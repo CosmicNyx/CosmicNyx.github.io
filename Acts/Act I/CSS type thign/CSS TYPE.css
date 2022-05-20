@@ -1,0 +1,19 @@
+/* this is a comment in CSS. MOVE THIS STYLE TO A SEPARATE FILE */
+
+
+.grid {
+    border: 1px solid black;
+    display: grid;
+    width: 250px;
+    height: 250px;
+    grid-template-columns: 50px 50px 50px 50px 50px;
+    grid-template-rows: 50px 50px 50px 50px 50px;
+}
+
+.grid-item{
+    border: 1px solid black;
+}
+
+.grid-item-black{
+    background-color: black;
+}
