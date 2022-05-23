@@ -1,4 +1,21 @@
 
+/* FONTS */
+h1 {
+    font-family: "Lucida Console", Courier, monospace;
+    font-weight: bold;
+}
+
+h2 {
+	font-family: "Lucida Console", Courier, monospace;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+p{ 
+	font-family: "Lucida Console", Courier, monospace;
+}
+
+
 /*SWEDEN */
 /* sweden grid */
 .sweden {
@@ -34,16 +51,43 @@
 }
 
 
-/* .grid-item{
+.custom {
     border: 1px solid black;
-} */
+    display: grid;
+    width: 480px;
+	height: 300px;
+	grid-template: 2fr 6fr 2fr 1fr 2fr 6fr 2fr/1fr 5fr 1fr 1fr 1fr 5fr 1fr
+}
+
+.item{
+    border: 1px solid black;
+}
 
 
 /* COLORS */
 
+/* made up flag */
+.green{
+    background-color: #0f5e19;
+}
+
+.blue{
+    background-color: #1d476e;
+}
+
+.purple{
+    background-color: #4f206e;
+}
+
+.red{
+    background-color: #8a1818;
+}
+
+
 .white{
     background-color: #ffffff;
 }
+/* ------ */
 
 /* sweden */
 .sweBlue{
