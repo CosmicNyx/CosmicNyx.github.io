@@ -1,4 +1,3 @@
-
 /* FONTS */
 h1 {
     font-family: "Lucida Console", Courier, monospace;
@@ -6,13 +5,13 @@ h1 {
 }
 
 h2 {
-	font-family: "Lucida Console", Courier, monospace;
-	font-weight: bold;
-	text-transform: uppercase;
+    font-family: "Lucida Console", Courier, monospace;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
-p{ 
-	font-family: "Lucida Console", Courier, monospace;
+p {
+    font-family: "Lucida Console", Courier, monospace;
 }
 
 
@@ -21,8 +20,8 @@ p{
     /* border: 1px solid black; */
     display: grid;
     width: 480px;
-	height: 300px;
-	grid-template: 4fr 2fr 4fr/5fr 2fr 9fr;
+    height: 300px;
+    grid-template: 4fr 2fr 4fr/5fr 2fr 9fr;
 }
 
 /* DENMARK ------- */
@@ -30,8 +29,8 @@ p{
     /* border: 1px solid black; */
     display: grid;
     width: 480px;
-	height: 300px;
-	grid-template: 6fr 2.5fr 6fr/6fr 2fr 9fr;
+    height: 300px;
+    grid-template: 6fr 2.5fr 6fr/6fr 2fr 9fr;
 }
 
 /* FINLAND ------- */
@@ -39,8 +38,8 @@ p{
     border: 1px solid black;
     display: grid;
     width: 480px;
-	height: 300px;
-	grid-template: 5fr 3fr 5fr/5fr 3fr 10fr;
+    height: 300px;
+    grid-template: 5fr 3fr 5fr/5fr 3fr 10fr;
 }
 
 /* ICELAND ------- */
@@ -48,8 +47,8 @@ p{
     /* border: 1px solid black; */
     display: grid;
     width: 480px;
-	height: 300px;
-	grid-template: 7fr 1fr 2fr 1fr 7fr/7fr 1fr 2fr 1fr 14fr;
+    height: 300px;
+    grid-template: 7fr 1fr 2fr 1fr 7fr/7fr 1fr 2fr 1fr 14fr;
 }
 
 /* CUSTOM ------- */
@@ -57,11 +56,11 @@ p{
     border: 1px solid black;
     display: grid;
     width: 480px;
-	height: 300px;
-	grid-template: 2fr 6fr 2fr 1fr 2fr 6fr 2fr/1fr 5fr 1fr 1fr 1fr 5fr 1fr
+    height: 300px;
+    grid-template: 2fr 6fr 2fr 1fr 2fr 6fr 2fr/1fr 5fr 1fr 1fr 1fr 5fr 1fr
 }
 
-.item{
+.item {
     border: 1px solid black;
 }
 
@@ -69,48 +68,53 @@ p{
 /* ------ COLORS --------- */
 
 /* made up flag */
-.green{
+.green {
     background-color: #0f5e19;
 }
-.blue{
+
+.blue {
     background-color: #1d476e;
 }
-.purple{
+
+.purple {
     background-color: #4f206e;
 }
-.red{
+
+.red {
     background-color: #8a1818;
 }
-.white{
+
+.white {
     background-color: #ffffff;
 }
+
 /* ------ */
 
 
 /* sweden */
-.sweBlue{
+.sweBlue {
     background-color: #004B87;
 }
 
-.sweYellow{
+.sweYellow {
     background-color: #FFCD00;
 }
 
 /* denmark */
-.denRed{
+.denRed {
     background-color: #C60C30;
 }
 
 /* finland */
-.finBlue{
+.finBlue {
     background-color: #002F6C;
 }
 
 /* Iceland */
-.iceRed{
+.iceRed {
     background-color: #DC1E35;
 }
 
-.iceBlue{
+.iceBlue {
     background-color: #02529C;
 }
