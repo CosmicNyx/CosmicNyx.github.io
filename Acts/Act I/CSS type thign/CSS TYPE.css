@@ -1,19 +1,41 @@
-/* this is a comment in CSS. MOVE THIS STYLE TO A SEPARATE FILE */
 
 
-.grid {
-    border: 1px solid black;
+/* TI STHIS ALIGHNS GRIDSSS */
+.grids {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    height: 90vh;
+}
+
+
+.letter {
+    width: 10vw;
+    height: 10vw;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
     display: grid;
-    width: 300px;
-    height: 300px;
-    grid-template-columns: 50px 50px 50px 50px 50px 50px;
-    grid-template-rows: 50px 50px 50px 50px 50px 50px;
+    border: 1px solid #000;
+
+    position: relative;
+    /* IMPORTANT: any element with position:absolute inside this container will now be relative to bounds of this element; */
 }
 
-.grid-item{
+.grid-item {
     border: 1px solid black;
 }
 
-.grid-item-black{
+.grid-item-black {
+    background-color: black;
+}
+
+#line {
+    grid-column: 1/5;
+    /* start at first column and end at last column */
+    grid-row: 1/9;
+    /* start at 5th row and end at 7th row */
     background-color: black;
 }
