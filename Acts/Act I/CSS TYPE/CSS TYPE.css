@@ -18,7 +18,11 @@
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     display: grid;
-    border: 1px solid #ffffff;
+
+    /* see thru thing that i like more 
+    unfortunelty did not hand this part it but its ok */
+    border: 7px solid rgba(255, 255, 255, 0);
+    
     position: relative;
 }
 
