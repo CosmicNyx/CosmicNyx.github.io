@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-zoom:1.0">
+    <meta charset="utf-8">
+    <title>Process Page</title>
+    <style>
+        /* Move all CSS to a stylesheet */
+        * {
+            /* Remove default browser spacing */
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 100px;
+            /* Add spacing around the entire page */
+            font-size: 12px;
+            /* Setting baseline font size */
+        }
+
+        /* Start of text sizes */
+        h1 {
+            font-size: 4em;
+        }
+
+        h2 {
+            font-size: 3em;
+        }
+
+        p {
+            font-size: 2em;
+            line-height: 1.5em;
+        }
+
+
+
+        /* End of text sizes */
+
+        /* Start of spacing and layout */
+        h2,
+        p,
+        figure,
+        figcaption {
+            margin-bottom: 40px;
+        }
+
+        img {
+            margin-bottom: 10px;
+        }
+
+        .process-template {
+            width: 40%;
+            /* Set the width of the template to 60% of the viewport. */
+            margin: auto;
+            /* Center align the template by adding auto margins to the left and right */
+        }
+
+        .title {
+            margin-bottom: 100px;
+            /* Add spacing to the bottom of the title div */
+        }
+
+        .section {
+            margin-bottom: 100px;
+        }
+
+        /* End of spacing and layout */
+
+        /* Adding media queries for page to adapts to tablet and mobile devices */
+        @media (max-width: 991px) {
+            .process-template {
+                width: 60%;
+            }
+        }
+
+        @media (max-width:767px) {
+            body {
+                margin: 40px;
+                font-size: 10px;
+            }
+
+            .process-template {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="process-template">
+        <!-- Start of title -->
+        <div class="title">
+            <h1>Web Typographic Poster</h1>
+        </div>
+        <!-- End of title -->
+        <!-- Start of content -->
+        <div class="content">
+            <!-- Start of a section -->
+            <div class="section">
+                <h2>Coming Up With An idea</h2>
+                <p>
+                    For my poster, I wanted to do something simple and use a minimal colour pallete. I sketched some
+                    gridi ideas and settled with 3 rows and two columns. One column will have the font typography I made
+                    with the hover animation I made for it.
+                </p>
+            </div>
+            <!-- End of a section -->
+            <!-- Start of a new section -->
+            <div class="section">
+                <h2>Coding The Poster</h2>
+                <p>
+                    I first coded the grid onto the page . I tried to make it one grid, but in the end I had to make 3
+                    grids, each havijng 1 row and two columns. In total the page has 5 grids, one the holds the title,
+                    the one that holds the link, and the three that have the text.
+                </p>
+                <p>
+                    To add more interactivity, I made a spoiler text where when you hover over it the text is revealed. I first made it on CodePen.
+                </p>
+                <!-- Start of a section -->
+                <!-- Start of image with caption -->
+                <figure>
+                    <img src="images/1.PNG">
+                </figure>
+                <br>
+                <figure>
+                    <p>
+                        The poster has a lot of CSS code and it was ahrd to try to put it all together. I did want to
+                        make the poster simple but i tried adding these elements to make it more interesting.
+                    </p>
+                </figure>
+                <!-- End of image with caption -->
+            </div>
+            <!-- End of a new section -->
+        </div>
+        <!-- End of content -->
+    </div>
+</body>
+
+</html>

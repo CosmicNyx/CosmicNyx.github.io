@@ -7,17 +7,21 @@
     justify-content: center;
     flex-direction: row;
     flex-wrap: wrap;
-    height: 90vh;
 }
 
 
 .letter {
-    width: 10vw;
-    height: 10vw;
+    width: 12em;
+    height: 12em;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     display: grid;
-    position: absolute;
+
+    /* see thru thing that i like more 
+    unfortunelty did not hand this part it but its ok */
+    border: 7px solid rgba(255, 255, 255, 0);
+
+    position: relative;
 }
 
 
@@ -27,15 +31,15 @@
 
 /* CHANGING COLOUR ANIMATION */
 :root {
-    --letterColour: black;
+    --letterColour: #9acb34;;
 }
 
 @keyframes colour {
 	from {
-		--letterColour: black
+		--letterColour: #9acb34
 	}
 	to {
-		--letterColour: red
+		--letterColour: #04d0d9
 	}
 }
 
