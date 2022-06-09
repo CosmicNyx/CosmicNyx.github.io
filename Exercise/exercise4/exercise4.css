@@ -1,0 +1,27 @@
+body {
+    margin: auto;
+    text-align: center;
+}
+
+h1 {
+    font-family: "Lucida Console", Courier, monospace;
+    font-weight: bold;
+    padding: 5px;
+}
+
+p {
+    font-family: "Lucida Console", Courier, monospace;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+
+
+/*-------iFrame---------*/
+
+iframe {
+    display: block;
+    margin: auto;
+    width: 90vw;
+    height: 90vh;
+}
