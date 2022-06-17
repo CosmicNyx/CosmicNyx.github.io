@@ -19,7 +19,7 @@ function IsEnter() {
         var rand1 = [Math.floor(Math.random() * 13)];
 
         if (rand1 >= 10){
-            setTimeout(myFunction, 30);
+            setTimeout(alertAnnoying, 30);
         }
 
         //either the input goes through or the window closes
@@ -37,7 +37,7 @@ function IsEnter() {
     }
 
     if (event.keyCode == (65) || event.keyCode == (78)) {
-        setTimeout(myFunction, 30);
+        setTimeout(alertAnnoying, 30);
     }
 
 
@@ -49,7 +49,7 @@ function IsEnter() {
 
 
 //Extra functions
-function myFunction() {
+function alertAnnoying() {
     alert(annoying[Math.floor(Math.random() * annoying.length)]);
 }
 
