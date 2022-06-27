@@ -1,6 +1,6 @@
 
 // VARIABLES
-var password = "fkcodes";
+var password = "mjjhdsfbsdbfmsgfhjeksbsdfkfgskjgkj";
 
 //projects 
 var cssTypeface = "https://cosmicnyx.github.io/Acts/Act%20I/CSS%20TYPE/CSS%20TYPE.html";
@@ -22,7 +22,7 @@ var qReading5 = "http://www.itwillneverbethesame.com/";
 // ---//
 //resources and inspo
 
-var link1 = "https://www.asciiart.eu/art-and-design";
+var link1 = "https://www.asciiart.eu/";
 var link2 = "https://terminal.sexy/";
 var link3 = "https://github.com/nextapps-de/winbox";
 var link4 = "https://github.com/luisbraganca/fake-terminal-website";
@@ -31,7 +31,7 @@ var link6 = "https://poolsuite.net/";
 var link7 = "https://yannickgregoire.nl/";
 var link8 = "https://www.youtube.com/watch?v=RXWAZ0C_mds&ab_channel=dcode";
 var link9 = "https://www.javascripttutorial.net/javascript-array-splice/";
-var link10 = "https://www.colorhexa.com/";
+var link10 = "https://patorjk.com/software/taag/#p=display&f=Graffiti&t=Type%20Something%20";
 
 
 
@@ -68,11 +68,12 @@ help = [
     '<span class="command">exercises</span>        View class exercises',
     '<span class="command">readings</span>         View class readings',
     '<span class="command">random_link</span>      Open a random reference link',
+    '<span class="command">ascii</span>            Display random ASCII arrt',
     '<span class="command">history</span>          View command history',
     '<span class="command">help</span>             No idea what this does',
     '<span class="command">clear</span>            Clear terminal',
     '<span class="command">banner</span>           Display the header',
-    '<span class="command">secret</span>           Enter password',
+    '<span class="command">secret</span>           try to find the hidden command',
     "<br>",
 ];
 
@@ -110,17 +111,24 @@ readings = [
     "<br>",
 ];
 
+secret = [
+    "<br>",
+    "Ow wow, you found hidden command...",
+    "heres ur reward",
+    "<br>",
+];
+
 
 banner = [
     '<span class="index">COSMICNYX [Version 10.0.19043.1766]<br>(c) COSMICNYX Corporation. All rights reserved.</span>',
-    "       .-'`  /\\  `'-.",
-    "     .'_____/__\\_____`.      ",
-    "    / `._  /    \\  _.` \\   ",
-    "   |     `/      \\'     |   ",
-    "   |     / `-..-' \\     | ",
-    "   \\    /  .-'`-.  \\   / ",
-    "    `. /.-'      `-.\\.' ",
-    "      `-..______..-'",
+    "   ___                    _            __             ",
+    "  / __\\___  ___ _ __ ___ (_) ___    /\\ \\ \\_   ___  __ ",
+    " ./ /  / _ \\/ __| '_ ` _ \\| |/ __|  /  \\/ / | | \\ \\/ /  ",
+    "/ /__| (_) \\__ \\ | | | | | | (__  / /\  /| |_| |>  <  ",
+    "\\____/\\___/|___/_| |_| |_|_|\\___| \\_\\ \/  \\__, /_/\\_\\ ",
+    "                                          |___/       ",
+    "                                ",
+
 
 
     '<span class="color2">Welcome to my interactive web terminal.</span>',
@@ -129,12 +137,19 @@ banner = [
 
 
 
+ascii1 = [
+"       .-'`  /\\  `'-.",
+"     .'_____/__\\_____`.      ",
+"    / `._  /    \\  _.` \\   ",
+"   |     `/      \\'     |   ",
+"   |     / `-..-' \\     | ",
+"   \\    /  .-'`-.  \\   / ",
+"    `. /.-'      `-.\\.' ",
+"      `-..______..-'",
+];
 
-// "       .-'`  /\\  `'-.",
-// "     .'_____/__\\_____`.      ",
-// "    / `._  /    \\  _.` \\   ",
-// "   |     `/      \\'     |   ",
-// "   |     / `-..-' \\     | ",
-// "   \\    /  .-'`-.  \\   / ",
-// "    `. /.-'      `-.\\.' ",
-// "      `-..______..-'",
+ascii2 = [
+    "    |\\__/,|   (`\\",
+    "  _.|o o  |_   ) )",
+    "-(((---(((--------",
+];

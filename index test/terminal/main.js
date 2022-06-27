@@ -17,10 +17,10 @@ setTimeout(function () {
 window.addEventListener("keyup", enterKey);
 
 console.log(
-    "%cYou hacked my password!",
+    "%cOH WOW YOU FOUND THE HIDDEN COMMAND",
     "color: #04ff00; font-weight: bold; font-size: 24px;"
 );
-console.log("%cPassword: '" + password + "' \nHEYHEY", "color: grey");
+console.log("%cCommand: '" + password + "'", "color: grey");
 
 //init
 textarea.value = "";
@@ -29,28 +29,6 @@ command.innerHTML = textarea.value;
 function enterKey(e) {
     if (e.keyCode == 181) {
         document.location.reload(true);
-    }
-    if (pw) {
-        let et = "*";
-        let w = textarea.value.length;
-        command.innerHTML = et.repeat(w);
-        if (textarea.value === password) {
-            pwd = true;
-        }
-        if (pwd && e.keyCode == 13) {
-            loopLines(secret, "color2 margin", 120);
-            command.innerHTML = "";
-            textarea.value = "";
-            pwd = false;
-            pw = false;
-            liner.classList.remove("password");
-        } else if (e.keyCode == 13) {
-            addLine("Wrong password", "error", 0);
-            command.innerHTML = "";
-            textarea.value = "";
-            pw = false;
-            liner.classList.remove("password");
-        }
     } else {
         if (e.keyCode == 13) {
             commands.push(command.innerHTML);
@@ -95,21 +73,12 @@ function commander(cmd) {
             loopLines(whoami, "color2 margin", 80);
             break;
 
-
-
-        // CHANGEEEEE_______________________________________________________________
-        // case "sudo": 
-        //     addLine("Oh no, you're not admin...", "color2", 80);
-        //     setTimeout(function () {
-        //         window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-        //     }, 1000);
-        //     break;
-
-        // CHANGE NAMEEE--------------------------------------
-
-        case "secret":
-            liner.classList.add("password");
-            pw = true;
+            //--- HIDDEN COMMAND---//
+        case "mjjhdsfbsdbfmsgfhjeksbsdfkfgskjgkj":
+            loopLines(secret, "color2 margin", 80);
+            setTimeout(function () {
+                window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+            }, 3000);
             break;
 
 
@@ -130,7 +99,7 @@ function commander(cmd) {
 
         case "password":
             // CHNAGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-            addLine("<span class=\"inherit\"> Lol! You're joking, right? You\'re gonna have to try harder than that!ðŸ˜‚</span>", 100);
+            addLine("<span class=\"inherit\"> Lol! You're joking, right? You\'re gonna have to try harder than that!</span>", 100);
             break;
 
         case "history":
@@ -246,34 +215,52 @@ function commander(cmd) {
             break;
 
 
-            // ---RANDOM LINK CASE-----//
+        // ---RANDOM LINK CASE-----//
         case "random_link":
             addLine("Opening a random link...", "color2", 0);
-            var random = Math.floor(Math.random() * 10);
+            var random = Math.floor(Math.random() * 11);
             // console.log(random);
-            if (random == 0){
+            if (random == 0) {
                 newTab(link1);
-            }else if (random == 1){
+            } else if (random == 1) {
                 newTab(link2);
-            }else if (random == 2){
+            } else if (random == 2) {
                 newTab(link3);
-            }else if (random == 3){
+            } else if (random == 3) {
                 newTab(link4);
-            }else if (random == 4){
+            } else if (random == 4) {
                 newTab(link5);
-            }else if (random == 5){
+            } else if (random == 5) {
                 newTab(link6);
-            }else if (random == 6){
+            } else if (random == 6) {
                 newTab(link7);
-            }else if (random == 7){
+            } else if (random == 7) {
                 newTab(link8);
-            }else if (random == 8){
+            } else if (random == 8) {
                 newTab(link9);
-            }else{
+            } else {
                 newTab(link10);
             }
             break;
 
+        case "ascii":
+
+            var random = Math.floor(Math.random() * 2);
+            console.log(random);
+            if (random == 0) {
+                loopLines(ascii1, "command", 80);
+            } else if (random == 1) {
+                loopLines(ascii2, "command", 80);
+            } else if (random == 2) {
+                newTab(link3);
+            } else if (random == 3) {
+                newTab(link4);
+            } else if (random == 4) {
+                newTab(link5);
+            } else {
+                newTab(link6);
+            }
+            break;
 
 
         default:
