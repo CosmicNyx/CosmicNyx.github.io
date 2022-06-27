@@ -8,7 +8,7 @@ var webTypographicPoster = "https://cosmicnyx.github.io/Acts/Act%20I/Web%20Typog
 var interactiveElements = "https://cosmicnyx.github.io/Acts/Act%202/Interactive%20Elements/chatbot.html";
 
 //exercises
-var exer1 = "https://cosmicnyx.github.io/Exercise/exercise1/selfPotrait.html";
+var exer1 = "https://cosmicnyx.github.io/Exercise/exercise1/selfPortrait.html";
 var exer2 = "https://cosmicnyx.github.io/Exercise/exercise2/exercise2.html";
 var exer3 = "https://cosmicnyx.github.io/Exercise/exercise3/exercise3.html";
 var exer4 = "https://cosmicnyx.github.io/Exercise/exercise4/exercise4.html";
