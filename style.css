@@ -4,24 +4,24 @@
 
 :root {
 
-    --BkgrColour: #151515;
+    --BkgrColour: #101010;
 
     /* window header colour */
-    --typingColour: #90A959;
+    --typingColour: #81957C;
 
-    --cursorColour: #75B5AA;
+    --cursorColour: #A7B79A;
 
-    --indexColour: #D0D0D0;
+    --indexColour: #D2C5BC;
 
-    --textColour: #F4BF75;
+    --textColour: #F9BB80;
 
-    --commandColour: #6A9FB5;
+    --commandColour: #7491A1;
 
-    --errorColour: #AC4142;
+    --errorColour: #B91E2E;
 
-    --linkMainColour: #AA759F;
-    --linkBkgrColour: #75B5AA;
-    --linkBkrgMainColour: #151515;
+    --linkMainColour: #87314E;
+    --linkBkgrColour: #356579;
+    --linkBkrgMainColour: #101010;
 }
 
 /* --typingColour: #13cc6f; */
@@ -236,7 +236,7 @@ p {
 
 /* winbox style */
 
-.wb-header {
+.wb-header{
     color: var(--BkgrColour);
 }
 

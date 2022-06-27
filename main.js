@@ -349,14 +349,14 @@ function clear() {
 
 // ----------- READING WINBOX FUNCTIONS ----------------//
 
-
+bkgrColor = "#81957C";
 
 // WINBOX
 function reading1() {
     const textbox = new WinBox({
         title: "Reading 1",
         width: "600px",
-        background: "#90A959",
+        background: bkgrColor,
         mount: document.querySelector('#reading1'),
     })
 }
@@ -366,7 +366,7 @@ function reading2() {
     const textbox = new WinBox({
         title: "Reading 2",
         width: "600px",
-        background: "#90A959",
+        background: bkgrColor,
         mount: document.querySelector('#reading2'),
     })
 }
@@ -376,7 +376,7 @@ function reading3() {
     const textbox = new WinBox({
         title: "Reading 3",
         width: "600px",
-        background: "#90A959",
+        background: bkgrColor,
         mount: document.querySelector('#reading3'),
     })
 }
@@ -386,7 +386,7 @@ function reading4() {
     const textbox = new WinBox({
         title: "Reading 4",
         width: "600px",
-        background: "#90A959",
+        background: bkgrColor,
         mount: document.querySelector('#reading4'),
     })
 }
@@ -396,7 +396,7 @@ function reading5() {
     const textbox = new WinBox({
         title: "Reading 5",
         width: "600px",
-        background: "#90A959",
+        background: bkgrColor,
         mount: document.querySelector('#reading5'),
     })
 }
