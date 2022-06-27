@@ -9,10 +9,22 @@ var pw = false;
 let pwd = false;
 var commands = [];
 
+
+// ---------- START -------------- //
+
+loopLines(load, "index", 200);
 setTimeout(function () {
+    clear();
     loopLines(banner, "", 80);
-    textarea.focus();
-});
+}, 4700)
+
+
+// setTimeout(function () {
+//     loopLines(banner, "", 80);
+//     textarea.focus();
+// });
+
+// ------------------- //
 
 window.addEventListener("keyup", enterKey);
 
@@ -73,12 +85,16 @@ function commander(cmd) {
             loopLines(whoami, "color2 margin", 80);
             break;
 
-            //--- HIDDEN COMMAND---//
+        //--- HIDDEN COMMAND---//
         case "mjjhdsfbsdbfmsgfhjeksbsdfkfgskjgkj":
             loopLines(secret, "color2 margin", 80);
             setTimeout(function () {
                 window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
             }, 3000);
+            break;
+
+        case "secret":
+            addLine('Bruh... Youre supposed to find the secret command. The command isnt "secret"', "error", 80);
             break;
 
 
@@ -98,7 +114,6 @@ function commander(cmd) {
         //----------//
 
         case "password":
-            // CHNAGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
             addLine("<span class=\"inherit\"> Lol! You're joking, right? You\'re gonna have to try harder than that!</span>", 100);
             break;
 
@@ -111,10 +126,7 @@ function commander(cmd) {
 
 
         case "clear":
-            setTimeout(function () {
-                terminal.innerHTML = '<a id="before"></a>';
-                before = document.getElementById("before");
-            }, 1);
+            clear();
             break;
 
         case "banner":
@@ -215,10 +227,10 @@ function commander(cmd) {
             break;
 
 
-        // ---RANDOM LINK CASE-----//
-        case "random_link":
-            addLine("Opening a random link...", "color2", 0);
-            var random = Math.floor(Math.random() * 11);
+        // ---RANDOM RESOURCE LINK CASE-----//
+        case "resources":
+            addLine("Opening a random resource link...", "color2", 0);
+            var random = Math.floor(Math.random() * 7);
             // console.log(random);
             if (random == 0) {
                 newTab(link1);
@@ -234,31 +246,45 @@ function commander(cmd) {
                 newTab(link6);
             } else if (random == 6) {
                 newTab(link7);
-            } else if (random == 7) {
-                newTab(link8);
-            } else if (random == 8) {
-                newTab(link9);
             } else {
-                newTab(link10);
+                newTab(link8);
             }
             break;
 
+
+        // RANDOM INSPA LINK
+        case "misc":
+            addLine("Opening a random insparation link...", "color2", 0);
+            var random = Math.floor(Math.random() * 2);
+            // console.log(random);
+            if (random == 0) {
+                newTab(ilink1);
+            } else if (random == 1) {
+                newTab(ilink2);
+            } else {
+                newTab(ilink3);
+            }
+            break;
+
+
+
+
+
+
         case "ascii":
 
-            var random = Math.floor(Math.random() * 2);
+            var random = Math.floor(Math.random() * 5);
             console.log(random);
             if (random == 0) {
                 loopLines(ascii1, "command", 80);
             } else if (random == 1) {
                 loopLines(ascii2, "command", 80);
             } else if (random == 2) {
-                newTab(link3);
+                loopLines(ascii3, "command", 80);
             } else if (random == 3) {
-                newTab(link4);
-            } else if (random == 4) {
-                newTab(link5);
+                loopLines(ascii4, "command", 80);
             } else {
-                newTab(link6);
+                loopLines(ascii5, "command", 80);
             }
             break;
 
@@ -312,7 +338,12 @@ function loopLines(name, style, time) {
 }
 
 
-
+function clear() {
+    setTimeout(function () {
+        terminal.innerHTML = '<a id="before"></a>';
+        before = document.getElementById("before");
+    }, 1);
+}
 
 
 

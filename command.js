@@ -20,20 +20,48 @@ var qReading4 = "https://cosmicnyx.github.io/Readings/reading%204/reading4.html"
 var qReading5 = "http://www.itwillneverbethesame.com/";
 
 // ---//
-//resources and inspo
+
+//resources
 
 var link1 = "https://www.asciiart.eu/";
 var link2 = "https://terminal.sexy/";
 var link3 = "https://github.com/nextapps-de/winbox";
 var link4 = "https://github.com/luisbraganca/fake-terminal-website";
-var link5 = "https://stonestoryrpg.com/ascii_tutorial.html";
-var link6 = "https://poolsuite.net/";
-var link7 = "https://yannickgregoire.nl/";
-var link8 = "https://www.youtube.com/watch?v=RXWAZ0C_mds&ab_channel=dcode";
-var link9 = "https://www.javascripttutorial.net/javascript-array-splice/";
-var link10 = "https://patorjk.com/software/taag/#p=display&f=Graffiti&t=Type%20Something%20";
+var link5 = "https://github.com/octobanana/asciimation";
+var link6 = "https://www.youtube.com/watch?v=RXWAZ0C_mds&ab_channel=dcode";
+var link7 = "https://www.javascripttutorial.net/javascript-array-splice/";
+var link8 = "https://patorjk.com/software/taag/#p=display&f=Graffiti&t=Type%20Something%20";
+
+// insparation
+var ilink1 = "https://poolsuite.net/";
+var ilink2 = "https://yannickgregoire.nl/";
+var ilink3 = "https://stonestoryrpg.com/ascii_tutorial.html";
 
 
+load = [
+    "Reticulating splines...",
+    "Generating witty dialog...",
+    "Swapping time and space...",
+    "Spinning violently around the y-axis...",
+    "Tokenizing real life...",
+    "Bending the spoon...",
+    "Filtering morale...",
+    "Don't think of purple hippos...",
+    "We need a new fuse...",
+    "Have a good day.",
+    "Upgrading Windows, your PC will restart several times. Sit back and relax.",
+    "640K ought to be enough for anybody",
+    "The architects are still drafting",
+    "The bits are breeding",
+    "We're building the buildings as fast as we can",
+    "Would you prefer chicken, steak, or tofu?",
+    "(Pay no attention to the man behind the curtain)",
+    "...and enjoy the elevator music...",
+    "Please wait while the little elves draw your map",
+    "Don't worry - a few bits tried to escape, but we caught them",
+    "Would you like fries with that?",
+    "Patience! This is difficult, you know...",
+];
 
 
 whois = [
@@ -67,7 +95,8 @@ help = [
     '<span class="command">projects</span>         View class projects',
     '<span class="command">exercises</span>        View class exercises',
     '<span class="command">readings</span>         View class readings',
-    '<span class="command">random_link</span>      Open a random reference link',
+    '<span class="command">resources</span>        Open a random resource link',
+    '<span class="command">misc</span>             Open a random insparation link',
     '<span class="command">ascii</span>            Display random ASCII arrt',
     '<span class="command">history</span>          View command history',
     '<span class="command">help</span>             No idea what this does',
@@ -127,7 +156,7 @@ banner = [
     "/ /__| (_) \\__ \\ | | | | | | (__  / /\  / | |_| |>  <  ",
     "\\____/\\___/|___/_| |_| |_|_|\\___| \\_\\ \/  \\__, /_/\\_\\ ",
     "                                          |___/       ",
-    "                                ",
+    // "                                ",
 
 
 
@@ -136,6 +165,7 @@ banner = [
 ];
 
 
+// --------------ASCII ART--------------//
 
 ascii1 = [
     "<br>",
@@ -157,3 +187,47 @@ ascii2 = [
     "-(((---(((--------",
     "<br>",
 ];
+
+ascii3 = [
+    "<br>",
+    " ._._     _ '''''`-._",
+    "(,-.`._,'(       |\\`-/|",
+    "    `-.-' \\ )-`( , o o)",
+    "          `-    \\`_`''-",
+    "<br>",
+];
+
+ascii4 = [
+    "<br>",
+    "               ______________                               ",
+    "          ,===:'.,            `-._                           ",
+    "            `:.`---.__         `-._                       ",
+    "              `:.     `--.         `.                     ",
+    "                \\.        `.         `.                   ",
+    "        (,,(,    \\.         `.   ____,-`.,                ",
+    "     (,'     `/   \\.   ,--.___`.'                         ",
+    " ,  ,'  ,--.  `,   \\.;'         `                         ",
+    "   `{D, {    \\  :    \\;                                    ",
+    "     V,,'    /  /    //                                    ",
+    "     j;;    /  ,' ,-//.    ,---.      ,                    ",
+    "     \\;'   /  ,' /  _  \ \ /  _  \\   ,'/                    ",
+    "            \\   `'  / \\  `'  / \\  `.' /                     ",
+    "             `.___,'   `.__,'   `.__,'                      ",
+    "<br>",
+];
+
+ascii5 = [
+    "<br>",
+    ".\\            //.",
+    ". \ \          / /.",
+    ".\  ,\     /` /,.-",
+    " -.   \  /'/ /  .",
+    "  ` -   `-'  \  -",
+    "   '.       /.\`",
+    "      -    .-",
+    "      :`//.'",
+    "      .`.'",
+    "      .'",
+    "<br>",
+];
+
