@@ -174,7 +174,7 @@ function commander(cmd) {
         case "reading5":
             addLine('Opening reading 5 window...', "color2", 80);
             setTimeout(function () {
-                reading4();
+                reading5();
             }, 500);
            
             setTimeout(function () {
