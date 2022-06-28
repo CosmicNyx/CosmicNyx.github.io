@@ -274,7 +274,7 @@ function commander(cmd) {
         case "ascii":
 
             var random = Math.floor(Math.random() * 5);
-            console.log(random);
+            // console.log(random);
             if (random == 0) {
                 loopLines(ascii1, "command", 80);
             } else if (random == 1) {
