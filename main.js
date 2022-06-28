@@ -191,7 +191,7 @@ function commander(cmd) {
             break;
 
         case "index":
-            addLine("You're already here...", "color2", 0);
+            addLine("You're already here...", "error", 0);
             break;
 
 
