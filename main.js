@@ -141,31 +141,46 @@ function commander(cmd) {
         // READING CALLOUTS------//
         case "reading1":
             addLine('Opening reading 1 window...', "color2", 80);
-            reading1();
+            setTimeout(function () {
+                reading1();
+            }, 500);
             break;
 
         case "reading2":
             addLine('Opening reading 2 window...', "color2", 80);
-            reading2();
+            setTimeout(function () {
+                reading2();
+            }, 500);
             break
 
         case "reading3":
             addLine('Opening reading 3 window...', "color2", 80);
-            reading3();
+            setTimeout(function () {
+                reading3();
+            }, 500);
             break
 
         case "reading4":
             addLine('Opening reading 4 window...', "color2", 80);
-            reading4();
+            setTimeout(function () {
+                reading4();
+            }, 500);
             addLine('Opening reading 4 question 2 link...', "color2", 80);
-            newTab(qReading4);
+            setTimeout(function () {
+                newTab(qReading4);
+            }, 500);
             break
 
         case "reading5":
             addLine('Opening reading 5 window...', "color2", 80);
-            reading5();
-            addLine('Opening reading 4 question 2 link...', "color2", 80);
-            newTab(qReading5);
+            setTimeout(function () {
+                reading4();
+            }, 500);
+           
+            setTimeout(function () {
+                newTab(qReading5);
+            }, 500);
+           
             break
 
 
