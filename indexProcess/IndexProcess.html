@@ -104,50 +104,67 @@
             <div class="section">
                 <h2>Coming up with an idea </h2>
                 <p>
-                    The interaction that I was given to work with was typing with a keyboard. At first I thought that
-                    this would be a simple interaction to work with, however I realized that coming up with a solid idea
-                    would be difficult. I went through many different ideas and even draft coded some of them in
-                    parts.<br><br>One idea that I think would have worked well was when you press the keyboard, that
-                    character shoots up and bounces around. I made a draft of it and it was fully complited, however im
-                    not sure how it even works and its a miracle that it does<br><br>
-                    <img src="images/keyboard.PNG"><br><br> The code was mostly copy and pasted and edited to fit with
-                    each other so I couldnt use it anyways. And I dont fully know how to use Matter.js and I didnt have
-                    the time to try to learn it.<br><br>I also coded a small pen on CodePen, to see if I could make
-                    somthing keys on the screen when it is pressed down. I wasnt sure how I would use it but I made it
-                    to see what I can do.<br><br><img src="images/letters.PNG"><br><br>An idea I had that I really like
-                    was to use the keybpard inputs to change what was showing up on screen. You press a button and you
-                    toggle between night and day. In the day you can press keys to make elements show up to decorate the
-                    surroundings. I made clouds for the day time and stars for the night time. I was going to make this
-                    using P5.js. However, after talking with the prof, I decided that the best thing to make that would
-                    make you interact with the keyboard that seperates it from other input and interactive elements was
-                    the ability to type out words. So I decided to make a chatbox that will annoy you.
+                    I always liked the asthetic of a terminal window and a text editor screen with code. It looked smart
+                    and interesting.<br><br>
+
+                    When looking for index website ideas, I thought about a website that worked as a terminal. I saw a
+                    few websites that used this concept, so by no means is this not an uncommon idea. I this really
+                    wanted to go for something that still had a terminal aspect. I decided to try to focus on a terminal
+                    theme and try to make it as interesting as I can.<br><br>
+
+                    I came across a website that had windows with content that you can move around <a
+                        href="https://poolsuite.net/">here</a>, so from there I got
+                    the idea to include windows with content. You have to type a command to open it.<br><br>
+
+                    While looking for more ideas, I saw some ASCII art and thought it would be cool to try to include
+                    that. I found a few websites that have ASCII art and could generate words into ASCII words.<br><br>
+
+                    With all this, I got my idea for the Index
+
                 </p>
 
             </div>
             <!-- End of a section -->
             <!-- Start of a new section -->
             <div class="section">
-                <h2>Creating the chatbot</h2>
+                <h2>Creating the Index Page</h2>
                 <p>
-                    It took a while to figure out how I wanted to make the chatbot look. I decided to go for a simple
-                    look and figured out how to have messages show up on the screen and replacing the last message. It
-                    was surprisingly simple. Anyways, I put some effort into creating the text box where the user types
-                    their inputs. I then made simple if statements to get basic replies from the chatbot when you type
-                    in hello. Then made it as a function that is called once you press the enter key.<br><br> After I
-                    got these basics figured out, I tried working with arrays to get
-                    multiple different answers rather that one fixed reply. I tried working with group
-                    arrays where there is just one const array and it has a few groups. I made one with possible
-                    user entries, and then made an array with responses that the bot would use. I tried using for loops
-                    but it just wasnt working. I then came up with the solution that I stuck with. This just allows me
-                    to have many different responses from the bot in an organized way, but not for the user. To keep the
-                    js file from becoming a mess, I put the dialogue arrays in a seperate js file. I think it works
-                    pretty well.<br><br>After the array mess, I added some random variables to make some annoying things
-                    happen.. at random. I got pretty annoyed while testing everything out becuase I would keep getting
-                    rickrolled or the window would close. I think the most unnoticible but after a bit noticible
-                    annoying
-                    thing is that sometimes the textbox where the user inputs their text, after they hit enter, it
-                    doesnt clear. So you are forced to delete it to type something new.<br><br> After adding some extra
-                    things to the website, I finally finished.
+                    First I experimented and tested with different aspects that I wanted to include in my index on
+                    CodePen. I made movable windows with Jquery, experimented with ASCII animations and tried making
+                    some sort of background to make the page more interesting.<br><br>
+
+                    For the windows, I found an open source window manager <a
+                        href="https://github.com/nextapps-de/winbox">here</a>
+                    while searching how to resize and delete the Jquery windows I made. This made things alot easier for
+                    me since the windows become easily cutomizable.<br><br>
+
+                    Making the terminal itself was pretty tricky and very time consuming. It took a while to try to
+                    figure out how to create a new paragraph element, but I was able to find a few references of
+                    terminals on CodePen and figured it out, tho it was pretty complicated. I also was planning to use
+                    if statements to get responses, but after testing it out I figured that using switch cases would be
+                    more effiecent and easier. I made a command js and listed variables, the multi line dailogue, and
+                    ASCII art there. I added the css colours after and had fun experimenting with different colour
+                    palletes using
+                    <a href="https://terminal.sexy/">this</a> website. Its a pretty cool website that has a bunch of
+                    terminal colour palletes and shows the palletes in action. Im pretty glad I came across it.<br><br>
+
+                    I then had to think of a loading page. From the start, I thought of having and ASCII animation as my
+                    loading screen. But then thought agaisnt it after I when back <a
+                        href="https://poolsuite.net/">here</a>
+                    to just see it again, and it has text as when its loading, just and a console would. So I thought Id
+                    be be funny with it and got a couple of funny texts that after it all types on screen, I have a
+                    setTimeOut function wait and the use th eclear function i made to clear it and then load in the
+                    banner.<br><br>
+
+                    In the end, I tried adding some animated ASCII art in some way since I didnt want it to be the
+                    loading screen. Before wheni was testing things out on CodePen, I put the ASCII animations in Visual
+                    Studio Code, and for some reason the Kaomoji animation was all weird. I tesed it out with the Idex
+                    to see if i could have it above my banner cuase why not... and it worked perfectly. Im not gonna
+                    question it.<br><br>
+
+                    And thats about it. Took me a while to get all this done so Im glad to have finished this and
+                    actually be satisfied with it. Im definently gonna use to to make another interesting terminal
+                    website for gags or even for a game dev documentation or a portfolio in general.
                 </p>
 
             </div>
