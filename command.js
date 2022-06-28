@@ -6,6 +6,7 @@ var password = "mjjhdsfbsdbfmsgfhjeksbsdfkfgskjgkj";
 var cssTypeface = "https://cosmicnyx.github.io/Acts/Act%20I/CSS%20TYPE/CSS%20TYPE.html";
 var webTypographicPoster = "https://cosmicnyx.github.io/Acts/Act%20I/Web%20Typographic%20Poster/webPoster.html";
 var interactiveElements = "https://cosmicnyx.github.io/Acts/Act%202/Interactive%20Elements/chatbot.html";
+var index = "https://cosmicnyx.github.io/";
 
 //exercises
 var exer1 = "https://cosmicnyx.github.io/Exercise/exercise1/selfPortrait.html";
@@ -115,7 +116,7 @@ projects = [
     'web_poster                    <a href="' + webTypographicPoster + '" target="_blank">\\Web_Typographic_Poster' + "</a>",
     'chatbox                       <a href="' + interactiveElements + '" target="_blank">\\Interactive_Elements' + "</a>",
     // ADD LINK----\\
-    'index                         <a href="' + interactiveElements + '" target="_blank">\\Index' + "</a>",
+    'index                         <a href="' + index + '" target="_blank">\\Index' + "</a>",
     "<br>",
 ];
 
