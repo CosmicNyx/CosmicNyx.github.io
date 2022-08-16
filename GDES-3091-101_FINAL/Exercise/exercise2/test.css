@@ -1,0 +1,37 @@
+.sweden {
+    border: 1px solid black;
+    display: grid;
+    width: 480px;
+	height: 300px;
+	grid-template: 4fr 2fr 4fr/5fr 2fr 9fr;
+}
+
+.denmark {
+    border: 1px solid black;
+    display: grid;
+    width: 480px;
+	height: 300px;
+	grid-template: 6fr 2.5fr 6fr/6fr 2fr 9fr;
+}
+
+.finland {
+    border: 1px solid black;
+    display: grid;
+    width: 480px;
+	height: 300px;
+	grid-template: 5fr 3fr 5fr/5fr 3fr 10fr;
+}
+
+.iceland {
+    border: 1px solid black;
+    display: grid;
+    width: 480px;
+	height: 300px;
+	grid-template: 7fr 1fr 2fr 1fr 7fr/7fr 1fr 2fr 1fr 14fr;
+}
+
+
+.grid-item{
+    border: 1px solid black;
+}
+

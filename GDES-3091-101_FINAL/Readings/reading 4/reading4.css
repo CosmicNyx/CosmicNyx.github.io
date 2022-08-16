@@ -1,0 +1,25 @@
+body {
+    display: block;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+div {
+    position: relative;
+}
+
+h1 {
+    font-family: "Lucida Console", Courier, monospace;
+    font-weight: bold;
+    font-size: x-large;
+    padding: 15px;
+}
+
+p {
+    font-family: "Lucida Console", Courier, monospace;
+    padding-left: 25%;
+    padding-top: 10%;
+    width:50%;
+}

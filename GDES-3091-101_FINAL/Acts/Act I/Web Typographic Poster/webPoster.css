@@ -1,0 +1,198 @@
+/* * { 
+    margin: 0;
+    padding: 0;
+}
+
+
+body {
+    margin: 100px; 
+    font-size: 12px; 
+    width: auto;
+    height: auto;
+} */
+
+/* COLORS */
+
+:root{
+    --black1: #353E4A;
+    /* --black2: #43473b; */
+    --green1: #9acb34;
+    /* --green2: #b5d43c;
+    --green3: #d9ef81; */
+    --white1: #fbfbef;
+    /* --white2: #f7f7f7; */
+    --blue1: #04d0d9;
+}
+
+.black{
+    color: var(--black1);
+}
+.green{
+    color: var(--green1);
+}
+.white{
+    color: var(--white1);
+}
+.blue{
+    color: var(--blue1);
+}
+
+/* ------------------ */
+
+* {
+    /* Remove default browser spacing */
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 1vw;
+    background-color: var(--black1);
+}
+
+
+/* body {
+    width: auto;
+    height: auto;
+} */
+
+.breakWord {
+    word-break: break-word;
+}
+
+.box {
+    position: relative;
+}
+
+.gridPage {
+    margin: 30px;
+}
+
+.fill {
+    border: 1px solid rgba(0, 0, 0, 0);
+    margin: 10px;
+}
+
+p {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.3em;
+    font-weight: bolder;
+    color: var(--white1);
+    margin: 20px;
+}
+
+h1 {
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--blue1);
+    padding-left: 17%;
+}
+
+
+
+.button{
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bolder;
+    background-color: #353E4A;
+    font-size: 2em;
+    color: var(--blue1);
+    padding-left: 42%;
+}
+
+
+
+h2 {
+    font-family: 'Courier New', Courier, monospace;
+    color: var(--blue1);
+}
+
+ul{
+    font-family: 'Courier New', Courier, monospace;
+    font-style: italic;
+    color: var(--white1);
+    padding-left: 6%;
+    font-size: 1.3em;
+}
+
+
+
+/* SPOILER HOVER */
+del {
+    color: var(--black1);
+    color: var(--black1);
+    text-decoration: none;
+}
+
+del:hover {
+    color: var(--blue1);
+}
+
+del2 {
+    color: var(--black1);
+    color: var(--black1);
+    text-decoration: none;
+}
+
+del2:hover {
+    color: var(--white1);
+}
+
+
+
+/* ---------------------------------------------
+-----------------------------------------------
+-------------------------------------------
+--------------------------------------------- */
+/* GRID ALIGN */
+.grid1 {
+    /* border: 1px solid black; */
+    display: grid;
+    width: 70fr;
+    height: 80fr;
+    grid-template: 70px/ 1200px;
+}
+
+.grid2 {
+    /* border: 1px solid black; */
+    display: grid;
+    width: 70%;
+    height: 35%;
+    grid-template: 600px/ 500px 700px;
+}
+
+.grid3 {
+    /* border: 1px solid black; */
+    display: grid;
+    width: 100%;
+    height: 35%;
+    grid-template: 600px/ 700px 500px;
+}
+
+.grid4 {
+    /* border: 1px solid black; */
+    display: grid;
+    width: 100%;
+    height: 35%;
+    grid-template: 600px/ 500px 700px;
+}
+
+.grid5 {
+    /* border: 1px solid black; */
+    display: grid;
+    width: 70fr;
+    height: 80fr;
+    grid-template: 70px/ 1200px;
+}
+
+/* -------------------------------------------------
+---------------------------------------------
+-----------------------------------------
+------------------------------------------- */
+
+/* FORMATING TITLES */
+.letter {
+    padding-top: 45px;
+}
+
+
+
+/* ----------------------- */

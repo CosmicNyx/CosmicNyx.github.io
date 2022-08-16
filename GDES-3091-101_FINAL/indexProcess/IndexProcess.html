@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-zoom:1.0">
+    <meta charset="utf-8">
+    <title>Process Page</title>
+    <style>
+        /* Move all CSS to a stylesheet */
+        * {
+            /* Remove default browser spacing */
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 100px;
+            /* Add spacing around the entire page */
+            font-size: 12px;
+            /* Setting baseline font size */
+        }
+
+        /* Start of text sizes */
+        h1 {
+            font-size: 4em;
+        }
+
+        h2 {
+            font-size: 3em;
+        }
+
+        p {
+            font-size: 2em;
+            line-height: 1.5em;
+        }
+
+
+
+        /* End of text sizes */
+
+        /* Start of spacing and layout */
+        h2,
+        p,
+        figure,
+        figcaption {
+            margin-bottom: 40px;
+        }
+
+        img {
+            margin-bottom: 10px;
+        }
+
+        .process-template {
+            width: 40%;
+            /* Set the width of the template to 60% of the viewport. */
+            margin: auto;
+            /* Center align the template by adding auto margins to the left and right */
+        }
+
+        .title {
+            margin-bottom: 100px;
+            /* Add spacing to the bottom of the title div */
+        }
+
+        .section {
+            margin-bottom: 100px;
+        }
+
+        /* End of spacing and layout */
+
+        /* Adding media queries for page to adapts to tablet and mobile devices */
+        @media (max-width: 991px) {
+            .process-template {
+                width: 60%;
+            }
+        }
+
+        @media (max-width:767px) {
+            body {
+                margin: 40px;
+                font-size: 10px;
+            }
+
+            .process-template {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="process-template">
+        <!-- Start of title -->
+        <div class="title">
+            <h1>Index Process</h1>
+        </div>
+        <!-- End of title -->
+        <!-- Start of content -->
+        <div class="content">
+            <!-- Start of a section -->
+            <!-- <img src="images/keyboard.PNG"> -->
+
+            <div class="section">
+                <h2>Coming up with an idea </h2>
+                <p>
+                    I always liked the asthetic of a terminal window and a text editor screen with code. It looked smart
+                    and interesting.<br><br>
+
+                    When looking for index website ideas, I thought about a website that worked as a terminal. I saw a
+                    few websites that used this concept, so by no means is this not an uncommon idea. I this really
+                    wanted to go for something that still had a terminal aspect. I decided to try to focus on a terminal
+                    theme and try to make it as interesting as I can.<br><br>
+
+                    I came across a website that had windows with content that you can move around <a
+                        href="https://poolsuite.net/">here</a>, so from there I got
+                    the idea to include windows with content. You have to type a command to open it.<br><br>
+
+                    While looking for more ideas, I saw some ASCII art and thought it would be cool to try to include
+                    that. I found a few websites that have ASCII art and could generate words into ASCII words.<br><br>
+
+                    With all this, I got my idea for the Index
+
+                </p>
+
+            </div>
+            <!-- End of a section -->
+            <!-- Start of a new section -->
+            <div class="section">
+                <h2>Creating the Index Page</h2>
+                <p>
+                    First I experimented and tested with different aspects that I wanted to include in my index on
+                    CodePen. I made movable windows with Jquery, experimented with ASCII animations and tried making
+                    some sort of background to make the page more interesting.<br><br>
+
+                    For the windows, I found an open source window manager <a
+                        href="https://github.com/nextapps-de/winbox">here</a>
+                    while searching how to resize and delete the Jquery windows I made. This made things alot easier for
+                    me since the windows become easily cutomizable.<br><br>
+
+                    Making the terminal itself was pretty tricky and very time consuming. It took a while to try to
+                    figure out how to create a new paragraph element, but I was able to find a few references of
+                    terminals on CodePen and figured it out, tho it was pretty complicated. I also was planning to use
+                    if statements to get responses, but after testing it out I figured that using switch cases would be
+                    more effiecent and easier. I made a command js and listed variables, the multi line dailogue, and
+                    ASCII art there. I added the css colours after and had fun experimenting with different colour
+                    palletes using
+                    <a href="https://terminal.sexy/">this</a> website. Its a pretty cool website that has a bunch of
+                    terminal colour palletes and shows the palletes in action. Im pretty glad I came across it.<br><br>
+
+                    I then had to think of a loading page. From the start, I thought of having and ASCII animation as my
+                    loading screen. But then thought agaisnt it after I when back <a
+                        href="https://poolsuite.net/">here</a>
+                    to just see it again, and it has text as when its loading, just and a console would. So I thought Id
+                    be be funny with it and got a couple of funny texts that after it all types on screen, I have a
+                    setTimeOut function wait and the use th eclear function i made to clear it and then load in the
+                    banner.<br><br>
+
+                    In the end, I tried adding some animated ASCII art in some way since I didnt want it to be the
+                    loading screen. Before wheni was testing things out on CodePen, I put the ASCII animations in Visual
+                    Studio Code, and for some reason the Kaomoji animation was all weird. I tesed it out with the Idex
+                    to see if i could have it above my banner cuase why not... and it worked perfectly. Im not gonna
+                    question it.<br><br>
+
+                    And thats about it. Took me a while to get all this done so Im glad to have finished this and
+                    actually be satisfied with it. Im definently gonna use to to make another interesting terminal
+                    website for gags or even for a game dev documentation or a portfolio in general.
+                </p>
+
+            </div>
+            <!-- End of a new section -->
+        </div>
+        <!-- End of content -->
+    </div>
+</body>
+
+</html>

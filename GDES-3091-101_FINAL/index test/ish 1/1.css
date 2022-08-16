@@ -1,0 +1,18 @@
+
+
+body, html {
+    text-align: center;
+    background:  rgb(0,0,0);
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+}
+  
+  
+#youreOfflineAnimation {
+    margin-top: 20vh;
+    font-size: 2em;
+    color: green;
+    line-height: 2em;
+    font-family: monospace;
+}
+  

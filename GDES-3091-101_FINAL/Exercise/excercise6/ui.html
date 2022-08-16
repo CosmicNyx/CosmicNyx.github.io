@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>UI Stylesheet</title>
+    <link rel="stylesheet" href="ui.css">
+</head>
+
+<body>
+    <main>
+
+
+        <!-- COLORS -->
+        <section class="colors">
+
+            <div class="palette main">
+                <div class="palette__main"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <h5>Primary</h5>
+            </div>
+            <div class="palette secondary">
+                <div class="palette__main"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <h5>Secondary</h5>
+            </div>
+            <div class="palette accent1">
+                <div class="palette__main"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <h5>Accent #1</h5>
+            </div>
+            <div class="palette accent2">
+                <div class="palette__main"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <h5>Accent #2</h5>
+            </div>
+            <div class="palette accent3">
+                <div class="palette__main"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <h5>Accent #3</h5>
+            </div>
+            <div class="palette neutrals">
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <div class="palette__shade"></div>
+                <h5>Neutrals</h5>
+            </div>
+        </section>
+
+
+        <!-- TYPO -->
+        <section class="typography">
+
+            <div class="font-family">
+                <div class="font-family-bold">
+                    <h1>Aa</h1>
+                    <h4>Poppins Bold</h4>
+                </div>
+                <div class="font-family-medium">
+                    <h1>Aa</h1>
+                    <h4>Poppins Medium</h4>
+                </div>
+                <div class="font-family-light">
+                    <h1>Aa</h1>
+                    <h4>Poppins Light</h4>
+                </div>
+            </div>
+            <div class="font-example">
+                <div class="font-example__headline">
+                    <h6 class="subheader">Headlines</h6>
+                    <h1>h1 headline</h1>
+                    <h2>h2 headline</h2>
+                    <h3>h3 headline</h3>
+                    <h4>h4 headline</h4>
+                    <h5>h5 headline</h5>
+                </div>
+                <div class="font-example__bodytext">
+                    <h6 class="subheader">Body Text</h6>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
+                        labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
+                        laboris nisi ut aliquip ex ea commodo consequat.
+                    </p>
+                    <p><strong> Duis aute irure dolor in reprehenderit in
+                            voluptate velit esse cillum dolore eu fugiat nulla pariatur.</strong></p>
+                    <p><em> Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit
+                            anim id est laborum.</em></p>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- BUTTONS -->
+        <section class="buttons-wrapper">
+            <h6>Buttons</h6>
+            <div class="buttons">
+                <a class="button">Default Button</a>
+                <input class="button hover" type="button" value="Hovered Button" />
+                <button class="button active">Active Button</button>
+                <a class="button disabled">Disabled Button</a>
+            </div>
+        </section>
+        <section class="links">
+            <h6>Links</h6>
+            <div class="links__sec"><a class="link">Sample Link</a><br /><a class="link hover">Hovered Link</a></div>
+            <div class="links__sec"><a class="link primary">Sample Link</a><br /><a class="link primary hover">Hovered
+                    Link</a></div>
+            <div class="links__sec"><a class="link secondary">Sample Link</a><br /><a
+                    class="link secondary hover">Hovered Link</a></div>
+        </section>
+
+
+        <!-- TYPING INPUTS -->
+        <section class="inputs-selects">
+
+            <div class="inputs">
+                <div class="input__wrapper"><label class="label-form">A Normal Input</label><input class="input-form"
+                        type="text" placeholder="Placeholder" />
+                    <p class="feedback-form">A message here.</p>
+                </div>
+                <div class="input__wrapper"><label class="label-form">An Active Input</label><input
+                        class="input-form active" type="text" placeholder="Placeholder" value="Typing Here..." />
+                </div>
+                <div class="input__wrapper"><label class="label-form">A Disabled Input</label><input class="input-form"
+                        type="text" placeholder="Placeholder" disabled="disabled" />
+                </div>
+            </div>
+
+            <!-- here -->
+
+            <div class="textarea-select">
+                <div class="input__wrapper input-success"><label class="label-form">A Right Input</label>
+                    <div class="input__validator"><input class="input-form" type="text" placeholder="Placeholder" />
+                    </div>
+                    <p class="feedback-form">Input noted.</p>
+                </div>
+                <!-- test -->
+                <div class="input__wrapper input-error"><label class="label-form">A Left Input</label>
+                    <div class="input__validator"><input class="input-form" type="text" placeholder="Placeholder" />
+                    </div>
+                    <p class="feedback-form">Go away.</p>
+                </div>
+                <div class="input__wrapper"><label class="label-form">Text area</label><textarea type="text"
+                        placeholder="Placeholder"></textarea></div> 
+            </div>
+
+        </section>
+
+    </main>
+
+
+</body>
+
+</html>

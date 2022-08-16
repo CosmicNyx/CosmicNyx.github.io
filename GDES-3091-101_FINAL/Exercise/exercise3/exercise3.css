@@ -1,0 +1,123 @@
+body {
+    display: block;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+div {
+    position: relative;
+}
+
+h1 {
+    font-family: "Lucida Console", Courier, monospace;
+    font-weight: bold;
+    padding: 5px;
+}
+
+p {
+    font-family: "Lucida Console", Courier, monospace;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+
+/* WORDS CSS PART */
+
+
+/*---------- FILL--------- */
+
+.fill {
+    font-family: ethnocentric, Veranda, sans-serif;
+    font-weight: 400;
+    font-size: 50px;
+    font-style: normal;
+    position: absolute;
+    /* TESTING POSITIONING */
+    /* margin-top: auto;
+    margin-bottom: auto;
+    margin-right: auto; */
+    /* top: 35%; */
+    left: 50%;
+    /* right: 50%;
+    bottom: 80%; */
+    transform: translate(-50%, -50%);
+    color: #000000;
+}
+
+.fill:before {
+    content: 'Fill';
+    color: #38a6b9;
+    position: absolute;
+    width: 0;
+    overflow: hidden;
+    transition: 0.4s;
+}
+
+.fill:hover:before {
+    width: 69%;
+}
+
+/* ---------- */
+
+
+/*-------STRETCH---------*/
+
+.stretch {
+    font-family: 'Blaka', 'Edwardian Script', cursive;
+    font-weight: 400;
+    font-size: 50px;
+    font-style: normal;
+    letter-spacing: 5px;
+}
+
+@keyframes stretch {
+    from {
+        letter-spacing: 5px;
+    }
+
+    to {
+        letter-spacing: 100px;
+    }
+}
+
+.stretch:hover {
+    animation: stretch 1.5s 1 ease-out;
+    animation-fill-mode: forwards;
+}
+
+/* --------- */
+
+/*--------- SELF HOSTED FONT ----------*/
+/*--------------FADING---------------*/
+
+@font-face {
+
+    font-family: 'intruder';
+    src: url(Fonts/Intruder-webfont.woff) format('woff');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+.fading {
+    font-family: 'intruder', Times, serif;
+    font-weight: 400;
+    font-size: 50px;
+    font-style: normal;
+}
+
+@keyframes fading {
+    from {
+        opacity: 100%;
+    }
+
+    to {
+        opacity: 0%;
+    }
+}
+
+.fading:hover {
+    animation: fading 2s;
+}

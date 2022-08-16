@@ -1,0 +1,31 @@
+body,
+html {
+    height: 100vh;
+    text-align: center;
+    background: rgb(0, 0, 0);
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+#row1 {
+
+    font-size: 2em;
+    color: lightgreen;
+    line-height: 1.5em;
+    font-family: monospace;
+}
+
+
+canvas {
+    
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: auto;
+}

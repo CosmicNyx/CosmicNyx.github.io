@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-zoom:1.0">
+    <meta charset="utf-8">
+    <title>Process Page</title>
+    <style>
+        /* Move all CSS to a stylesheet */
+        * {
+            /* Remove default browser spacing */
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 100px;
+            /* Add spacing around the entire page */
+            font-size: 12px;
+            /* Setting baseline font size */
+        }
+
+        /* Start of text sizes */
+        h1 {
+            font-size: 4em;
+        }
+
+        h2 {
+            font-size: 3em;
+        }
+
+        p {
+            font-size: 2em;
+            line-height: 1.5em;
+        }
+
+
+
+        /* End of text sizes */
+
+        /* Start of spacing and layout */
+        h2,
+        p,
+        figure,
+        figcaption {
+            margin-bottom: 40px;
+        }
+
+        img {
+            margin-bottom: 10px;
+        }
+
+        .process-template {
+            width: 40%;
+            /* Set the width of the template to 60% of the viewport. */
+            margin: auto;
+            /* Center align the template by adding auto margins to the left and right */
+        }
+
+        .title {
+            margin-bottom: 100px;
+            /* Add spacing to the bottom of the title div */
+        }
+
+        .section {
+            margin-bottom: 100px;
+        }
+
+        /* End of spacing and layout */
+
+        /* Adding media queries for page to adapts to tablet and mobile devices */
+        @media (max-width: 991px) {
+            .process-template {
+                width: 60%;
+            }
+        }
+
+        @media (max-width:767px) {
+            body {
+                margin: 40px;
+                font-size: 10px;
+            }
+
+            .process-template {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="process-template">
+        <!-- Start of title -->
+        <div class="title">
+            <h1>Interactive Process</h1>
+        </div>
+        <!-- End of title -->
+        <!-- Start of content -->
+        <div class="content">
+            <!-- Start of a section -->
+            <div class="section">
+                <h2>Coming up with an idea </h2>
+                <p>
+                    The interaction that I was given to work with was typing with a keyboard. At first I thought that
+                    this would be a simple interaction to work with, however I realized that coming up with a solid idea
+                    would be difficult. I went through many different ideas and even draft coded some of them in
+                    parts.<br><br>One idea that I think would have worked well was when you press the keyboard, that
+                    character shoots up and bounces around. I made a draft of it and it was fully complited, however im
+                    not sure how it even works and its a miracle that it does<br><br>
+                    <img src="images/keyboard.PNG"><br><br> The code was mostly copy and pasted and edited to fit with
+                    each other so I couldnt use it anyways. And I dont fully know how to use Matter.js and I didnt have
+                    the time to try to learn it.<br><br>I also coded a small pen on CodePen, to see if I could make
+                    somthing keys on the screen when it is pressed down. I wasnt sure how I would use it but I made it
+                    to see what I can do.<br><br><img src="images/letters.PNG"><br><br>An idea I had that I really like
+                    was to use the keybpard inputs to change what was showing up on screen. You press a button and you
+                    toggle between night and day. In the day you can press keys to make elements show up to decorate the
+                    surroundings. I made clouds for the day time and stars for the night time. I was going to make this
+                    using P5.js. However, after talking with the prof, I decided that the best thing to make that would
+                    make you interact with the keyboard that seperates it from other input and interactive elements was
+                    the ability to type out words. So I decided to make a chatbox that will annoy you.
+                </p>
+
+            </div>
+            <!-- End of a section -->
+            <!-- Start of a new section -->
+            <div class="section">
+                <h2>Creating the chatbot</h2>
+                <p>
+                    It took a while to figure out how I wanted to make the chatbot look. I decided to go for a simple
+                    look and figured out how to have messages show up on the screen and replacing the last message. It
+                    was surprisingly simple. Anyways, I put some effort into creating the text box where the user types
+                    their inputs. I then made simple if statements to get basic replies from the chatbot when you type
+                    in hello. Then made it as a function that is called once you press the enter key.<br><br> After I
+                    got these basics figured out, I tried working with arrays to get
+                    multiple different answers rather that one fixed reply. I tried working with group
+                    arrays where there is just one const array and it has a few groups. I made one with possible
+                    user entries, and then made an array with responses that the bot would use. I tried using for loops
+                    but it just wasnt working. I then came up with the solution that I stuck with. This just allows me
+                    to have many different responses from the bot in an organized way, but not for the user. To keep the
+                    js file from becoming a mess, I put the dialogue arrays in a seperate js file. I think it works
+                    pretty well.<br><br>After the array mess, I added some random variables to make some annoying things
+                    happen.. at random. I got pretty annoyed while testing everything out becuase I would keep getting
+                    rickrolled or the window would close. I think the most unnoticible but after a bit noticible
+                    annoying
+                    thing is that sometimes the textbox where the user inputs their text, after they hit enter, it
+                    doesnt clear. So you are forced to delete it to type something new.<br><br> After adding some extra
+                    things to the website, I finally finished.
+                </p>
+
+            </div>
+            <!-- End of a new section -->
+        </div>
+        <!-- End of content -->
+    </div>
+</body>
+
+</html>

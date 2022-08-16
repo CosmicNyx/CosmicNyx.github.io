@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-zoom:1.0">
+    <meta charset="utf-8">
+    <title>Process Page</title>
+    <style>
+        /* Move all CSS to a stylesheet */
+        * {
+            /* Remove default browser spacing */
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 100px;
+            /* Add spacing around the entire page */
+            font-size: 12px;
+            /* Setting baseline font size */
+        }
+
+        /* Start of text sizes */
+        h1 {
+            font-size: 4em;
+        }
+
+        h2 {
+            font-size: 3em;
+        }
+
+        p {
+            font-size: 2em;
+            line-height: 1.5em;
+        }
+
+
+
+        /* End of text sizes */
+
+        /* Start of spacing and layout */
+        h2,
+        p,
+        figure,
+        figcaption {
+            margin-bottom: 40px;
+        }
+
+        img {
+            margin-bottom: 10px;
+        }
+
+        .process-template {
+            width: 40%;
+            /* Set the width of the template to 60% of the viewport. */
+            margin: auto;
+            /* Center align the template by adding auto margins to the left and right */
+        }
+
+        .title {
+            margin-bottom: 100px;
+            /* Add spacing to the bottom of the title div */
+        }
+
+        .section {
+            margin-bottom: 100px;
+        }
+
+        /* End of spacing and layout */
+
+        /* Adding media queries for page to adapts to tablet and mobile devices */
+        @media (max-width: 991px) {
+            .process-template {
+                width: 60%;
+            }
+        }
+
+        @media (max-width:767px) {
+            body {
+                margin: 40px;
+                font-size: 10px;
+            }
+
+            .process-template {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="process-template">
+        <!-- Start of title -->
+        <div class="title">
+            <h1>CSS Typeface Process</h1>
+        </div>
+        <!-- End of title -->
+        <!-- Start of content -->
+        <div class="content">
+            <!-- Start of a section -->
+            <div class="section">
+                <h2>Typography Design Process</h2>
+                <p>
+                    For my typography typeface, I tried to make letters used large grids like 16x16. But things just
+                    turned out complicated and I was'nt
+                    able to come up with any good designs. So then I thought what if I was to make the most simplest
+                    typography design. So I started towork with a 4x4 grid and designed all 26 characters of the
+                    alphabet. Below you can see that M, W, and X have a red space there, it's because I couldnt fine an
+                    eligible way topu tit ina 4x4 grid. So I decided to design only those three letters in an 8x8 grid
+                    since it would still fit the overall theme of the typeface, and i could draw the rest of teh letters
+                    in the 8x8 grid without any changes.
+                </p>
+                <!-- Start of a section -->
+                <!-- Start of image with caption -->
+                <figure>
+                    <img src="css-typface-images/typeface draft.PNG">
+                    <p>
+                        and below is the final letter designs implementing the 8x8 grid for M, W, and X. I also included
+                        a sketch of the letter A in an 8x8 grid to see how it would turn out. I also redesigned the
+                        letter Y.
+                    </p>
+                    <img src="css-typface-images/Capture.PNG">
+                </figure>
+                <!-- End of image with caption -->
+            </div>
+            <!-- End of a section -->
+            <!-- Start of a new section -->
+            <div class="section">
+                <h2>Coding The Typeface</h2>
+                <p>
+                    I decided that rather than using the template that was provided to draw out letters in, I made one
+                    myself. It's also responsive to window resizing. Im quite happy with out it turned out.
+                    Drawing the typography in CSS was pretty easy. I decided to use the grid template method we learned
+                    from that carrot planting grid game. After drawing out a few letters, I started to get tired from
+                    going back to refresh the page since it was taking so long. I then started to use CodePen and
+                    colored the box I was moving blue so I can see it easily. This process was much faster.
+                </p>
+                <!-- Start of a section -->
+                <!-- Start of image with caption -->
+                <figure>
+                    <img src="css-typface-images/codepen1.PNG">
+                </figure>
+                <br>
+                <figure>
+                    <p>
+                        Then with the typeface done, I thougth about what I can do to make the letters interactive.
+                        Because of the way I drew the letters, I didnt think itd be good to make each bar change colour
+                        when hovered over. then I remembered CSS variables and experimented with it in CodePen. Im glad
+                        to say that it works and it makes the typface very interesting. Ill definitely be using this in other projects. 
+                    </p>
+                    <img src="css-typface-images/codepen2.PNG">
+                    <p>In the final typeface, I made the variable :root {--letterColour: black;} to make things easier</p>
+                </figure>
+                <!-- End of image with caption -->
+            </div>
+            <!-- End of a new section -->
+        </div>
+        <!-- End of content -->
+    </div>
+</body>
+
+</html>

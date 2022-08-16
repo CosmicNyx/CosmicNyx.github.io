@@ -1,0 +1,239 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Blaka&family=Major+Mono+Display&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne+Mono&display=swap');
+
+:root {
+
+    --BkgrColour: #151515;
+
+    /* window header colour */
+    --typingColour: #90A959;
+
+    --cursorColour: #75B5AA;
+
+    --indexColour: #D0D0D0;
+
+    --textColour: #F4BF75;
+
+    --commandColour: #6A9FB5;
+
+    --errorColour: #AC4142;
+
+    --linkMainColour: #AA759F;
+    --linkBkgrColour: #75B5AA;
+    --linkBkrgMainColour: #151515;
+}
+
+/* --typingColour: #13cc6f; */
+
+/* --------------------------------------------------- */
+
+body {
+    margin: 0;
+    padding: 15px 20px;
+    min-height: 99%;
+    width: 100%;
+    min-width: 550px;
+    color: var(--typingColour);
+    background: var(--BkgrColour);
+
+    font-family: 'Syne Mono', monospace;
+    /* font-family: 'Major Mono Display', monospace; */
+    /* font-family: 'Share Tech Mono', monospace; */
+    /* font-family: moby-monospace, monospace; */
+    /* font-weight: 700; */
+    /* font-style:italic; */
+    overflow-x: hidden;
+}
+
+
+/* WHEN U HIGHLIGHT WORDS    I KEEP FORGETTING WHAT THIS IS */
+::selection {
+    color: var(--BkgrColour);
+    background-color: var(--typingColour);
+}
+
+textarea {
+    left: -1000px;
+    position: absolute;
+}
+
+
+/* COLOURS */
+.index {
+    color: var(--indexColour);
+}
+
+.color2 {
+    color: var(--textColour);
+}
+
+.command {
+    color: var(--commandColour);
+}
+
+.error {
+    color: var(--errorColour);
+}
+
+
+.inherit,
+a {
+    color: var(--linkMainColour);
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    background: var(--linkBkgrColour);
+    color: var(--linkBkrgMainColour);
+}
+
+a:focus {
+    outline: 0;
+}
+
+
+
+/* TESTIN GTO SEE HOW THE WEBSITES FAIRS WITHOUT IT */
+/* b {
+    font-weight: bold;
+    text-decoration: underline;
+} */
+
+
+
+/* Cursor Start */
+.cursor {
+    font-size: 12px;
+    color: var(--cursorColour);
+    background-color: var(--cursorColour);
+    position: relative;
+    opacity: 1;
+    height: 1.5em;
+    width: 5px;
+    max-width: 10px;
+    transform: translateY(4px);
+    overflow: hidden;
+    text-indent: -5px;
+    display: inline-block;
+    text-decoration: blink;
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
+}
+
+#command {
+    cursor: text;
+    height: 50px;
+    color: var(--cursorColour);
+}
+
+#liner {
+    line-height: 1.3em;
+    margin-top: -2px;
+    animation: show 0.5s ease forwards;
+    animation-delay: 1.2s;
+    opacity: 0;
+}
+
+#liner::before {
+    /* THATS THAT IS SHOWN FOR TYPING...COLOUR OF BELOW */
+    color: var(--typingColour);
+
+    /* CHNAGE THI SFOR WHAT IT SAYS BEFORE INPUT--------------------------------------------------------- */
+    content: "C:\\Users\\Guest\\.COSMICNYC.GITHUB.IO\\.Index>";
+
+}
+
+#liner.password::before {
+    content: "Password:";
+}
+
+@keyframes show {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Cursor End */
+p {
+    display: block;
+    line-height: 1.3em;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    margin: 0;
+    letter-spacing: 0.05em;
+    animation: typing 0.5s steps(30, end);
+}
+
+.no-animation {
+    animation: typing 0 steps(30, end);
+}
+
+.margin {
+    margin-left: 20px;
+}
+
+@keyframes typing {
+    from {
+        width: 0;
+    }
+
+    to {
+        width: 100%;
+    }
+}
+
+
+
+
+
+/* ---------------  WINBOX ------------------ */
+
+/* text edits */
+.box-size {
+    margin: 1vw;
+}
+
+.hidden {
+    display: none;
+}
+
+.title {
+    font-size: 25px;
+    color: var(--indexColour);
+}
+
+.question {
+    font-size: 20px;
+    color: var(--commandColour);
+}
+
+.para {
+    font-size: 15px;
+    color: var(--textColour);
+}
+
+
+/* winbox style */
+
+.wb-header {
+    color: var(--BkgrColour);
+}
+
+.wb-body {
+    background: var(--BkgrColour);
+    padding: 20px;
+}
