@@ -3,21 +3,21 @@
 var password = "mjjhdsfbsdbfmsgfhjeksbsdfkfgskjgkj";
 
 //projects 
-var cssTypeface = "https://cosmicnyx.github.io/Acts/Act%20I/CSS%20TYPE/CSS%20TYPE.html";
-var webTypographicPoster = "https://cosmicnyx.github.io/Acts/Act%20I/Web%20Typographic%20Poster/webPoster.html";
-var interactiveElements = "https://cosmicnyx.github.io/Acts/Act%202/Interactive%20Elements/chatbot.html";
+var cssTypeface = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Acts/Act%20I/CSS%20TYPE/CSS%20TYPE.html";
+var webTypographicPoster = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Acts/Act%20I/Web%20Typographic%20Poster/webPoster.html";
+var interactiveElements = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Acts/Act%202/Interactive%20Elements/chatbot.html";
 var index = "https://cosmicnyx.github.io/";
 
 //exercises
-var exer1 = "https://cosmicnyx.github.io/Exercise/exercise1/selfPortrait.html";
-var exer2 = "https://cosmicnyx.github.io/Exercise/exercise2/exercise2.html";
-var exer3 = "https://cosmicnyx.github.io/Exercise/exercise3/exercise3.html";
-var exer4 = "https://cosmicnyx.github.io/Exercise/exercise4/exercise4.html";
-var exer5 = "https://cosmicnyx.github.io/Exercise/exercise5/exercise5.html";
-var exer6 = "https://cosmicnyx.github.io/Exercise/excercise6/ui.html";
+var exer1 = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Exercise/exercise1/selfPortrait.html";
+var exer2 = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Exercise/exercise2/exercise2.html";
+var exer3 = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Exercise/exercise3/exercise3.html";
+var exer4 = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Exercise/exercise4/exercise4.html";
+var exer5 = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Exercise/exercise5/exercise5.html";
+var exer6 = "https://cosmicnyx.github.io/GDES-3091-101_FINAL/Exercise/excercise6/ui.html";
 
 //readings
-var qReading4 = "CosmicNyx.github.io/Readings/reading%204/reading4.html";
+var qReading4 = "CosmicNyx.github.io/GDES-3091-101_FINAL/Readings/reading%204/reading4.html";
 var qReading5 = "http://www.itwillneverbethesame.com/";
 
 // ---//
