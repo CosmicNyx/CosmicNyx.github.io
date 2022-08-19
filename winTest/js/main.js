@@ -34,17 +34,39 @@ hi.addEventListener('click', () => {
 
 // ------ keeps track of keybourd clicking------
 
+//oh this is perfect omg im such a genuis
+
 window.addEventListener("keydown", (event) => {
+
+  //
   if (event.keyCode == 90) {
     new WinBox("Basic Window");
     console.log("hi");
   }
+
+  //
   if (event.keyCode == 88) {
     new WinBox("Custom Border", {
-            border: "0.3em"
-          });
+      border: "0.3em"
+    });
     console.log("no");
   }
+
+
+
+  //window wherver u want it...im so happy rn
+
+  if (event.keyCode == 67) {
+    new WinBox({
+      title: "Custom Position / Size",
+      x: "center",
+      y: 67,
+      width: "50%",
+      height: "50%"
+    });
+    console.log("no");
+  }
+
 });
 
 // ------------------
