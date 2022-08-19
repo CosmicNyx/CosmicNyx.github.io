@@ -8,7 +8,7 @@
 
 hi.addEventListener('click', () => {
   new WinBox({
-    title: 'About Me',
+    title: 'win1',
     // modal: true,
     width: '400px',
     height: '400px',
@@ -29,8 +29,44 @@ hi.addEventListener('click', () => {
 })
 
 
+hihi.addEventListener('click', () => {
+  new WinBox({
+    title: 'win2',
+    // modal: true,
+    width: '400px',
+    height: '400px',
+    top: 150,
+    right: 50,
+    bottom: 50,
+    left: 250,
+    mount: document.querySelector('#win2'),
+
+
+    onfocus: function () {
+      this.setBackground('#00aa00')
+    },
+    onblur: function () {
+      this.setBackground('#777')
+    },
+  })
+})
+
+
+
 // -------------------
 
+const template = document.createElement("div");
+    template.innerHTML = `
+    <div class=wb-header>
+        <div class=wb-icon>
+            <span class=wb-custom></span>
+            <span class=wb-close></span>
+        </div>
+        <div class=wb-drag>
+            <div class=wb-title></div>
+        </div>
+    </div>
+    <div class=wb-body></div>`;
 
 // ------ keeps track of keybourd clicking------
 
@@ -46,9 +82,9 @@ window.addEventListener("keydown", (event) => {
 
   //
   if (event.keyCode == 88) {
-    new WinBox("Custom Border", {
-      border: "0.3em"
-    });
+    
+
+    new WinBox("Custom Template", { template });
     console.log("no");
   }
 
@@ -61,9 +97,100 @@ window.addEventListener("keydown", (event) => {
       title: "Custom Position / Size",
       x: "center",
       y: 67,
-      width: "50%",
-      height: "50%"
+      width: 400,
+      height: 400,
+      //and it cant resize... bruh im so happy
+      class: [ "no-resize"]
     });
+    console.log("no");
+  }
+
+
+
+
+  //-------------coords----//
+
+  if (event.keyCode == 13) {
+    new WinBox({
+      // configuration:
+      index: 1,
+      id: "my-window",
+      root: document.body,
+      class: ["no-full", "no-max", "my-theme"],
+
+      // appearance:
+      title: "All Options",
+      background: "#fff",
+      border: 4,
+      header: 45,
+      icon: false,
+
+      // initial state:
+      modal: false,
+      max: false,
+      min: false,
+      hidden: false,
+
+      // dimension:
+      width: 400,
+      height: 225,
+      minheight: 55,
+      minwidth: 100,
+      maxheight: 300,
+      maxwidth: 500,
+      autosize: true,
+
+      // position:
+      x: "center",
+      y: "center",
+
+
+      // contents (choose from):
+      url: false,
+      mount: false,
+      html: "width: 250, height: 200",
+
+      // callbacks:
+      oncreate: function (options) {
+        options.icon = "demo/wikipedia.svg"
+      },
+      onshow: function () {
+        console.log("Show:", this.id);
+      },
+      onhide: function () {
+        console.log("Hide:", this.id);
+      },
+      onfocus: function () {
+        this.setBackground("#fff");
+      },
+      onblur: function () {
+        this.setBackground("#999");
+      },
+      onresize: function (w, h) {
+        this.body.textContent =
+          `width: ${w}, height: ${h}`;
+      },
+      onmove: function (x, y) {
+        this.body.textContent =
+          `x: ${x}, y: ${y}`;
+      },
+      onclose: function (force) {
+        return !confirm("Close window?");
+      },
+      onfullscreen: function () {
+        console.log("Fullscreen:", this.id);
+      },
+      onmaximize: function () {
+        console.log("Maximize:", this.id);
+      },
+      onminimize: function () {
+        console.log("Minimize:", this.id);
+      },
+      onrestore: function () {
+        console.log("Restore:", this.id);
+      }
+    });
+
     console.log("no");
   }
 
