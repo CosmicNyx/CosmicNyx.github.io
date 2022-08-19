@@ -2,12 +2,12 @@
 // const aboutContent = document.querySelector('#about-content')
 // const contactContent = document.querySelector('#contact-content')
 
-window.addEventListener("keyup", enterKey);
+// window.addEventListener("keyup", enterKey);
 
 //thing before the . is the name of the li id in the HTML 
 
 hi.addEventListener('click', () => {
-  const aboutBox = new WinBox({
+  new WinBox({
     title: 'About Me',
     // modal: true,
     width: '400px',
@@ -29,11 +29,44 @@ hi.addEventListener('click', () => {
 })
 
 
-function enterKey(e) {
-  if (e.keyCode == 13){
-    new WinBox("Basic Window");
-  console.log("hi");
-  }
-}
+// -------------------
 
+
+// ------ keeps track of keybourd clicking------
+
+window.addEventListener("keydown", (event) => {
+  if (event.keyCode == 90) {
+    new WinBox("Basic Window");
+    console.log("hi");
+  }
+  if (event.keyCode == 88) {
+    new WinBox("Custom Border", {
+            border: "0.3em"
+          });
+    console.log("no");
+  }
+});
+
+// ------------------
+
+
+
+
+
+
+// function enterKey(e) {
+//   if (e.keyCode == 13){
+//     new WinBox("Basic Window");
+//   console.log("hi");
+//   }
+// }
+
+// function enterKey(e) {
+//   if (e.keyCode == 88){
+//     new WinBox("Custom Border", {
+//       border: "0.3em"
+//     });
+//   console.log("hi");
+//   }
+// }
 
