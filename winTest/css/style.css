@@ -1,4 +1,3 @@
-
 * {
   box-sizing: border-box;
   padding: 0;
@@ -7,6 +6,8 @@
 
 :root {
   --text-color: #00aa00;
+  --close: url('../image/heart.svg');
+  --close2: url('../image/png-clipart-square-area-symbol-apps-dialog-close-desktop-wallpaper-sign-thumbnail.png');
 }
 
 body {
@@ -38,13 +39,49 @@ nav ul li {
   align-items: center;
 }
 
+.hidden {
+  display: none;
+}
 
+
+
+
+/* WINBOX BODY */
 
 .wb-body {
   background: #111;
   padding: 90px;
 }
 
-.hidden {
-  display: none;
+/* you idiot u forgot about the ... in sub folders */
+/* well atleatdx i figured it out  */
+
+.wb-close {
+  background-image: var(--close2);
+  background-position: center;
+  background-size: 15px auto;
+}
+
+
+
+/* SCROLLBAR STUFFS */
+.wb-body::-webkit-scrollbar {
+  width: 12px;
+}
+
+.wb-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wb-body::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: #263040;
+}
+
+.wb-body::-webkit-scrollbar-thumb:window-inactive {
+  background: #181f2a;
+}
+
+.wb-body::-webkit-scrollbar-corner {
+  background: transparent;
 }

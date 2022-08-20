@@ -2,7 +2,7 @@
 
 function IsEnter() {
     // Get all the data from the input box.
-    var TextBox_val = document.getElementById("InputBox").value; 
+    var TextBox_val = document.getElementById("InputBox").value;
 
     // If enter key is pressed then only respond.
     // if (event.keyCode == 13)
@@ -18,7 +18,7 @@ function IsEnter() {
         //getting random varaibles
         var rand1 = [Math.floor(Math.random() * 13)];
 
-        if (rand1 >= 10){
+        if (rand1 >= 10) {
             setTimeout(alertAnnoying, 30);
         }
 
@@ -41,7 +41,7 @@ function IsEnter() {
     }
 
 
-    if(event.keyCode == 16){
+    if (event.keyCode == 16) {
         generateRandomColour()
     }
 }
@@ -54,9 +54,9 @@ function alertAnnoying() {
 }
 
 function generateRandomColour() {
-    var myRandomColor = '#'+Math.floor(Math.random()*16777215).toString(16);
+    var myRandomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
     document.body.style.backgroundColor = myRandomColor;
-  }
+}
 
 
 // -------------------------  TEXT BOT ACTIONS  ---------------------------//
@@ -72,19 +72,19 @@ function main() {
 
     if (rand2 == 1) {
         window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley", "_blank");
-    }else if (rand2 == 2) {
+    } else if (rand2 == 2) {
         window.open("https://www.google.com", "_blank");
     } else if (rand2 == 3) {
         location.reload();
     }
-    
+
 
     // RESPONSES
     if (FormatInput.includes("help")) {
 
         ResponseText_val.innerHTML = help[Math.floor(Math.random() * help.length)];
 
-    } else if (FormatInput == ("hi") || FormatInput.includes("hello")|| FormatInput.includes("hey")) {
+    } else if (FormatInput == ("hi") || FormatInput.includes("hello") || FormatInput.includes("hey")) {
         ResponseText_val.innerHTML = greeting[Math.floor(Math.random() * greeting.length)];
 
     } else if (FormatInput.includes("how are you")) {
@@ -99,11 +99,11 @@ function main() {
         ResponseText_val.innerHTML = "no";
         window.close();
 
-    } 
-    else if (FormatInput==("")) {
+    }
+    else if (FormatInput == ("")) {
         ResponseText_val.innerHTML = empty[Math.floor(Math.random() * empty.length)];;
 
-    }else {
+    } else {
         ResponseText_val.innerHTML = alternative[Math.floor(Math.random() * alternative.length)];
     }
 

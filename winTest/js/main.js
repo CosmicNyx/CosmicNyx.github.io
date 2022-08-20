@@ -4,10 +4,27 @@
 
 // window.addEventListener("keyup", enterKey);
 
-//thing before the . is the name of the li id in the HTML 
 
+
+// var r = document.querySelector(':root');
+
+// function myFunction_set() {
+//   // Set the value of variable --blue to another value (in this case "lightblue")
+//   r.style.setProperty('--close', '--close2');
+// }
+
+
+
+// function icon() {
+//   wbClose.style.backgroundImage = '../image/heart.svg';
+// }
+
+
+//thing before the . is the name of the li id in the HTML  
 hi.addEventListener('click', () => {
-  new WinBox({
+  
+  var hiWin = new WinBox({
+    
     title: 'win1',
     // modal: true,
     width: '400px',
@@ -17,7 +34,6 @@ hi.addEventListener('click', () => {
     bottom: 50,
     left: 50,
     mount: document.querySelector('#win1'),
-
 
     onfocus: function () {
       this.setBackground('#00aa00')
@@ -41,7 +57,7 @@ hihi.addEventListener('click', () => {
     left: 250,
     mount: document.querySelector('#win2'),
 
-
+    
     onfocus: function () {
       this.setBackground('#00aa00')
     },
@@ -54,44 +70,31 @@ hihi.addEventListener('click', () => {
 
 
 // -------------------
-
-const template = document.createElement("div");
-    template.innerHTML = `
-    <div class=wb-header>
-        <div class=wb-icon>
-            <span class=wb-custom></span>
-            <span class=wb-close></span>
-        </div>
-        <div class=wb-drag>
-            <div class=wb-title></div>
-        </div>
-    </div>
-    <div class=wb-body></div>`;
-
+   
 // ------ keeps track of keybourd clicking------
 
 //oh this is perfect omg im such a genuis
 
 window.addEventListener("keydown", (event) => {
 
-  //
+  //Z
   if (event.keyCode == 90) {
     new WinBox("Basic Window");
     console.log("hi");
   }
 
-  //
+  //X
   if (event.keyCode == 88) {
-    
-
-    new WinBox("Custom Template", { template });
+    new WinBox("Custom Border", {
+      border: "0.3em"
+    });
     console.log("no");
   }
 
 
 
   //window wherver u want it...im so happy rn
-
+  //C
   if (event.keyCode == 67) {
     new WinBox({
       title: "Custom Position / Size",
@@ -99,8 +102,9 @@ window.addEventListener("keydown", (event) => {
       y: 67,
       width: 400,
       height: 400,
+
       //and it cant resize... bruh im so happy
-      class: [ "no-resize"]
+      class: ["no-resize"]
     });
     console.log("no");
   }
@@ -109,7 +113,7 @@ window.addEventListener("keydown", (event) => {
 
 
   //-------------coords----//
-
+  //ENTER
   if (event.keyCode == 13) {
     new WinBox({
       // configuration:
