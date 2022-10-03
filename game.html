@@ -9,7 +9,7 @@
 </head>
 <body>
 <tw-story><noscript><tw-noscript>JavaScript needs to be enabled to play game.</tw-noscript></noscript></tw-story>
-<tw-storydata name="game" startnode="1" creator="Twine" creator-version="2.5.1" format="Harlowe" format-version="3.3.3" ifid="78F61081-BEA0-4099-B565-F964F0E89F94" options="" tags="" zoom="1" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">tw-icon[alt] { 
+<tw-storydata name="game" startnode="1" creator="Twine" creator-version="2.5.1" format="Harlowe" format-version="3.3.3" ifid="78F61081-BEA0-4099-B565-F964F0E89F94" options="" tags="" zoom="0.6" hidden><style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">tw-icon[alt] { 
   display: none;
 }
 
@@ -35,6 +35,12 @@ tw-passage {
 }
 #small {
   font-size:75%;
+}
+
+
+
+tw-story[tags~="purple"] {
+background-image: linear-gradient(to bottom right, black, purple);
 }</style><script role="script" id="twine-user-script" type="text/twine-javascript"></script><tw-passagedata pid="1" name="Starting poem" tags="" position="200,25" size="100,100">&lt;div id=&quot;left&quot;&gt;
 Man is a masterpiece of creation(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[if for no other reason than that,](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
@@ -88,7 +94,7 @@ Birds are chirping(after: 1.5s, (cond: visits &gt; 0, 200ms, 0))[=
 [[[Get out of bed-&gt;1]]
 
 [[Stay in bed-&gt;1]]](stop:)]  
-</tw-passagedata><tw-passagedata pid="4" name="1" tags="" position="275,200" size="100,100">
+</tw-passagedata><tw-passagedata pid="4" name="1" tags="" position="300,250" size="100,100">
 
 
 
@@ -98,14 +104,14 @@ Birds are chirping(after: 1.5s, (cond: visits &gt; 0, 200ms, 0))[=
 
 
 
-You look out the window(after: 1.5s, (cond: visits &gt; 0, 200ms, 0))[=
+You gaze around the room(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
 
 
 
 (live: .5s)[(t8n:&quot;dissolve&quot;)
-[[[Theres a tree-&gt;2]]
+[[[Observe the wall paper-&gt;2]]
 
-[[Theres a pond-&gt;2]]](stop:)]  </tw-passagedata><tw-passagedata pid="5" name="2" tags="" position="425,200" size="100,100">
+[[Peer down at the desk-&gt;2]]](stop:)]  </tw-passagedata><tw-passagedata pid="5" name="bridge" tags="" position="475,575" size="100,100">
 
 
 
@@ -120,10 +126,10 @@ Theres a bridge (after: 1.5s, (cond: visits &gt; 0, 200ms, 0))[=
 
 
 (live: .5s)[(t8n:&quot;dissolve&quot;)
-[[[Jump-&gt;3]]
+[[[Jump-&gt;after bridge]]
 
 	(cycling-link: bind _recall, &quot;Are you confused?&quot;, &quot;Whats there to be confused about?&quot;, &quot;Nothings even happened yet&quot;, &quot;Just choose the other option&quot;)
-](stop:)] </tw-passagedata><tw-passagedata pid="6" name="3" tags="" position="325,500" size="100,100">
+](stop:)] </tw-passagedata><tw-passagedata pid="6" name="after bridge" tags="" position="325,575" size="100,100">
 
 
 
@@ -135,12 +141,12 @@ You jumped (after: 3s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[I&#39;m sure there was](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[Because I do remember typing it out](stop:)]  (after: time + 5s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[Did it not do anything?](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
-(live: .5s)[(t8n:&quot;dissolve&quot;)[How about you [[check-&gt;checking after 3]] again](stop:)]  (after: time + 8s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[How about you [[check-&gt;checking after 3]] again](stop:)]  (after: time + 3s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[[[I&#39;d rather not-&gt;not checking after 3]] again](stop:)] 
 
 
 
-</tw-passagedata><tw-passagedata pid="7" name="keeping track of variables and notes" tags="" position="50,350" size="100,100">test
+</tw-passagedata><tw-passagedata pid="7" name="keeping track of variables and notes" tags="" position="475,75" size="100,100">test
 
 vars
 
@@ -157,7 +163,7 @@ help
 ]
 (else-if: $a1 is &quot;option 3&quot;)[
 	(set: $a2 to (either: &quot;option 6.6&quot;, &quot;option 2.2&quot;, &quot;option 4.4&quot;))
-]</tw-passagedata><tw-passagedata pid="8" name="checking after 3" tags="" position="150,500" size="100,100">(set: $startReal to &quot;true&quot;)
+]</tw-passagedata><tw-passagedata pid="8" name="checking after 3" tags="" position="125,450" size="100,100">(set: $startReal to &quot;true&quot;)
 
 
 
@@ -169,7 +175,7 @@ Theres a bridge (after: 1.5s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)
 [(cycling-link: bind _recall, &quot;Jump&quot;, &quot;Jump&quot;)
 
-(cycling-link: bind _recall, &quot;Are you confused?&quot;, &quot;Was something else supposed to happen?&quot;, &quot;Thats weird&quot;, &quot;Oh well, now you know this does&#39;nt lead anywhere&quot;, &quot;Now what?&quot;, &quot;Well now what?&quot;, &quot;This is just gonna repeat forever&quot;, &quot;And ever&quot;)
+(cycling-link: bind _recall, &quot;Are you confused?&quot;, &quot;Was something else supposed to happen?&quot;, &quot;Thats weird&quot;, &quot;Oh well, now you know this doesn&#39;t lead anywhere&quot;, &quot;Now what?&quot;, &quot;Well now what?&quot;, &quot;This is just gonna repeat forever&quot;, &quot;And ever&quot;)
 ](stop:)](after: 10s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[Well this is amusing](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[Now what are you going to do?](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
@@ -177,7 +183,7 @@ Theres a bridge (after: 1.5s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[Well rather than restarting the page, how about you let me lead you to the actual page](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[Cause then you&#39;ll have to go through this again](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
 (live: .5s)[(t8n:&quot;dissolve&quot;)[Here you [[go -&gt;Starting poem]]](stop:)]
-</tw-passagedata><tw-passagedata pid="9" name="not checking after 3" tags="" position="500,500" size="100,100">
+</tw-passagedata><tw-passagedata pid="9" name="not checking after 3" tags="" position="125,625" size="100,100">
 
 
 
@@ -187,8 +193,12 @@ Theres a bridge (after: 1.5s, (cond: visits &gt; 0, 200ms, 0))[=
 
 
 
-Well then..... (after: 4s, (cond: visits &gt; 0, 200ms, 0))[=
-(live: .5s)[(t8n:&quot;dissolve&quot;)[Now what?](stop:)]  </tw-passagedata><tw-passagedata pid="10" name="actualstart" tags="" position="800,25" size="100,100">
+Well then..... (after: 2s, (cond: visits &gt; 0, 200ms, 0))[=(live: .5s)[(t8n:&quot;dissolve&quot;)[Now what?](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Well we cant just end it here.](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Are you not curious to check again?](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Ok well I have nothing for you here so you&#39;re going to have to start again](stop:)]  (after: time + 4s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[buh bye](stop:)]  (after: time + 1s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(goto: &quot;loading&quot;)]</tw-passagedata><tw-passagedata pid="10" name="actualstart" tags="" position="900,25" size="100,100">
 
 
 Well well well(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
@@ -202,7 +212,229 @@ Well well well(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
 [[Left-&gt;1.1]]
 
 [[Right-&gt;1.1]]](stop:)]  
-</tw-passagedata><tw-passagedata pid="11" name="1.1" tags="" position="800,150" size="100,100"></tw-passagedata></tw-storydata>
+</tw-passagedata><tw-passagedata pid="11" name="1.1" tags="" position="900,150" size="100,100">
+
+
+
+
+
+
+
+
+Well which way did you go?(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[It doesnt really matter I suppose](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Your choices dont really matter unless I decide they do](stop:)]  (after: time + 5s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Ok fine](stop:)]  (after: time + 3s, (cond: visits &gt; 0, 200ms, 0))[=
+
+
+
+(live: .5s)[(t8n:&quot;dissolve&quot;)
+[(cycling-link: bind _recall, &quot;Here&quot;, &quot;There&quot;)
+
+(cycling-link: bind _recall, &quot;There&quot;, &quot;Here&quot;)](stop:)]  (after: time + 20s, (cond: visits &gt; 0, 200ms, 0))[=
+
+
+(live: .5s)[(t8n:&quot;dissolve&quot;)[This is funny](stop:)]  (after: time + 3s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: 5s)[(goto: &quot;1.2&quot;)]</tw-passagedata><tw-passagedata pid="12" name="3" tags="" position="600,250" size="100,100">
+
+
+
+
+
+
+
+
+
+You walk out of the room(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
+
+
+
+(live: .5s)[(t8n:&quot;dissolve&quot;)
+[[[Look-&gt;4]]
+
+[[Observe-&gt;4]]](stop:)]  </tw-passagedata><tw-passagedata pid="13" name="2" tags="" position="450,250" size="100,100">
+
+
+
+
+
+
+
+
+
+There is an interesting pattern adorned there(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
+
+
+
+(live: .5s)[(t8n:&quot;dissolve&quot;)
+[[[Look closely-&gt;3]]
+
+[[Trace your finger on it-&gt;3]]](stop:)]  </tw-passagedata><tw-passagedata pid="14" name="4" tags="" position="325,375" size="100,100">
+
+
+
+
+
+
+
+
+
+(live: .5s)[(t8n:&quot;dissolve&quot;)
+[[[What is that?-&gt;5]]](stop:)]  </tw-passagedata><tw-passagedata pid="15" name="5" tags="" position="525,400" size="100,100">
+
+
+
+
+
+
+
+
+
+I dont see anything?(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
+
+
+
+(live: .5s)[(t8n:&quot;dissolve&quot;)
+[[[Right there-&gt;bridge]]
+
+[[Can&#39;t you see it?-&gt;bridge]]](stop:)]  </tw-passagedata><tw-passagedata pid="16" name="loading" tags="" position="125,750" size="100,100">
+
+
+
+
+
+
+
+
+
+
+
+Loading...(after: time + 3s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(goto: &quot;Starting poem&quot;)]</tw-passagedata><tw-passagedata pid="17" name="1.2" tags="" position="1000,150" size="100,100">
+
+
+
+
+
+
+
+
+
+
+Choices are a strange thing(after: 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[So far the choices you&#39;ve made have had either no effect...](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Or you were just lead back to the beginning](stop:)]  (after: time + 6s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[You have no free will here](stop:)]  (after: time + 5s, (cond: visits &gt; 0, 200ms, 0))[=
+
+(live: .5s)[(goto: &quot;1.3&quot;)]
+</tw-passagedata><tw-passagedata pid="18" name="1.3" tags="" position="1125,150" size="100,100">
+
+
+
+
+
+
+
+
+People believe they have free will(after: 5s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Well most do....](stop:)]  (after: time + 4s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Religion](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[God gave you free will so it can be judged whether or not you go to heaven or hell](stop:)]  (after: time + 5s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Tch. How merciful](stop:)]  (after: time + 5s, (cond: visits &gt; 0, 200ms, 0))[=
+
+
+(live: .5s)[(t8n:&quot;dissolve&quot;)[
+
+[[You shouldn&#39;t say that-&gt;dont agree]]
+
+[[You have a point..-&gt;agree]]](stop:)] </tw-passagedata><tw-passagedata pid="19" name="agree" tags="" position="1050,275" size="100,100">
+
+
+
+
+
+
+
+
+
+
+
+
+Right????
+(live: .5s)[(goto: &quot;1.4&quot;)]</tw-passagedata><tw-passagedata pid="20" name="dont agree" tags="" position="1200,275" size="100,100">
+
+
+
+
+
+
+
+
+
+
+
+
+Oh whatever
+(live: .5s)[(goto: &quot;1.4&quot;)]</tw-passagedata><tw-passagedata pid="21" name="1.4" tags="" position="1125,400" size="100,100">
+
+
+
+
+
+
+
+
+Well that was a choice you were free to make(after: 5s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[But both choices lead to this page right?](stop:)]  (after: time + 3s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[So what did your choice accomplish?](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Well you shared your opinion](stop:)]  (after: time + 3s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[I dont really care too much](stop:)]  (after: time + 5s, (cond: visits &gt; 0, 200ms, 0))[=
+
+
+(live: .5s)[(goto: &quot;1.5&quot;)]</tw-passagedata><tw-passagedata pid="22" name="1.5" tags="" position="1275,400" size="100,100">
+
+
+
+
+
+
+
+Well then how about we give you some choices hm?(after: 5s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Something that you can choose to do](stop:)]  (after: time + 3s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[That will have some effects and whatnot](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+
+
+(live: .5s)[(t8n:&quot;dissolve&quot;)[
+
+[[Change colour of background-&gt;colour change]]
+
+[[Explore-&gt;explore]]](stop:)] </tw-passagedata><tw-passagedata pid="23" name="colour change" tags="purple" position="900,625" size="100,100">
+
+
+
+
+
+
+
+
+
+
+Well(after: 5s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Isn&#39;t that lovely](stop:)]  (after: time + 4s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[You must be proud](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(goto: &quot;cc2&quot;)]</tw-passagedata><tw-passagedata pid="24" name="explore" tags="" position="1400,250" size="100,100"></tw-passagedata><tw-passagedata pid="25" name="cc2" tags="purple" position="1000,625" size="100,100">
+
+
+
+
+
+
+
+
+Well(after: 5s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[Isn&#39;t that lovely](stop:)]  (after: time + 4s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(t8n:&quot;dissolve&quot;)[You must be proud](stop:)]  (after: time + 2s, (cond: visits &gt; 0, 200ms, 0))[=
+(live: .5s)[(goto: &quot;cc2&quot;)]</tw-passagedata></tw-storydata>
 <script title="Twine engine code" data-main="harlowe">(function(){"use strict";
 var require,define;!function(){var e={},r={};require=function(i){var n=e[i];return n&&(r[i]=n[1].apply(void 0,n[0].map(require)),e[i]=void 0),r[i]},(define=function(r,i,n){if("function"==typeof r)return r();e[r]=[i,n]}).amd=!0}();/*!
  * https://github.com/paulmillr/es6-shim
