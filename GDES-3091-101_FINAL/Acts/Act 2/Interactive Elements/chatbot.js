@@ -15,6 +15,9 @@ function IsEnter() {
 
 
     if (event.keyCode == 13) {
+
+        main();
+
         //getting random varaibles
         var rand1 = [Math.floor(Math.random() * 13)];
 
