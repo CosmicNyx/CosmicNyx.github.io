@@ -1,10 +1,10 @@
 //array vars
 var inputs = [];
 var newArr = [];
+var t = 0;
 var same = 0
-var sameWord = [];
+// var sameWord = [];
 var noRepeats = [];
-
 var start = 0;
 
 function alphaOnly() {
@@ -18,7 +18,7 @@ function alphaOnly() {
         main();
         document.getElementById("InputBox").value = "";
     } else {
-        console.log("no")
+        // console.log("no")
         clear()
         // document.getElementById("InputBox").value = "";
     }
@@ -72,7 +72,6 @@ function main() {
     } else {
 
         inputs.push(TextBox_val);
-
         // console.log("inputs " + inputs)
         clean();
     }
@@ -98,7 +97,7 @@ function sort() {
                 // add one if common word is found
                 same++;
                 //push same words to a new array
-                sameWord.push(words[j]);
+                // sameWord.push(words[j]);
             }
         }
     }

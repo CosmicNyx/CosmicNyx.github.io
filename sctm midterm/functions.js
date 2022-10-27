@@ -21,13 +21,13 @@ function removeBlanks() {
 function clearArrays() {
     inputs = [];
     newArr = [];
-    sameWord = [];
+    // sameWord = [];
     same = 0;
     noRepeats = [];
 }
 
 
-//checking and showing results
+//checking and showing
 function check() {
     if (start == 1) {
         alert("Was that fun? Well now how about you rant again and see if you write down certain common words. If you do, you'll get a prize!")
