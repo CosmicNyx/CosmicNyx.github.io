@@ -6,7 +6,7 @@ var same = 0
 var sameWord = [];
 var noRepeats = [];
 
-
+var start = 0;
 
 function alphaOnly() {
     var TextBox_val = document.getElementById("InputBox").value;
@@ -53,21 +53,17 @@ function main() {
         //roeason it snot working cuase it needs trim.. make into a func???
         if (inputs[t] == ("rick")) {
             window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley", "_self");
-        } else {
-            console.log("not rick")
-            console.log(inputs[t])
         }
+        //else {
+        //     // console.log("not rick")
+        //     // console.log(inputs[t])
+        // }
     }
 
     //clears the input array
     if ((FormatInput.includes("clear"))) {
-        clear
+        clear();
     }
-
-    /**
-     * write some more fun words for links i dunno 
-     * go to random websites
-    */
 
     //if stament that tells if user is done and wants results
     if ((FormatInput.includes("done"))) {
@@ -88,7 +84,7 @@ function main() {
 
 //sorting into stats func
 function sort() {
-
+    start++;
     repeat();
     // // //--------COMAPRING WORDS----------
     // console.log(words[z])

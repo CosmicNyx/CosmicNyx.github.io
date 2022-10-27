@@ -23,26 +23,34 @@ function clearArrays() {
     newArr = [];
     sameWord = [];
     same = 0;
-    noRepeats =[];
+    noRepeats = [];
 }
 
 
+//checking and showing results
 function check() {
-
-    if (same >= 1 && same < 9) {
-        console.log("You wrote the correct words " + same + " time(s).... You need to guess the 10 or more correct words")
-        //writng the words that were corect.. might now show for last run
-        console.log(noRepeats)
-        console.log(sameWord)
-    }else if(same >= 10){
-        console.log("You wrote the correct words " + same + " time(s)")
-        console.log("Here is your prize")
-        //change link PRIZE LINK  -------------------------
-        window.open("https://t3.ftcdn.net/jpg/03/14/56/66/360_F_314566645_UNHlYyGK2EVdGQ8MoNw95vvH44yknrc7.jpg", "_self");
-    }else {
-        console.log("You did not get any words right")
+    if (start == 1) {
+        alert("Was that fun? Well now how about you rant again and see if you write down certain common words. If you do, you'll get a prize!")
     }
     
+    if(start == 5){
+        alert("ok im tired")
+        alert("goodbye")
+        window.close();
+    }
+    else if (same >= 1 && same < 9) {
+        alert("You wrote the correct words " + same + " time(s).... You need to guess the 10 or more correct words")
+        // console.log(noRepeats)
+        // console.log(sameWord)
+    } else if (same >= 10) {
+        alert("You wrote the correct words " + same + " time(s)")
+        alert("Here is your prize")
+        //change link PRIZE LINK  -------------------------
+        window.open("https://www.youtube.com/watch?v=attUrDwfdr8&ab_channel=Gamerboy", "_self");
+    } else {
+        alert("You did not write down any of the correct words")
+    }
+
 }
 
 
@@ -51,16 +59,16 @@ function repeat() {
     // console.log(newArr);
     const num = newArr.length;
     const mostFrequent = (newArr = [], num = 1) => {
-        const map = {};
+        const temp = {};
         let keys = [];
         for (let i = 0; i < newArr.length; i++) {
-            if (map[newArr[i]]) {
-                map[newArr[i]]++;
+            if (temp[newArr[i]]) {
+                temp[newArr[i]]++;
             } else {
-                map[newArr[i]] = 1;
+                temp[newArr[i]] = 1;
             }
         }
-        for (let i in map) {
+        for (let i in temp) {
             keys.push(i);
             // console.log("i "+i)
             noRepeats.push(i)
