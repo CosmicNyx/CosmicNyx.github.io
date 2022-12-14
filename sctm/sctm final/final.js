@@ -56,14 +56,9 @@ function main() {
     if ((FormatInput.includes("roll"))) {
         inputs.push(TextBox_val);
         clean();
-        //roeason it snot working cuase it needs trim.. make into a func???
         if (inputs[inputs.length - 2] == ("rick")) {
             window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley", "_self");
         }
-        //else {
-        //     // console.log("not rick")
-        //     // console.log(inputs[t])
-        // }
     }
 
     //clears the input array////USED FOR TESTING
@@ -76,7 +71,7 @@ function main() {
 
     }
 
-    //COLORS
+    //colour commands
     if ((FormatInput.includes("blue"))) {
         document.body.style.backgroundColor = "#89CFF0";
     } else if ((FormatInput.includes("red"))) {

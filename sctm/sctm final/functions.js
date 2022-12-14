@@ -30,8 +30,13 @@ function clearArrays() {
 //checking and showing
 function check() {
 
-    if (totalWords >= 100){
-        alert("Oh wow youve written over 100 words")
+    if (totalWords >= 50){
+        alert("Oh wow youve written 50 words")
+        alert("damn")
+    }else if(totalWords >= 150){
+        alert("get a life")
+        alert("damn")
+        window.close();
     }
 
     if (start == 1 && localStorage.getItem("Start")!= "true") {
@@ -47,7 +52,7 @@ function check() {
     if(start == 5){
         alert("ok im tired")
         alert("goodbye")
-        //window.close();
+        window.close();
     }
     else if (same >= 1 && same < 9) {
         alert("You wrote the correct words " + same + " time(s).... You need to guess the 10 or more correct words")
@@ -63,34 +68,6 @@ function check() {
     }
 
 }
-
-
-// //cheakcing if there are any repeats
-// function repeat() {
-//     // console.log(newArr);
-//     const num = newArr.length;
-//     const mostFrequent = (newArr = [], num = 1) => {
-//         const temp = {};
-//         let keys = [];
-//         for (let i = 0; i < newArr.length; i++) {
-//             if (temp[newArr[i]]) {
-//                 temp[newArr[i]]++;
-//             } else {
-//                 temp[newArr[i]] = 1;
-//             }
-//         }
-//         for (let i in temp) {
-//             keys.push(i);
-//             // console.log("i "+i)
-//             noRepeats.push(i)
-//         }
-//     };
-//     // console.log("below")
-//     mostFrequent(newArr, num);
-//     // console.log("sorted "+noRepeats)
-//     // newArr.push(mostFrequent(newArr, num));
-//     // console.log("after push "+newArr)
-// }
 
 
 function repeat(){
