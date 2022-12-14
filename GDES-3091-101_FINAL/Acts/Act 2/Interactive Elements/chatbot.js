@@ -46,6 +46,7 @@ function IsEnter() {
 
     if (event.keyCode == 16) {
         generateRandomColour()
+        console.log("color")
     }
 }
 
