@@ -6,10 +6,10 @@
 
 <meta charset="UTF-8">
 
-<title>just turn ofF THE LIGHTS{pg}...please it hurts so bad</title>
+<title>just turn ofF THE LIGHTS</title>
 
 <script type="text/bitsyGameData" id="exportedGameData">
-just turn ofF THE LIGHTS{pg}...please it hurts so bad
+just turn ofF THE LIGHTS
 
 # BITSY VERSION 8.4
 
@@ -20,7 +20,7 @@ just turn ofF THE LIGHTS{pg}...please it hurts so bad
 ! TXT_MODE 0
 
 PAL 0
-231,235,238
+255,255,255
 254,241,208
 188,198,200
 NAME white
@@ -187,7 +187,7 @@ ROOM 7
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,l,0,0,0,0,0,0,0,0
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 PAL 1
@@ -1430,6 +1430,7 @@ SPR d
 00000000
 DLG 6
 POS 6 7,13
+BLIP 6
 
 SPR e
 00000000
@@ -1619,10 +1620,17 @@ BEAT 66 0
 SQR P8
 
 BLIP 5
-C#,G#3,A#3
+A3,E3,F#3
 NAME pick up 3
-ENV 97 124 2 183 146
-BEAT 37 0
+ENV 97 124 2 87 146
+BEAT 128 0
+SQR P4
+
+BLIP 6
+F2,D#2,C3
+NAME pick up 4
+ENV 79 121 3 343 135
+BEAT 32 0
 SQR P4
 
 
@@ -1638,7 +1646,7 @@ body {
 	margin:0px;
 	padding:0px;
 	overflow:hidden;
-	background:#000000;
+	background:#ffffff;
 }
 
 #game {
@@ -13315,6 +13323,7 @@ CHAR 9835
 011011
 011000
 000000
+</script>
 </script>
 
 </head>
