@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
         html: '<input type="text" id="terminalInput" placeholder="Enter command..." style="width: 100%;"> for lack of time here are the following inputs. file1, file2, site',
         width: '400px',
         height: '300px',
-        border: "0.3em",
         x: "center",
         y: "center",
         class: "terminal", 
@@ -32,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     width: width,
                     height: height,
                     class: cssClass, 
-                    border: "0.3em",
                     x: xVar,
                     y: yVar,
                 });
