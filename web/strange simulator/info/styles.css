@@ -1,0 +1,61 @@
+/* Reset some default browser styles */
+body,
+h1,
+ul,
+p {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #23232e;
+    /* Dark bluish-grey background */
+    color: white;
+    /* White text for readability on dark background */
+    line-height: 1.6;
+    padding: 20px;
+}
+
+.instructions-container {
+    background-color: #141418;
+    /* Very dark grey for the container */
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+h1 {
+    color: white;
+    /* White color for headings */
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    background-color: #23232e;
+    /* Dark bluish-grey background for list items */
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+strong {
+    color: white;
+    /* Ensuring strong elements are white for emphasis */
+    font-weight: bold;
+}
+
+p {
+    margin-top: 20px;
+    text-align: center;
+}
