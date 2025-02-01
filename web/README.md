@@ -12,7 +12,7 @@
 
 
 ## Concept
-This concept explores visual and interactive storytelling through the aesthetics of a retro style. on A handmade website, we use pop up windows as journal entries to showcase a story about the conflicts and inner Turmoil about romantic relationships, their views on being an aromantica dn ace. The interactive part comes from unexpected moments through reading the diary and the characters feelings. Unexpected popups, Java animations, exploring through files and entries.
+This concept explores visual and interactive storytelling through the aesthetics of a retro style. The interactive part comes from unexpected moments when reading the diary and the characters' feelings: unexpected popups, Java animations, and exploring files and entries.
 
 ## Idea
 I chose to work on a web-based project because I like building them. In my haste to think of something, I began coding some features as I considered the narrative. The designathon offered me the opportunity to unwind, code something random, and create the basis for next projects.
