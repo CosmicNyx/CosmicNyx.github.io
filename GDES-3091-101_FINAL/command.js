@@ -113,7 +113,7 @@ help = [
 projects = [
     "<br>",
     'typeface                      <a href="' + cssTypeface + '" target="_blank">\\CSS_Typeface' + "</a>",
-    'web_poster                    <a href="' + webTypographicPoster + '" target="_blank">\\Web_Typographic_Poster' + "</a>",
+    // 'web_poster                    <a href="' + webTypographicPoster + '" target="_blank">\\Web_Typographic_Poster' + "</a>",
     'chatbox                       <a href="' + interactiveElements + '" target="_blank">\\Interactive_Elements' + "</a>",
     // ADD LINK----\\
     'index                         <a href="' + index + '" target="_blank">\\Index' + "</a>",
