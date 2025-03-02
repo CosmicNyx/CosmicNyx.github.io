@@ -1926,70 +1926,6 @@ const shimizuMorioka = {
         return position;
     },
 };
-const liuChen = {
-    name: "Chua 2",
-    dxdt: "dx/dt = α(y - x - δ(|x + 1|-|x - 1|))",
-    dydt: "dy/dt = β(x - y + z)",
-    dzdt: "dz/dt = -ςy",
-    α: 15.6,
-    β: 1,
-    ς: 25.58,
-    δ: -1,
-    dt: 0.01,
-    scl: 55,
-    pathLength: 100,
-    highHue: 57,
-    lowHue: 0,
-    parameters: {
-        α: "15.6",
-        β: "1",
-        ς: "25.58",
-        δ: "-1",
-    },
-    offSet: {
-        x: 0,
-        y: 0,
-        z: 0,
-    },
-    motion: {
-        vel: 0.01,
-        axis: [0, 0, -1],
-    },
-    tilt: {
-        x: Math.PI / 2,
-        y: 0,
-        z: 0,
-        otherTilt: 0,
-        otherAxis: [0, 1, 0],
-    },
-    
-    dx: function (x, y, z) {
-        return (
-            this.α *
-            (y - x - this.δ * (Math.abs(x + 1) - Math.abs(x - 1))) *
-            this.dt
-        );
-    },
-    dy: function (x, y, z) {
-        return this.β * (x - y + z) * this.dt;
-    },
-    dz: function (x, y, z) {
-        return -this.ς * y * this.dt;
-    },
-    particleColor: function () {
-        return color(random(this.lowHue, this.highHue), 100, 50);
-    },
-    initialCoordinates: function () {
-        let position = {};
-        let x = round(random(-1, 1) + coordinateDelta.x, 6);
-        let y = round(random(-1, 1) + coordinateDelta.y, 6);
-        let z = round(random(-1, 1) + coordinateDelta.z, 6);
-        position["x"] = x;
-        position["y"] = y;
-        position["z"] = z;
-        return position;
-    },
-};
 const bouali2 = {
     name: "Bouali 2",
     dxdt: "dx/dt = αx(1 - y) - βz",
@@ -2051,99 +1987,39 @@ const bouali2 = {
     },
 };
 
-const threeDAttractor = {
-    name: "3D Attractor",
-    dxdt: "dx/dt = a1 + a2*X + a3*X² + a4*X*Y + a5*X*Z + a6*Y + a7*Y² + a8*Y*Z + a9*Z + a10*Z²",
-    dydt: "dy/dt = b1 + b2*X + b3*X² + b4*X*Y + b5*X*Z + b6*Y + b7*Y² + b8*Y*Z + b9*Z + b10*Z²",
-    dzdt: "dz/dt = c1 + c2*X + c3*X² + c4*X*Y + c5*X*Z + c6*Y + c7*Y² + c8*Y*Z + c9*Z + c10*Z²",
-    parameters: {
-        a1: "0.1", a2: "0.1", a3: "0.1", a4: "0.1", a5: "0.1", a6: "0.1", a7: "0.1", a8: "0.1", a9: "0.1", a10: "0.1",
-        b1: "0.1", b2: "0.1", b3: "0.1", b4: "0.1", b5: "0.1", b6: "0.1", b7: "0.1", b8: "0.1", b9: "0.1", b10: "0.1",
-        c1: "0.1", c2: "0.1", c3: "0.1", c4: "0.1", c5: "0.1", c6: "0.1", c7: "0.1", c8: "0.1", c9: "0.1", c10: "0.1"
-    },
-    dt: 0.01,
-    pathLength: 100,
-    scl: 10,
-    highHue: 360,
-    lowHue: 0,
-    updateParameters: function(newParams) {
-        for (const key in newParams) {
-            if (this.parameters.hasOwnProperty(key)) {
-                this.parameters[key] = newParams[key];
-            }
-        }
-    },
-    dx: function(x, y, z) {
-        const p = this.parameters;
-        return (parseFloat(p.a1) + parseFloat(p.a2) * x + parseFloat(p.a3) * x * x + parseFloat(p.a4) * x * y +
-                parseFloat(p.a5) * x * z + parseFloat(p.a6) * y + parseFloat(p.a7) * y * y + parseFloat(p.a8) * y * z +
-                parseFloat(p.a9) * z + parseFloat(p.a10) * z * z) * this.dt;
-    },
-    dy: function(x, y, z) {
-        const p = this.parameters;
-        return (parseFloat(p.b1) + parseFloat(p.b2) * x + parseFloat(p.b3) * x * x + parseFloat(p.b4) * x * y +
-                parseFloat(p.b5) * x * z + parseFloat(p.b6) * y + parseFloat(p.b7) * y * y + parseFloat(p.b8) * y * z +
-                parseFloat(p.b9) * z + parseFloat(p.b10) * z * z) * this.dt;
-    },
-    dz: function(x, y, z) {
-        const p = this.parameters;
-        return (parseFloat(p.c1) + parseFloat(p.c2) * x + parseFloat(p.c3) * x * x + parseFloat(p.c4) * x * y +
-                parseFloat(p.c5) * x * z + parseFloat(p.c6) * y + parseFloat(p.c7) * y * y + parseFloat(p.c8) * y * z +
-                parseFloat(p.c9) * z + parseFloat(p.c10) * z * z) * this.dt;
-    },
-    particleColor: function() {
-        return color(random(this.lowHue, this.highHue), 100, 50);
-    },
-    initialCoordinates: function() {
-        return {
-            x: random(-10, 10),
-            y: random(-10, 10),
-            z: random(-10, 10)
-        };
-    }
-};
-
-
 let attractors = {
     lorenz: lorenz,
-    //threeDAttractor:threeDAttractor,
-    shimizuMorioka: shimizuMorioka,
-    bouali2: bouali2,
-    rayleighBenard: rayleighBenard,
-    anishchenkoAstakhov: anishchenkoAstakhov,
-    qiChen: qiChen,
-    sprott: sprott,
-    chua1: chua1,
-    finance: finance,
-    bouali: bouali,
-    hadley: hadley,
-    // chua2: chua2,
-    // aizawa: aizawa,
-    luChen: luChen,
-
-    thomas: thomas,
-    halvorsen: halvorsen,
-
-    rucklidge: rucklidge,
-
-    // lorenzMod2: lorenzMod2,
-    // lorenzMod1: lorenzMod1,
-
-    sakarya: sakarya,
-    // threeScroll1: threeScroll1,
-    genesioTesi: genesioTesi,
-
-    arneodo: arneodo,
-    burkeShaw: burkeShaw,
-    newtonLeipnik: newtonLeipnik,
-    coullet: coullet,
     fourwing: fourwing,
+    halvorsen: halvorsen,
     rabinovichFabrikant: rabinovichFabrikant,
+    sprott: sprott,
     dadras: dadras,
+    aizawa: aizawa,
     chen: chen,
+    thomas: thomas,
     rossler: rossler,
-    // threeScroll2: threeScroll2,
-    // lorenz83: lorenz83,
-
+    threeScroll1: threeScroll1,
+    threeScroll2: threeScroll2,
+    lorenz83: lorenz83,
+    newtonLeipnik: newtonLeipnik,
     noseHoover: noseHoover,
+    bouali: bouali,
+    bouali2: bouali2,
+    coullet: coullet,
+    finance: finance,
+    arneodo: arneodo,
+    rayleighBenard: rayleighBenard,
+    genesioTesi: genesioTesi,
+    burkeShaw: burkeShaw,
+    chua1: chua1,
+    chua2: chua2,
+    hadley: hadley,
+    lorenzMod1: lorenzMod1,
+    lorenzMod2: lorenzMod2,
+    anishchenkoAstakhov: anishchenkoAstakhov,
+    rucklidge: rucklidge,
+    qiChen: qiChen,
+    sakarya: sakarya,
+    luChen: luChen,
+    shimizuMorioka: shimizuMorioka,
 };

@@ -1,0 +1,125 @@
+/* General Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #1e1e2f;
+    color: #ffffff;
+}
+
+/* Instructions Panel */
+.instructions-panel {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 10px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+/* .instructions-toggle {
+    background-color: #ff6b6b;
+    border: none;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+} */
+
+.instructions-content {
+    display: none;
+    margin-top: 10px;
+}
+
+.instructions-panel.expanded .instructions-content {
+    display: block;
+}
+
+/* Navigation Bar */
+.navbar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 10px;
+    z-index: 1000;
+}
+
+.navbar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-button {
+    background-color: #4ecdc4;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px 0;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.nav-button:hover {
+    background-color: #45b8b0;
+}
+
+/* Attractor Info Card */
+.card {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 15px;
+    width: 250px;
+    z-index: 1000;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.card-body {
+    margin-top: 10px;
+}
+
+.equations p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.parameters h3 {
+    margin: 10px 0 5px 0;
+    font-size: 16px;
+}
+
+.para-list {
+    font-size: 14px;
+}
+
+/* Canvas Holder */
+#holder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden; /* Prevent scrollbars */
+}
+
+canvas {
+    display: block; /* Remove inline spacing */
+  }
+
+.hidden {
+    display: none;
+}
