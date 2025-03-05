@@ -212,6 +212,18 @@
             background: var(--hoverColour);
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         @media (max-width: 768px) {
             .container {
                 width: 85%;
@@ -261,9 +273,14 @@
             <p>Full-stack Engineer | Programmer | Illustrator</p>
             <p>Toronto, Canada</p>
             <div class="social-links">
-                <a href="https://github.com/CosmicNyx" target="_blank"><i class="fab fa-github"></i></a>
-                <a href="https://www.linkedin.com/in/ushna-khalid-a11856179/" target="_blank"><i
-                        class="fab fa-linkedin"></i></a>
+                <a href="https://github.com/CosmicNyx" target="_blank" aria-label="GitHub">
+                    <span class="fab fa-github" aria-hidden="true"></span>
+                    <span class="sr-only">GitHub</span>
+                </a>
+                <a href="https://www.linkedin.com/in/ushna-khalid-a11856179/" target="_blank" aria-label="LinkedIn">
+                    <span class="fab fa-linkedin" aria-hidden="true"></span>
+                    <span class="sr-only">LinkedIn</span>
+                </a>
             </div>
         </header>
 
