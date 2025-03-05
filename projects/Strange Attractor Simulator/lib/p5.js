@@ -53959,7 +53959,7 @@
               include
             ];
             //if other shapes of this type have been created
-          } else if (this.ingredients.shapes[f] !== [include]) {
+          } else {
             //for every shape of this type
             for (var y in this.ingredients.shapes[f]) {
               //compare it with current shape and if it already exists make add false
