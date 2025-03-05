@@ -1,54 +1,368 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <!-- <link rel="stylesheet" type="text/css" href="styles.css"> -->
-  <title>basic index</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne+Mono&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --BkgrColour: #1a1a1a;
+            /* Dark background */
+            --headerColour: blanchedalmond;
+            /* Blanched almond for headers */
+            --textColour: blanchedalmond;
+            /* Blanched almond for text */
+            --accentColour: #666666;
+            /* Muted grey for borders and accents */
+            --hoverColour: #999999;
+            /* Slightly lighter grey for hover effects */
+            --linkColour: blanchedalmond;
+            /* Blanched almond for links */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--BkgrColour);
+            color: var(--textColour);
+            font-family: 'Syne Mono', monospace;
+            line-height: 1.6;
+            font-size: 1rem;
+            /* Slightly smaller base font size */
+        }
+
+        .container {
+            width: 50%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 0;
+            text-align: left;
+            /* Align content to the left */
+        }
+
+        header {
+            padding: 2rem 0;
+            /* Reduced padding */
+            border-bottom: 1px solid var(--accentColour);
+            text-align: left;
+            /* Left-aligned header */
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            /* Smaller header size */
+            letter-spacing: 1px;
+            color: var(--headerColour);
+            margin-bottom: 0.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            /* Smaller section header size */
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--accentColour);
+            padding-bottom: 0.5rem;
+            color: var(--headerColour);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            /* Reduced padding */
+            background: var(--BkgrColour);
+            border-radius: 12px;
+            border: 1px solid var(--accentColour);
+            box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .project {
+            background: var(--BkgrColour);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--accentColour);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .project:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
+        }
+
+        .project h3 {
+            font-size: 1.2rem;
+            /* Smaller project title */
+            margin-bottom: 0.5rem;
+            color: var(--headerColour);
+        }
+
+        .project small {
+            color: var(--accentColour);
+            display: block;
+            margin-top: 0.8rem;
+        }
+
+        .skills-list,
+        .work-list,
+        .education-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            list-style: none;
+        }
+
+        .skills-list li,
+        .work-list li,
+        .education-list li {
+            background: var(--BkgrColour);
+            padding: 0.8rem 1.2rem;
+            border-radius: 20px;
+            border: 1px solid var(--accentColour);
+            font-size: 0.9rem;
+            color: var(--textColour);
+        }
+
+        .work-list li,
+        .education-list li {
+            width: 100%;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            justify-content: flex-start;
+            /* Left-aligned social links */
+        }
+
+        .social-links a {
+            color: var(--linkColour);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            /* Smaller social icons */
+        }
+
+        .social-links a:hover {
+            color: var(--headerColour);
+        }
+
+        #back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--headerColour);
+            color: var(--BkgrColour);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+        }
+
+        #back-to-top:hover {
+            background: var(--hoverColour);
+        }
+
+        #theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--headerColour);
+            color: var(--BkgrColour);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #theme-toggle:hover {
+            background: var(--hoverColour);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                width: 85%;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                width: 90%;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .skills-list li {
+                width: 100%;
+                text-align: center;
+            }
+
+            .project {
+                padding: 1rem;
+            }
+        }
+    </style>
 </head>
-<style>
-  body {
-
-    color: blanchedalmond;
-    background: black;
-
-  }
-</style>
 
 <body>
+    <button id="theme-toggle">☀️</button>
+    <button id="back-to-top">↑</button>
 
-  <div id="container">
-    <h1>
-      hi
-    </h1>
+    <div class="container">
+        <header>
+            <h1>Ushna Khalid</h1>
+            <p>Full-stack Engineer | Programmer | Illustrator</p>
+            <p>Toronto, Canada</p>
+            <div class="social-links">
+                <a href="https://github.com/CosmicNyx" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="https://www.linkedin.com/in/your-linkedin-profile" target="_blank"><i class="fab fa-linkedin"></i></a>
+            </div>
+        </header>
 
-    <p>
-      this is just an inded page where I link to a bunch of websites I wanna make. Ill probably make this
-      page look more appealing. for now, I'll link the websites i have made
-    </p>
+        <section class="section">
+            <p>
+                I’m a passionate full-stack engineer, programmer, and illustrator with over 6 years of experience crafting web applications and solving complex problems. My work reflects my commitment to clean, efficient code and innovative solutions. Below, you’ll find some of my recent projects that showcase my skills and creativity. I’m always learning and evolving, and I’m excited to work on a more refined portfolio page in the near future. Stay tuned for updates!
+            </p>
+            <br>
+            <p>
+                <!-- <em>— Ushna Khalid</em><br> -->
 
-    <br>
+                <small>P.S. A better portfolio page is in the works!</small>
+            </p>
+        </section>
 
-    <ul>
-      <li><a href="projects/GDES-3091-101_FINAL/">GDES-3091-101 FINAL Index Page /// Terminal Index Page</a></li>
-      <li><a href="projects/Strange Attractor Simulator/src/index.html">Strange attractor (not phone cohesive sorry)</a>
-      </li>
-      </br>
-      </br>
-      <li><a href="https://eportfolio.ocadu.ca/exhibitor/details/9102e619-7e68-4393-ade5-aa2504783db0">OCADU hosted
-          eportolio</a></li>
-    </ul>
+        <!-- <section class="section">
+            <h2>Work Experience</h2>
+            <ul class="work-list">
+                <li>
+                    <strong>PLACEHOLDER</strong> - TITLE<br>
+                    <small>DESC</small>
+                </li>
+            </ul>
+        </section> -->
 
-    <br>
+        <section class="section">
+            <h2>Skills</h2>
+            <ul class="skills-list">
+                <li>JavaScript</li>
+                <li>Java</li>
+                <li>C#</li>
+                <li>Next.js</li>
+                <li>Node.js</li>
+                <li>P5.js</li>
 
-    <p>
-      this should work for now lol
-    </p>
+            </ul>
+        </section>
 
+        <section class="section">
+            <h2>Projects</h2>
+            <div class="projects-grid">
+                <div class="project" onclick="window.open('https://github.com/CosmicNyx/Digital-Realms-Interdisciplinary-Thesis-301', '_blank');" style="cursor: pointer;">
+                    <h3>Digital Realms Thesis</h3>
+                    <p>Explores technological determinism and digital sociology through an interactive web experience.</p>
+                    <small>JavaScript, WebGL, Research Paper</small>
+                </div>
+                <div class="project" onclick="window.open('https://cosmicnyx.github.io/projects/GDES-3091-101_FINAL/', '_blank');" style="cursor: pointer;">
+                    <h3>Terminal Index</h3>
+                    <p>Minimalist terminal-style web interface for organized content navigation.</p>
+                    <small>HTML, CSS, JavaScript</small>
+                </div>
+                <div class="project" onclick="window.open('https://cosmicnyx.github.io/projects/Strange%20Attractor%20Simulator/src/index.html', '_blank');" style="cursor: pointer;">
+                    <h3>Strange Attractor Simulator</h3>
+                    <p>3D simulation exploring chaos theory and strange attractors.</p>
+                    <small>p5.js, JavaScript</small>
+                </div>
+            </div>
+        </section>
+        
+        
 
-  </div>
+        <!-- <section class="section">
+            <h2>Education</h2>
+            <ul class="education-list">
+                <li>
+                    <strong>University Name</strong><br>
+                    Blank<br>
+                </li>
+            </ul>
+        </section> -->
+    </div>
 
+    <script>
+        // Back to Top Button
+        window.onscroll = () => {
+            const backToTopButton = document.getElementById('back-to-top');
+            if (window.scrollY > 300) {
+                backToTopButton.style.display = 'block';
+            } else {
+                backToTopButton.style.display = 'none';
+            }
+        };
 
+        document.getElementById('back-to-top').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
 
+        // Dark/Light Mode Toggle
+        const toggleButton = document.getElementById('theme-toggle');
+        const root = document.documentElement;
+
+        toggleButton.addEventListener('click', () => {
+            root.classList.toggle('light-mode');
+            toggleButton.textContent = root.classList.contains('light-mode') ? '🌙' : '☀️';
+        });
+
+        // Light Mode Styles
+        const lightModeStyles = `
+            :root.light-mode {
+                --BkgrColour: #f5f5f5;
+                --headerColour: #1a1a1a;
+                --textColour: #333333;
+                --accentColour: #666666;
+                --hoverColour: #999999;
+                --linkColour: #1a1a1a;
+            }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.type = 'text/css';
+        styleSheet.innerText = lightModeStyles;
+        document.head.appendChild(styleSheet);
+    </script>
 </body>
 
 </html>
