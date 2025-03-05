@@ -209,10 +209,11 @@
 
         /* Dropdown Menu Styles */
         .dropdown {
-            position: absolute;
-            top: 2rem;
-            right: 0;
+            position: fixed; /* Fixed position to keep it visible */
+            top: 20px; /* Adjust top position */
+            right: 20px; /* Adjust right position */
             display: inline-block;
+            z-index: 1000; /* Ensure it's above other content */
         }
 
         .dropdown-button {
@@ -297,18 +298,18 @@
 
 <body>
     <a href="#main-content" class="sr-only">Skip to main content</a>
-    <button id="theme-toggle" aria-label="Toggle light mode">☀️</button>
-    <button id="back-to-top" aria-label="Back to top">↑</button>
+    <button id="theme-toggle">☀️</button>
+    <button id="back-to-top">↑</button>
 
     <div class="container">
         <header id="main-content">
             <!-- Site Map Dropdown -->
             <div class="dropdown">
-                <button class="dropdown-button" aria-label="Site Map">☰</button>
+                <button class="dropdown-button">☰</button>
                 <div class="dropdown-content">
-                    <a href="#main-content">Home</a>
-                    <a href="#skills">Skills</a>
-                    <a href="#projects">Projects</a>
+                    <a href="#main-content" class="dropdown-link">Home</a>
+                    <a href="#skills" class="dropdown-link">Skills</a>
+                    <a href="#projects" class="dropdown-link">Projects</a>
                 </div>
             </div>
 
@@ -316,12 +317,12 @@
             <p>Full-stack Engineer | Programmer | Illustrator</p>
             <p>Toronto, Canada</p>
             <div class="social-links">
-                <a href="https://github.com/CosmicNyx" target="_blank" aria-label="GitHub">
-                    <span class="fab fa-github" aria-hidden="true"></span>
+                <a href="https://github.com/CosmicNyx" target="_blank">
+                    <span class="fab fa-github"></span>
                     <span class="sr-only">GitHub</span>
                 </a>
-                <a href="https://www.linkedin.com/in/ushna-khalid-a11856179/" target="_blank" aria-label="LinkedIn">
-                    <span class="fab fa-linkedin" aria-hidden="true"></span>
+                <a href="https://www.linkedin.com/in/ushna-khalid-a11856179/" target="_blank">
+                    <span class="fab fa-linkedin"></span>
                     <span class="sr-only">LinkedIn</span>
                 </a>
             </div>
@@ -341,7 +342,7 @@
             </p>
         </section>
 
-        <section class="section">
+        <section id="skills" class="section">
             <h2>Skills</h2>
             <ul class="skills-list">
                 <li>JavaScript</li>
@@ -353,7 +354,7 @@
             </ul>
         </section>
 
-        <section class="section">
+        <section id="projects" class="section">
             <h2>Projects</h2>
             <div class="projects-grid">
                 <div class="project"
@@ -412,6 +413,18 @@
         toggleButton.addEventListener('click', () => {
             root.classList.toggle('light-mode');
             toggleButton.textContent = root.classList.contains('light-mode') ? '🌙' : '☀️';
+        });
+
+        // Smooth Scrolling for Dropdown Links
+        document.querySelectorAll('.dropdown-content a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent default anchor behavior
+                const targetId = link.getAttribute('href'); // Get the target section ID
+                const targetSection = document.querySelector(targetId); // Find the target section
+                if (targetSection) {
+                    targetSection.scrollIntoView({ behavior: 'smooth' }); // Smooth scroll to the section
+                }
+            });
         });
 
         // Light Mode Styles
