@@ -119,6 +119,19 @@
             margin-top: 0.8rem;
         }
 
+        .wip-badge {
+            color: var(--headerColour);
+            /* Use the header color for consistency */
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+            border: 1px solid var(--accentColour);
+            /* Thin outline */
+            background-color: transparent;
+        }
+
         .skills-list,
         .work-list,
         .education-list {
@@ -249,13 +262,18 @@
             <p>Toronto, Canada</p>
             <div class="social-links">
                 <a href="https://github.com/CosmicNyx" target="_blank"><i class="fab fa-github"></i></a>
-                <a href="https://www.linkedin.com/in/ushna-khalid-a11856179/" target="_blank"><i class="fab fa-linkedin"></i></a>
+                <a href="https://www.linkedin.com/in/ushna-khalid-a11856179/" target="_blank"><i
+                        class="fab fa-linkedin"></i></a>
             </div>
         </header>
 
         <section class="section">
             <p>
-                I’m a passionate full-stack engineer, programmer, and illustrator with over 6 years of experience crafting web applications and solving complex problems. My work reflects my commitment to clean, efficient code and innovative solutions. Below, you’ll find some of my recent projects that showcase my skills and creativity. I’m always learning and evolving, and I’m excited to work on a more refined portfolio page in the near future. Stay tuned for updates!
+                I’m a passionate full-stack engineer, programmer, and illustrator with over 6 years of experience
+                crafting web applications and solving complex problems. My work reflects my commitment to clean,
+                efficient code and innovative solutions. Below, you’ll find some of my recent projects that showcase my
+                skills and creativity. I’m always learning and evolving, and I’m excited to work on a more refined
+                portfolio page in the near future. Stay tuned for updates!
             </p>
             <br>
             <p>
@@ -291,25 +309,40 @@
         <section class="section">
             <h2>Projects</h2>
             <div class="projects-grid">
-                <div class="project" onclick="window.open('https://github.com/CosmicNyx/Digital-Realms-Interdisciplinary-Thesis-301', '_blank');" style="cursor: pointer;">
+                <div class="project"
+                    onclick="window.open('https://github.com/CosmicNyx/Digital-Realms-Interdisciplinary-Thesis-301', '_blank');"
+                    style="cursor: pointer;">
                     <h3>Digital Realms Thesis</h3>
-                    <p>Explores technological determinism and digital sociology through an interactive web experience.</p>
+                    <p>Explores technological determinism and digital sociology through an interactive web experience.
+                    </p>
                     <small>JavaScript, WebGL, Research Paper</small>
                 </div>
-                <div class="project" onclick="window.open('https://cosmicnyx.github.io/projects/GDES-3091-101_FINAL/', '_blank');" style="cursor: pointer;">
+                <div class="project"
+                    onclick="window.open('https://cosmicnyx.github.io/projects/GDES-3091-101_FINAL/', '_blank');"
+                    style="cursor: pointer;">
                     <h3>Terminal Index</h3>
                     <p>Minimalist terminal-style web interface for organized content navigation.</p>
                     <small>HTML, CSS, JavaScript</small>
                 </div>
-                <div class="project" onclick="window.open('https://cosmicnyx.github.io/projects/Strange%20Attractor%20Simulator/src/index.html', '_blank');" style="cursor: pointer;">
+                <div class="project"
+                    onclick="window.open('https://cosmicnyx.github.io/projects/Strange%20Attractor%20Simulator/src/index.html', '_blank');"
+                    style="cursor: pointer;">
                     <h3>Strange Attractor Simulator</h3>
                     <p>3D simulation exploring chaos theory and strange attractors.</p>
                     <small>p5.js, JavaScript</small>
                 </div>
+                <div class="project">
+                    <h3>Web-based Colour Tool App <span class="wip-badge">WIP</span></h3>
+                    <p>
+                        A web-based tool to improve colour perception, streamline colour thumbnailing,
+                        and optimize digital blending modes for better design outcomes.
+                    </p>
+                    <small>Next.js, Tauri, Node.js</small>
+                </div>
             </div>
         </section>
-        
-        
+
+
 
         <!-- <section class="section">
             <h2>Education</h2>
