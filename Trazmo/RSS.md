@@ -1,5 +1,12 @@
 # Site Update Log
 
+### To-do
+
+- [ ] Work on debth map for Iceberg hero image  
+- [ ] Add icons to site  
+- [ ] Fix font sizing
+
+
 ## [Current] - April 18 2025
 
 - **Design Changes**:
