@@ -21,9 +21,6 @@
   --color-dark-gray: #2a3248;
   /* Font Families */
   --font-primary: "DM Sans", sans-serif;
-  --font-secondary: "Inter", sans-serif;
-  --font-tertiary: "Nohemi", sans-serif;
-  --font-quaternary: "Figtree", sans-serif;
   /* Font Sizes */
   --font-size-xs: 0.8rem;
   --font-size-sm: 0.9rem;
@@ -69,10 +66,24 @@ body {
   min-width: 320px;
 }
 
+/* Layout */
 .container {
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
+  padding: 0 20px;
+}
+
+.full-width {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+html, body {
   overflow-x: hidden;
 }
 
@@ -557,7 +568,7 @@ hr {
 
 .cards-slider {
   display: flex;
-  gap: 20px;
+  gap: 25px;
   overflow-x: auto;
   padding: 20px 0;
   margin-bottom: 60px;
@@ -568,7 +579,7 @@ hr {
   background: var(--color-primary);
   border-radius: 10px;
   padding: 30px;
-  min-width: 300px;
+  min-width: 380px;
   text-align: left;
   color: var(--color-black);
 }
