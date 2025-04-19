@@ -12,8 +12,6 @@
 - **Design Changes**:
   - Removed margin gaps
   - Changed slider card size under Benifits Section
-- **Enhancements**:
-  - lorem
 
 ## [Previous] Updates
 
