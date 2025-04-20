@@ -10,6 +10,7 @@
 ## [Current] - April 20 2025
 
 - Spent time getting icon svgs from figma file that was missed during first export attempt
+- Created Favicon of logo
 - **Design Changes**:
   - fixed font sizes
 
