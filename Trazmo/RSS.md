@@ -13,6 +13,7 @@
 - Created Favicon of logo
 - **Design Changes**:
   - fixed font sizes
+  - added logo to website tab
 
 ## [Previous] Updates
 
