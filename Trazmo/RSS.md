@@ -7,13 +7,18 @@
 - [ ] Fix font sizing
 
 
-## [Current] - April 18 2025
+## [Current] - April 20 2025
 
+- Spent time getting icon svgs from figma file that was missed during first export attempt
+- **Design Changes**:
+  - fixed font sizes
+
+## [Previous] Updates
+
+### April 18 2025
 - **Design Changes**:
   - Removed margin gaps
   - Changed slider card size under Benifits Section
-
-## [Previous] Updates
 
 ### April 15 2025
 - **Design Changes**:
