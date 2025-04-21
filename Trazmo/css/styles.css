@@ -313,7 +313,7 @@ hr {
 .lending-cards {
   display: grid;
   gap: 1.5rem; /* 24px */
-  margin: 3.75rem auto; /* 60px */
+  /* margin: 3.75rem auto; */
   max-width: 1200px;
   padding: 0 1.25rem; /* 20px */
 }
@@ -460,15 +460,17 @@ hr {
   padding: 1.875rem; /* 30px */
 }
 
-.icon-circle {
+.icon-square {
+  --shape-roundness: 0.5rem; /* Adjust this value */
+  
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem; /* 40px */
-  height: 2.5rem; /* 40px */
+  width: 2.5rem;
+  height: 2.5rem;
   background: var(--color-primary);
-  border-radius: 50%;
-  margin-bottom: 1.25rem; /* 20px */
+  border-radius: var(--shape-roundness);
+  margin-bottom: 1.25rem;
 }
 
 .benefits {
@@ -881,4 +883,10 @@ blockquote {
   .slider-dots {
     bottom: 1.25rem; /* 20px */
   }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }

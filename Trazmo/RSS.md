@@ -7,16 +7,20 @@
 - [ ] Fix font sizing
 
 
-## [Current] - April 20 2025
+## [Current] - April 21 2025
 
+- **Design Changes**:
+  - Added svgs to site
+
+## [Previous] Updates
+
+### April 20 2025
 - Spent time getting icon svgs from figma file that was missed during first export attempt
 - Created Favicon of logo
 - **Design Changes**:
   - fixed font sizes
   - added logo to website tab
-
-## [Previous] Updates
-
+ 
 ### April 18 2025
 - **Design Changes**:
   - Removed margin gaps
