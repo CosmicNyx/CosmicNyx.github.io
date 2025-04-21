@@ -1,6 +1,10 @@
 import { registerCustomElements } from "./components/customElements.js";
+import { ParticleBackground } from "./components/particles.js";
 
 registerCustomElements();
+ParticleBackground.init();
+
+// ----------------
 
 document.querySelectorAll(".faq-question").forEach((question) => {
   question.addEventListener("click", () => {

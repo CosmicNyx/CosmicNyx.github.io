@@ -2,15 +2,14 @@
 
 ### To-do
 
-- [ ] Work on debth map for Iceberg hero image  
-- [ ] Add icons to site  
-- [ ] Fix font sizing
+- [ ] Work on debth map for Iceberg hero image
 
 
 ## [Current] - April 21 2025
 
 - **Design Changes**:
   - Added svgs to site
+  - Added particle effect in the bkgr
 
 ## [Previous] Updates
 
