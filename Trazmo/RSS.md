@@ -4,7 +4,7 @@
 
 - [ ] Work on debth map for Iceberg hero image
 - [ ] Create func to clear cache
-
+- [ ] Correct annotation coords
 
 ## [Current] - April 21 2025
 
