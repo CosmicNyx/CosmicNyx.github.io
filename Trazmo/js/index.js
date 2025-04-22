@@ -2,7 +2,7 @@ import { registerCustomElements } from "./components/customElements.js";
 import { ParticleBackground } from "./components/particles.js";
 
 registerCustomElements();
-ParticleBackground();
+// ParticleBackground();
 
 // ----------------
 
