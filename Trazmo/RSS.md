@@ -3,13 +3,18 @@
 ### To-do
 
 - [ ] Work on debth map for Iceberg hero image
+- [ ] Create func to clear cache
 
 
 ## [Current] - April 21 2025
 
+- Fixed CSS 
+- Corrected SVG links
+- 
 - **Design Changes**:
   - Added svgs to site
   - Added particle effect in the bkgr
+  - Added annotations
 
 ## [Previous] Updates
 
