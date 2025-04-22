@@ -1031,3 +1031,102 @@ img {
   backface-visibility: hidden;
   transform: translate3d(0,0,0);
 }
+
+/* ============================================= */
+/* Iceberg Annotations */
+/* ============================================= */
+
+.iceberg-annotations {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.annotation {
+  position: absolute;
+  display: flex;
+  align-items: center;
+}
+
+/* Right side annotations (point left toward iceberg) */
+.annotation.right {
+  flex-direction: row-reverse;
+  right: 0;
+}
+
+/* Left side annotations (point right toward iceberg) */
+.annotation.left {
+  left: 0;
+}
+
+.annotation-line {
+  width: 100px; /* Longer line */
+  height: 2px; /* Thicker line */
+  background: transparent;
+  border-top: 2px dotted #0F1627; /* Thicker dotted line */
+  position: relative;
+}
+
+/* White dotted line variation */
+.annotation.light .annotation-line {
+  border-top-color: #ffffff;
+}
+
+/* Right side endpoint (points left toward iceberg) */
+.annotation.right .annotation-line::before {
+  content: '';
+  position: absolute;
+  left: 0; /* Points toward iceberg */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px; /* Larger dot */
+  height: 14px; /* Larger dot */
+  background: currentColor;
+  border-radius: 50%;
+}
+
+/* Left side endpoint (points right toward iceberg) */
+.annotation.left .annotation-line::before {
+  content: '';
+  position: absolute;
+  right: 0; /* Points toward iceberg */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px; /* Larger dot */
+  height: 14px; /* Larger dot */
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.annotation-text {
+  margin: 0 15px; /* More spacing */
+  color: #00d76c; /* Green text */
+  font-size: 16px; /* Slightly larger text */
+  white-space: nowrap;
+  font-family: var(--font-primary);
+  font-weight: 600; /* Bolder text */
+}
+
+/* Color customization */
+.annotation {
+  color: #0F1627; /* Dark color for right side dots */
+}
+
+.annotation.light{
+  color: #ffffff; /* White color for light variation dots */
+}
+
+@media (max-width: 768px) {
+  .annotation-line {
+    width: 80px; /* Slightly shorter on mobile */
+    border-top-width: 1.5px; /* Slightly thinner on mobile */
+  }
+  .annotation-text {
+    font-size: 14px; /* Slightly smaller on mobile */
+  }
+  .annotation-line::before {
+    width: 12px; /* Slightly smaller on mobile */
+    height: 12px;
+  }
+}
