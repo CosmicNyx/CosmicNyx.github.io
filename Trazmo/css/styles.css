@@ -1061,16 +1061,19 @@ img {
 }
 
 .annotation-line {
-  width: 100px; /* Longer line */
-  height: 2px; /* Thicker line */
+  width: var(--line-length, 100px); /* default to 100px */
+  height: 2px;
   background: transparent;
-  border-top: 2px dotted #0F1627; /* Thicker dotted line */
+  border-style: dotted;
+  border-width: 2px 0 0 0;
+  border-color:var(--color-dark);;
   position: relative;
 }
 
+
 /* White dotted line variation */
 .annotation.light .annotation-line {
-  border-top-color: #ffffff;
+  border-top-color:var(--color-bg-blue);
 }
 
 /* Right side endpoint (points left toward iceberg) */
@@ -1080,8 +1083,8 @@ img {
   left: 0; /* Points toward iceberg */
   top: 50%;
   transform: translateY(-50%);
-  width: 14px; /* Larger dot */
-  height: 14px; /* Larger dot */
+  width: 6px;
+  height: 6px;
   background: currentColor;
   border-radius: 50%;
 }
@@ -1093,15 +1096,15 @@ img {
   right: 0; /* Points toward iceberg */
   top: 50%;
   transform: translateY(-50%);
-  width: 14px; /* Larger dot */
-  height: 14px; /* Larger dot */
+  width: 6px;
+  height: 6px;
   background: currentColor;
   border-radius: 50%;
 }
 
 .annotation-text {
   margin: 0 15px; /* More spacing */
-  color: #00d76c; /* Green text */
+  color: var(--color-primary);; /* Green text */
   font-size: 16px; /* Slightly larger text */
   white-space: nowrap;
   font-family: var(--font-primary);
@@ -1110,11 +1113,11 @@ img {
 
 /* Color customization */
 .annotation {
-  color: #0F1627; /* Dark color for right side dots */
+  color: var(--color-dark);
 }
 
 .annotation.light{
-  color: #ffffff; /* White color for light variation dots */
+  color: var(--color-bg-blue)
 }
 
 @media (max-width: 768px) {
@@ -1128,5 +1131,20 @@ img {
   .annotation-line::before {
     width: 12px; /* Slightly smaller on mobile */
     height: 12px;
+  }
+}
+
+
+
+/* ============================================= */
+/* Desktop */
+/* ============================================= */
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
   }
 }
