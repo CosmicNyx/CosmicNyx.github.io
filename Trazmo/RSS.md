@@ -3,19 +3,22 @@
 ### To-do
 
 - [ ] Work on debth map for Iceberg hero image
-- [ ] Create func to clear cache
-- [ ] Correct annotation coords
+- [ ] Fix rainbow flare on iceberg
 
-## [Current] - April 21 2025
+## [Current] - April 23 2025
 
+- **Design Changes**
+  - added flares on iceberg (still needs fixing)
+
+## [Previous] Updates
+
+### April 22 2025
 - Fixed CSS 
 - Corrected SVG links
 - **Design Changes**
   - Added svgs to site
   - Added particle effect in the bkgr
   - Added annotations
-
-## [Previous] Updates
 
 ### April 20 2025
 - Spent time getting icon svgs from figma file that was missed during first export attempt
