@@ -8,7 +8,8 @@
 ## [Current] - April 23 2025
 
 - **Design Changes**
-  - added flares on iceberg (still needs fixing)
+  - added flares on iceberg 
+  - fixed slider cards issue
 
 ## [Previous] Updates
 

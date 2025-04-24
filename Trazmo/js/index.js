@@ -3,61 +3,59 @@ import { ParticleBackground } from "./components/particles.js";
 
 registerCustomElements();
 
-// Optimized Scroll Fade-In
+// Optimized Scroll Fade-In that doesn't affect layout
 function initScrollFade() {
     const fadeConfig = {
         fadeSpeed: 0.4,
         triggerOffset: 150,
-        elements: 'div:not(.slider-container *, .faq-item, .faq-question), section, article, [data-fade]',
-        exclude: '.slider-container *, .faq-item, .faq-question, .dot',
-        batchSize: 10 // Process elements in batches to reduce memory pressure
+        elements: 'div:not(.slider-container *, .faq-item, .faq-question, .no-fade), section:not(.no-fade), article:not(.no-fade), [data-fade]',
+        exclude: '.slider-container *, .faq-item, .faq-question, .dot, .no-fade, #lensFlareCanvas',
+        batchSize: 10
     };
 
+    // Add minimal styles that won't affect layout
     const style = document.createElement('style');
     style.textContent = `
         .js-fade-scroll {
             opacity: 0;
-            transform: translateY(30px);
-            transition: 
-                opacity ${fadeConfig.fadeSpeed}s ease-out,
-                transform ${fadeConfig.fadeSpeed}s ease-out;
+            will-change: opacity;
+            transition: opacity ${fadeConfig.fadeSpeed}s ease-out;
         }
         .js-fade-scroll.active {
             opacity: 1;
-            transform: translateY(0);
-        }
-        
-        /* Hardware-accelerate only the elements currently animating */
-        .js-fade-scroll.animating {
-            backface-visibility: hidden;
-            perspective: 1000px;
         }
     `;
     document.head.appendChild(style);
 
-    // Process elements in batches to reduce memory pressure
+    // Get all potential elements and excluded elements
     const allElements = Array.from(document.querySelectorAll(fadeConfig.elements));
-    const excluded = Array.from(document.querySelectorAll(fadeConfig.exclude));
-    
+    const excludedElements = Array.from(document.querySelectorAll(fadeConfig.exclude));
+
+    // Filter out excluded elements and their children
     const filteredElements = allElements.filter(el => {
-        return !excluded.some(excludedEl => 
-            el.contains(excludedEl) || el === excludedEl || el.closest(fadeConfig.exclude)
+        return !excludedElements.some(excludedEl => 
+            el === excludedEl || 
+            el.contains(excludedEl) || 
+            el.closest(fadeConfig.exclude)
         );
     });
 
-    // Initialize elements in batches
+    // Process elements in batches for better performance
     function processBatch(batch) {
         batch.forEach(el => {
+            // Skip if already processed or should be excluded
+            if (el.classList.contains('js-fade-scroll') || 
+                el.matches(fadeConfig.exclude) || 
+                el.closest(fadeConfig.exclude)) {
+                return;
+            }
+
             el.classList.add('js-fade-scroll');
             
-            // Only add animating class during the actual animation
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('animating', 'active');
-                        setTimeout(() => {
-                            entry.target.classList.remove('animating');
-                        }, fadeConfig.fadeSpeed * 1000);
+                        entry.target.classList.add('active');
                         observer.unobserve(entry.target);
                     }
                 });
@@ -70,20 +68,23 @@ function initScrollFade() {
         });
     }
 
-    // Process in batches with slight delay between them
+    // Process elements in staggered batches
     for (let i = 0; i < filteredElements.length; i += fadeConfig.batchSize) {
-        const batch = filteredElements.slice(i, i + fadeConfig.batchSize);
-        setTimeout(() => processBatch(batch), i * 50); // Stagger initialization
+        setTimeout(() => {
+            const batch = filteredElements.slice(i, i + fadeConfig.batchSize);
+            processBatch(batch);
+        }, i * 50);
     }
 }
 
-// FAQ Functionality (unchanged)
+// FAQ Functionality
 function initFAQ() {
     document.querySelectorAll(".faq-question").forEach((question) => {
         question.addEventListener("click", () => {
             const item = question.parentElement;
             item.classList.toggle("active");
 
+            // Close other open FAQ items
             document.querySelectorAll(".faq-item").forEach((otherItem) => {
                 if (otherItem !== item && otherItem.classList.contains("active")) {
                     otherItem.classList.remove("active");
@@ -93,7 +94,7 @@ function initFAQ() {
     });
 }
 
-// Optimized Slider Functionality
+// Slider Functionality
 function initSlider() {
     const sliderContainer = document.querySelector('.slider-container');
     if (!sliderContainer) return;
@@ -103,31 +104,17 @@ function initSlider() {
     const dots = sliderContainer.querySelectorAll('.dot');
     let currentSlide = 0, startX = 0, isDragging = false;
 
-    // Only animate the current and adjacent slides
-    function optimizeSlideAnimations() {
-        slides.forEach((slide, index) => {
-            if (index >= currentSlide - 1 && index <= currentSlide + 1) {
-                slide.style.willChange = 'transform';
-            } else {
-                slide.style.willChange = 'auto';
-            }
-        });
-    }
-
     function updateSlider() {
         track.style.transition = 'transform 0.4s ease';
         track.style.transform = `translateX(${currentSlide * -100}%)`;
         dots.forEach(dot => dot.classList.remove('active'));
         dots[currentSlide].classList.add('active');
-        optimizeSlideAnimations();
     }
 
-    // Event handlers (same as before)
     function startDrag(e) {
         isDragging = true;
         startX = e.clientX || e.touches[0].clientX;
         track.style.transition = 'none';
-        optimizeSlideAnimations();
     }
 
     function drag(e) {
@@ -152,14 +139,15 @@ function initSlider() {
         updateSlider();
     }
 
-    // Initialize
+    // Event listeners
     track.addEventListener('mousedown', startDrag);
-    track.addEventListener('touchstart', startDrag, {passive: true});
+    track.addEventListener('touchstart', startDrag, { passive: true });
     document.addEventListener('mousemove', drag);
-    document.addEventListener('touchmove', drag, {passive: true});
+    document.addEventListener('touchmove', drag, { passive: true });
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('touchend', endDrag);
 
+    // Dot navigation
     dots.forEach((dot, i) => {
         dot.addEventListener('click', () => {
             if (isDragging) return;
@@ -168,6 +156,7 @@ function initSlider() {
         });
     });
 
+    // Initialize
     updateSlider();
 }
 
