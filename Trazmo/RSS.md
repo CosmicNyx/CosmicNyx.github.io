@@ -2,16 +2,19 @@
 
 ### To-do
 
-- [ ] Work on debth map for Iceberg hero image
-- [ ] Fix rainbow flare on iceberg
+- [ ] figure out a way to create a 3d effect from a single 2d image with no layers provided
 
-## [Current] - April 23 2025
+## [Current] - April 24 2025
 
+- **Iceberg**
+  - jasdskl
+
+## [Previous] Updates
+
+### April 23 2025
 - **Design Changes**
   - added flares on iceberg 
   - fixed slider cards issue
-
-## [Previous] Updates
 
 ### April 22 2025
 - Fixed CSS 
