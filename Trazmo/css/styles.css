@@ -1158,7 +1158,7 @@ img {
   display: block;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1300px) {
   .desktop-only {
     display: none;
   }
