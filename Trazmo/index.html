@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iceberg with Lens Flare</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="hero-image desktop-only">
+        <div class="iceberg-container">
+            <img src="Iceberg.svg" alt="Iceberg" class="iceberg">
+        </div>
+
+        <canvas id="lensFlareCanvas"></canvas>
+
+        <!-- Right side annotations (pointing left) -->
+        <div class="annotation right" style="top: 34%; right: 23%;">
+            <span class="annotation-text">Loan Application</span>
+            <div class="annotation-line" style="--line-length: 190px;"></div>
+        </div>
+
+        <div class="annotation right" style="top: 39%; right: 27%;">
+            <span class="annotation-text">Approval Process</span>
+            <div class="annotation-line" style="--line-length: 170px;"></div>
+        </div>
+
+        <div class="annotation right light" style="top: 51.5%; right: 14%;">
+            <span class="annotation-text">Cashflow Forecasting</span>
+            <div class="annotation-line" style="--line-length: 150px;"></div>
+        </div>
+
+        <div class="annotation right light" style="top: 56%; right: 12.6%;">
+            <span class="annotation-text">Regulatery Compliance</span>
+            <div class="annotation-line" style="--line-length: 270px;"></div>
+        </div>
+
+        <div class="annotation right light" style="top: 63%; right: 25%;">
+            <span class="annotation-text">Fraud Detection</span>
+            <div class="annotation-line" style="--line-length: 150px;"></div>
+        </div>
+
+        <!-- Left side annotations (pointing right) -->
+        <div class="annotation left" style="top: 42%; left: 21%;">
+            <span class="annotation-text">Loan Disbursement</span>
+            <div class="annotation-line" style="--line-length: 170px;"></div>
+        </div>
+
+        <div class="annotation left light" style="top: 55%; left: 17%;">
+            <span class="annotation-text">Risk Analysis</span>
+            <div class="annotation-line" style="--line-length: 130px;"></div>
+        </div>
+
+        <div class="annotation left light" style="top: 65%; left: 12%;">
+            <span class="annotation-text">Underwriting Intelligence</span>
+            <div class="annotation-line" style="--line-length: 250px;"></div>
+        </div>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
