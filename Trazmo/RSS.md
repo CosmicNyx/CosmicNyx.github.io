@@ -7,7 +7,7 @@
 ## [Current] - April 24 2025
 
 - **Iceberg**
-  - jasdskl
+  - spent day researching differnt way to achieve wanted effects
 
 ## [Previous] Updates
 
