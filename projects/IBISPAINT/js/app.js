@@ -2395,25 +2395,9 @@ class IbisPaintWorkspace {
         let startX, startY, startLeft, startTop;
         
         const onMouseDown = (e) => {
-            // Don't start dragging if clicking on image content or inputs
-            if (e.target.closest('.ref-viewer-image') || e.target.closest('button') || e.target.closest('input')) {
-                return;
-            }
-            
-            // Always allow drag when starting from the explicit handle
+            // Only allow dragging when starting from the explicit top handle
             const startedOnHandle = !!(dragHandle && (e.target === dragHandle || dragHandle.contains(e.target)));
-            
-            // Otherwise, allow drag only when clicking near borders
-            const rect = viewer.getBoundingClientRect();
-            const borderSize = 6; // easier to grab
-            const isInBorder = (
-                e.clientX <= rect.left + borderSize ||
-                e.clientX >= rect.right - borderSize ||
-                e.clientY <= rect.top + borderSize ||
-                e.clientY >= rect.bottom - borderSize
-            );
-            
-            if (!startedOnHandle && !isInBorder) return;
+            if (!startedOnHandle) return;
             
             isDragging = true;
             startX = e.clientX;
@@ -2425,7 +2409,7 @@ class IbisPaintWorkspace {
             e.preventDefault();
         };
         
-        dragElement.addEventListener('mousedown', onMouseDown);
+        // Listen only on the handle
         if (dragHandle) dragHandle.addEventListener('mousedown', onMouseDown);
         
         document.addEventListener('mousemove', (e) => {
