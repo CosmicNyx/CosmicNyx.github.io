@@ -60,6 +60,8 @@
             <div class="nav-resize-handle"></div>
           </div>
 
+
+
           <!-- Canvas Area -->
           <div class="canvas-container">
             <div id="canvas-container" class="canvas-frame">
@@ -133,6 +135,121 @@
 
           <!-- Hide/Show toolbar button (always visible, positioned like it's in the toolbar) -->
           <button id="btn-hidebar" class="hide-toolbar-btn icon-chevron-down" title="Hide toolbar"></button>
+
+          <!-- Brush Panel -->
+          <div id="brush-panel" class="brush-panel">
+              <div class="brush-header">
+                <div class="brush-tabs">
+                <button class="brush-tab active" data-tab="basic">Basic</button>
+                <button class="brush-tab" data-tab="custom">Custom</button>
+                <button class="brush-tab" data-tab="special">Special</button>
+                <button class="brush-add-group-btn" title="Add New Group">+</button>
+              </div>
+              <button class="brush-delete-btn">Delete</button>
+            </div>
+            
+            <div class="brush-list-container">
+              <div class="brush-list" id="brush-list">
+                <!-- Brush items will be dynamically added here -->
+              </div>
+            </div>
+            
+            <!-- Brush Settings Panel -->
+            <div class="brush-settings" id="brush-settings">
+              <div class="brush-settings-header">
+                <span class="brush-settings-title">Dip Pen (Soft)</span>
+                <button class="brush-settings-close">×</button>
+              </div>
+              
+              <div class="brush-settings-tabs">
+                <button class="brush-settings-tab active" data-settings-tab="basic">🖊️</button>
+                <button class="brush-settings-tab" data-settings-tab="fade">💎</button>
+                <button class="brush-settings-tab" data-settings-tab="shape">⚪</button>
+                <button class="brush-settings-tab" data-settings-tab="jitter">↔️</button>
+                <button class="brush-settings-tab" data-settings-tab="type">🖊️🖊️</button>
+                <button class="brush-settings-tab" data-settings-tab="dynamic">⚡</button>
+                <button class="brush-settings-tab" data-settings-tab="settings">⚙️</button>
+              </div>
+              
+              <div class="brush-preview">
+                <div class="brush-preview-canvas">
+                  <div class="brush-stroke-preview"></div>
+                </div>
+              </div>
+              
+              <div class="brush-controls">
+                <div class="brush-control-group">
+                  <label>Thickness of Start</label>
+                  <div class="brush-control-row">
+                    <button class="brush-control-btn">−</button>
+                    <input type="range" class="brush-slider" min="0" max="100" value="0">
+                    <button class="brush-control-btn">+</button>
+                    <span class="brush-control-value">0%</span>
+                  </div>
+                </div>
+                
+                <div class="brush-control-group">
+                  <label>Thickness of End</label>
+                  <div class="brush-control-row">
+                    <button class="brush-control-btn">−</button>
+                    <input type="range" class="brush-slider" min="0" max="100" value="0">
+                    <button class="brush-control-btn">+</button>
+                    <span class="brush-control-value">0%</span>
+                  </div>
+                </div>
+                
+                <div class="brush-control-group">
+                  <label>Opacity of Start</label>
+                  <div class="brush-control-row">
+                    <button class="brush-control-btn">−</button>
+                    <input type="range" class="brush-slider" min="0" max="100" value="100">
+                    <button class="brush-control-btn">+</button>
+                    <span class="brush-control-value">100%</span>
+                  </div>
+                </div>
+                
+                <div class="brush-control-group">
+                  <label>Opacity of End</label>
+                  <div class="brush-control-row">
+                    <button class="brush-control-btn">−</button>
+                    <input type="range" class="brush-slider" min="0" max="100" value="100">
+                    <button class="brush-control-btn">+</button>
+                    <span class="brush-control-value">100%</span>
+                  </div>
+                </div>
+                
+                <div class="brush-control-group">
+                  <label>Force Fade Out</label>
+                  <div class="brush-toggle">
+                    <input type="checkbox" id="force-fade-out" class="brush-toggle-input">
+                    <label for="force-fade-out" class="brush-toggle-label"></label>
+                  </div>
+                </div>
+                
+                <button class="brush-reset-btn">Reset</button>
+                
+                <div class="brush-control-group">
+                  <label>Thickness</label>
+                  <div class="brush-control-row">
+                    <button class="brush-control-btn">−</button>
+                    <input type="range" class="brush-slider" min="1" max="200" value="41">
+                    <button class="brush-control-btn">+</button>
+                    <span class="brush-control-value">4.1px</span>
+                  </div>
+                </div>
+                
+                <div class="brush-control-group">
+                  <label>Opacity</label>
+                  <div class="brush-control-row">
+                    <button class="brush-control-btn">−</button>
+                    <input type="range" class="brush-slider" min="1" max="100" value="58">
+                    <button class="brush-control-btn">+</button>
+                    <span class="brush-control-value">58%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Layers Panel -->
           <div id="layers-panel" class="layers-panel">
@@ -227,6 +344,49 @@
             <button id="btn-back" class="bottom-btn icon-back" title="Menu / Export"></button>
           </div>
         </main>
+      </div>
+      
+      <!-- Reference Image Viewers Container (outside stage to avoid overflow hidden) -->
+      <div id="ref-viewers-container" class="ref-viewers-container">
+        <!-- Reference image viewers will be dynamically created here -->
+      </div>
+      
+      <!-- Saved Reference Images Panel (outside stage to avoid overflow hidden) -->
+      <div id="saved-ref-images-panel" class="saved-ref-images-panel">
+        <div class="ref-images-header">
+          <span class="ref-images-title">Saved Reference Images</span>
+          <button class="ref-images-close">×</button>
+        </div>
+        
+        <div class="ref-images-grid">
+          <div class="ref-image-item" data-image-id="ref-1">
+            <div class="ref-image-placeholder">
+              <span class="ref-image-text">Ref 1</span>
+            </div>
+            <div class="ref-image-name">Reference 1</div>
+          </div>
+          
+          <div class="ref-image-item" data-image-id="ref-2">
+            <div class="ref-image-placeholder">
+              <span class="ref-image-text">Ref 2</span>
+            </div>
+            <div class="ref-image-name">Reference 2</div>
+          </div>
+          
+          <div class="ref-image-item" data-image-id="ref-3">
+            <div class="ref-image-placeholder">
+              <span class="ref-image-text">Ref 3</span>
+            </div>
+            <div class="ref-image-name">Reference 3</div>
+          </div>
+          
+          <div class="ref-image-item add-new" id="add-ref-image">
+            <div class="ref-image-placeholder add-new-placeholder">
+              <span class="add-new-text">+</span>
+            </div>
+            <div class="ref-image-name">Add New</div>
+          </div>
+        </div>
       </div>
     </div>
 

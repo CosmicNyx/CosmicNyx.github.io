@@ -72,6 +72,8 @@ class IbisPaintWorkspace {
         this.setupLayerControls();
         this.setupColorPicker();
         this.setupTopToolbar();
+        this.setupBrushPanel();
+        this.setupReferenceImages();
         this.updateUI();
         
         // Dev access in console
@@ -423,7 +425,7 @@ class IbisPaintWorkspace {
 
         if (btnBrush) {
             btnBrush.addEventListener('click', () => {
-                alert('Brush types panel (placeholder)');
+                this.toggleBrushPanel();
             });
         }
 
@@ -1870,6 +1872,786 @@ class IbisPaintWorkspace {
         
     }
     
+    // ===== BRUSH PANEL (FULLY FUNCTIONAL) =====
+    setupBrushPanel() {
+        this.basicBrushes = [
+            { id: 'pen', name: 'Pen', value: 8.0, isStarred: false, preview: 'pen' },
+            { id: 'brush', name: 'Brush', value: 15.0, isStarred: false, preview: 'solid' },
+            { id: 'marker', name: 'Marker', value: 12.0, isStarred: false, preview: 'marker' },
+            { id: 'pencil', name: 'Pencil', value: 6.0, isStarred: false, preview: 'pen' }
+        ];
+        
+        this.customBrushes = [
+            { id: 'rainbow-splash', name: 'Rainbow Splash', value: 45.0, isStarred: false, preview: 'spray' },
+            { id: 'cosmic-dust', name: 'Cosmic Dust', value: 23.5, isStarred: true, preview: 'soft' },
+            { id: 'neon-glow', name: 'Neon Glow', value: 67.0, isStarred: false, preview: 'thick' },
+            { id: 'mystic-waves', name: 'Mystic Waves', value: 34.2, isStarred: false, preview: 'wavy' },
+            { id: 'crystal-shards', name: 'Crystal Shards', value: 18.8, isStarred: false, preview: 'textured' },
+            { id: 'shadow-blend', name: 'Shadow Blend', value: 52.0, isStarred: false, preview: 'soft' },
+            { id: 'fire-strokes', name: 'Fire Strokes', value: 89.0, isStarred: true, preview: 'thick' },
+            { id: 'ice-crystals', name: 'Ice Crystals', value: 41.3, isStarred: false, preview: 'textured' }
+        ];
+        
+        this.specialBrushes = [
+            { id: 'magic-wand', name: 'Magic Wand', value: 100.0, isStarred: true, preview: 'star' },
+            { id: 'galaxy-brush', name: 'Galaxy Brush', value: 75.5, isStarred: false, preview: 'spray' },
+            { id: 'dragon-scale', name: 'Dragon Scale', value: 33.0, isStarred: false, preview: 'textured' },
+            { id: 'phoenix-feather', name: 'Phoenix Feather', value: 58.7, isStarred: true, preview: 'soft' },
+            { id: 'unicorn-hair', name: 'Unicorn Hair', value: 42.1, isStarred: false, preview: 'wavy' }
+        ];
+        
+        this.currentTab = 'basic';
+        this.currentBrush = this.basicBrushes[0];
+        this.selectedBrushId = 'pen';
+        
+        this.renderBrushList();
+        this.setupBrushPanelEvents();
+    }
+    
+    renderBrushList() {
+        const brushList = document.getElementById('brush-list');
+        if (!brushList) return;
+        
+        brushList.innerHTML = '';
+        
+        let currentBrushSet;
+        switch(this.currentTab) {
+            case 'basic':
+                currentBrushSet = this.basicBrushes;
+                break;
+            case 'custom':
+                currentBrushSet = this.customBrushes;
+                break;
+            case 'special':
+                currentBrushSet = this.specialBrushes;
+                break;
+            default:
+                currentBrushSet = this.basicBrushes;
+        }
+        
+        currentBrushSet.forEach(brush => {
+            const brushItem = document.createElement('div');
+            brushItem.className = `brush-item ${brush.id === this.selectedBrushId ? 'selected' : ''}`;
+            brushItem.dataset.brushId = brush.id;
+            
+            brushItem.innerHTML = `
+                <button class="brush-add-btn">+</button>
+                <div class="brush-preview-stroke ${brush.preview}"></div>
+                <span class="brush-name">${brush.name}</span>
+                <span class="brush-value">${brush.value}</span>
+                <button class="brush-menu-btn">⋮</button>
+            `;
+            
+            if (brush.isStarred) {
+                const star = document.createElement('span');
+                star.className = 'brush-star';
+                star.textContent = '★';
+                brushItem.insertBefore(star, brushItem.querySelector('.brush-name'));
+            }
+            
+            brushList.appendChild(brushItem);
+        });
+    }
+    
+    setupBrushPanelEvents() {
+        const brushPanel = document.getElementById('brush-panel');
+        const brushList = document.getElementById('brush-list');
+        const brushSettings = document.getElementById('brush-settings');
+        
+        // Brush tab switching
+        const brushTabs = document.querySelectorAll('.brush-tab');
+        brushTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabType = tab.dataset.tab;
+                this.switchBrushTab(tabType, tab);
+            });
+        });
+        
+        // Brush item selection
+        if (brushList) {
+            brushList.addEventListener('click', (e) => {
+                const brushItem = e.target.closest('.brush-item');
+                if (brushItem) {
+                    const brushId = brushItem.dataset.brushId;
+                    this.selectBrush(brushId);
+                    
+                    // Double click to open settings
+                    if (e.detail === 2) {
+                        this.openBrushSettings(brushId);
+                    }
+                }
+            });
+        }
+        
+        // Brush settings close
+        const brushSettingsClose = document.querySelector('.brush-settings-close');
+        if (brushSettingsClose) {
+            brushSettingsClose.addEventListener('click', () => {
+                this.closeBrushSettings();
+            });
+        }
+        
+        // Brush settings tabs
+        const brushSettingsTabs = document.querySelectorAll('.brush-settings-tab');
+        brushSettingsTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                brushSettingsTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                // TODO: Switch settings content
+            });
+        });
+        
+        // Brush control sliders
+        const brushSliders = document.querySelectorAll('.brush-slider');
+        brushSliders.forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const valueSpan = e.target.parentElement.querySelector('.brush-control-value');
+                if (valueSpan) {
+                    const value = e.target.value;
+                    if (e.target.min === '1' && e.target.max === '200') {
+                        // Thickness slider
+                        valueSpan.textContent = `${(value / 10).toFixed(1)}px`;
+                    } else {
+                        // Percentage sliders
+                        valueSpan.textContent = `${value}%`;
+                    }
+                }
+            });
+        });
+        
+        // Brush control buttons
+        const brushControlBtns = document.querySelectorAll('.brush-control-btn');
+        brushControlBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const slider = e.target.parentElement.querySelector('.brush-slider');
+                if (slider) {
+                    const currentValue = parseInt(slider.value);
+                    const step = 1;
+                    const newValue = e.target.textContent === '−' 
+                        ? Math.max(parseInt(slider.min), currentValue - step)
+                        : Math.min(parseInt(slider.max), currentValue + step);
+                    
+                    slider.value = newValue;
+                    slider.dispatchEvent(new Event('input'));
+                }
+            });
+        });
+        
+        // Reset button
+        const resetBtn = document.querySelector('.brush-reset-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.resetBrushSettings();
+            });
+        }
+        
+        // Add group button
+        const addGroupBtn = document.querySelector('.brush-add-group-btn');
+        if (addGroupBtn) {
+            addGroupBtn.addEventListener('click', () => {
+                this.addNewBrushGroup();
+            });
+        }
+        
+        // Click outside to close
+        document.addEventListener('click', (e) => {
+            if (brushPanel && brushPanel.classList.contains('is-visible')) {
+                if (!brushPanel.contains(e.target) && !e.target.closest('#btn-brush')) {
+                    this.closeBrushPanel();
+                }
+            }
+        });
+    }
+    
+    selectBrush(brushId) {
+        this.selectedBrushId = brushId;
+        let currentBrushSet;
+        switch(this.currentTab) {
+            case 'basic':
+                currentBrushSet = this.basicBrushes;
+                break;
+            case 'custom':
+                currentBrushSet = this.customBrushes;
+                break;
+            case 'special':
+                currentBrushSet = this.specialBrushes;
+                break;
+            default:
+                currentBrushSet = this.basicBrushes;
+        }
+        this.currentBrush = currentBrushSet.find(b => b.id === brushId);
+        this.renderBrushList();
+        this.updateBrushSettings();
+    }
+    
+    openBrushSettings(brushId) {
+        const brushSettings = document.getElementById('brush-settings');
+        if (brushSettings) {
+            this.selectBrush(brushId);
+            brushSettings.classList.add('is-visible');
+        }
+    }
+    
+    closeBrushSettings() {
+        const brushSettings = document.getElementById('brush-settings');
+        if (brushSettings) {
+            brushSettings.classList.remove('is-visible');
+        }
+    }
+    
+    updateBrushSettings() {
+        const brushSettingsTitle = document.querySelector('.brush-settings-title');
+        if (brushSettingsTitle && this.currentBrush) {
+            brushSettingsTitle.textContent = this.currentBrush.name;
+        }
+    }
+    
+    resetBrushSettings() {
+        const sliders = document.querySelectorAll('.brush-slider');
+        sliders.forEach(slider => {
+            if (slider.min === '1' && slider.max === '200') {
+                slider.value = 41; // 4.1px
+            } else {
+                slider.value = slider.min === '0' ? 0 : 100;
+            }
+            slider.dispatchEvent(new Event('input'));
+        });
+        
+        const toggle = document.getElementById('force-fade-out');
+        if (toggle) {
+            toggle.checked = false;
+        }
+    }
+    
+    toggleBrushPanel() {
+        const panel = document.getElementById('brush-panel');
+        if (panel) {
+            const isVisible = panel.classList.contains('is-visible');
+            if (isVisible) {
+                this.closeBrushPanel();
+            } else {
+                this.openBrushPanel();
+            }
+        }
+    }
+    
+    openBrushPanel() {
+        const panel = document.getElementById('brush-panel');
+        if (panel) {
+            panel.classList.add('is-visible');
+            this.renderBrushList();
+        }
+    }
+    
+    closeBrushPanel() {
+        const panel = document.getElementById('brush-panel');
+        const settings = document.getElementById('brush-settings');
+        if (panel) {
+            panel.classList.remove('is-visible');
+        }
+        if (settings) {
+            settings.classList.remove('is-visible');
+        }
+    }
+    
+    addNewBrushGroup() {
+        const groupName = prompt('Enter name for new brush group:');
+        if (groupName && groupName.trim()) {
+            // Create a new brush group with some default brushes
+            const newGroup = [
+                { id: `${groupName.toLowerCase()}-1`, name: `${groupName} Brush 1`, value: 25.0, isStarred: false, preview: 'solid' },
+                { id: `${groupName.toLowerCase()}-2`, name: `${groupName} Brush 2`, value: 35.0, isStarred: false, preview: 'soft' },
+                { id: `${groupName.toLowerCase()}-3`, name: `${groupName} Brush 3`, value: 45.0, isStarred: false, preview: 'thick' }
+            ];
+            
+            // Add the new group to the brush groups
+            this[`${groupName.toLowerCase()}Brushes`] = newGroup;
+            
+            // Add a new tab button
+            this.addNewTabButton(groupName.toLowerCase(), groupName);
+            
+            alert(`New brush group "${groupName}" created with 3 default brushes!`);
+        }
+    }
+    
+    switchBrushTab(tabType, clickedTab) {
+        // Remove active class from all tabs
+        const allTabs = document.querySelectorAll('.brush-tab');
+        allTabs.forEach(tab => tab.classList.remove('active'));
+        
+        // Add active class to clicked tab
+        clickedTab.classList.add('active');
+        
+        // Update current tab and render brush list
+        this.currentTab = tabType;
+        this.renderBrushList();
+    }
+    
+    addNewTabButton(tabId, tabName) {
+        const tabsContainer = document.querySelector('.brush-tabs');
+        const addGroupBtn = document.querySelector('.brush-add-group-btn');
+        
+        const newTab = document.createElement('button');
+        newTab.className = 'brush-tab';
+        newTab.dataset.tab = tabId;
+        newTab.textContent = tabName;
+        
+        // Insert before the add group button
+        tabsContainer.insertBefore(newTab, addGroupBtn);
+        
+        // Add event listener for the new tab
+        newTab.addEventListener('click', () => {
+            this.switchBrushTab(tabId, newTab);
+        });
+    }
+
+    // ===== REFERENCE IMAGES (FULLY FUNCTIONAL) =====
+    setupReferenceImages() {
+        this.referenceImages = [
+            { id: 'ref-1', name: 'Reference 1', image: null },
+            { id: 'ref-2', name: 'Reference 2', image: null },
+            { id: 'ref-3', name: 'Reference 3', image: null }
+        ];
+        
+        this.openRefViewers = new Map(); // Track open viewers
+        this.viewerCounter = 0; // For unique positioning
+        
+        this.setupReferenceImagesEvents();
+        this.renderReferenceImagesGrid();
+    }
+    
+    setupReferenceImagesEvents() {
+        console.log('Setting up reference images events...');
+        const refImagesPanel = document.getElementById('saved-ref-images-panel');
+        console.log('Reference images panel:', refImagesPanel);
+        
+        // Close button for reference images panel
+        const refImagesClose = document.querySelector('.ref-images-close');
+        if (refImagesClose) {
+            refImagesClose.addEventListener('click', () => {
+                this.closeReferenceImagesPanel();
+            });
+        }
+        
+        // Reference image items - use event delegation since items are dynamically created
+        const refImagesGrid = document.querySelector('.ref-images-grid');
+        if (refImagesGrid) {
+            refImagesGrid.addEventListener('click', (e) => {
+                console.log('Grid clicked, target:', e.target);
+                const refImageItem = e.target.closest('.ref-image-item:not(.add-new)');
+                console.log('Found ref image item:', refImageItem);
+                if (refImageItem) {
+                    const imageId = refImageItem.dataset.imageId;
+                    console.log('Image ID:', imageId);
+                    this.openReferenceImageViewer(imageId);
+                }
+            });
+        }
+        
+        // Add new reference image
+        const addRefImage = document.getElementById('add-ref-image');
+        if (addRefImage) {
+            addRefImage.addEventListener('click', () => {
+                this.addNewReferenceImage();
+            });
+        }
+        
+        
+        // Click outside to close
+        document.addEventListener('click', (e) => {
+            if (refImagesPanel && refImagesPanel.classList.contains('is-visible')) {
+                if (!refImagesPanel.contains(e.target) && !e.target.closest('#saved-ref-images')) {
+                    this.closeReferenceImagesPanel();
+                }
+            }
+            
+            if (refImageViewer && refImageViewer.classList.contains('is-visible')) {
+                if (!refImageViewer.contains(e.target)) {
+                    this.closeReferenceImageViewer();
+                }
+            }
+        });
+    }
+    
+    toggleReferenceImagesPanel() {
+        console.log('Toggling reference images panel...');
+        const panel = document.getElementById('saved-ref-images-panel');
+        console.log('Panel element:', panel);
+        if (panel) {
+            const isVisible = panel.classList.contains('is-visible');
+            console.log('Panel is visible:', isVisible);
+            if (isVisible) {
+                this.closeReferenceImagesPanel();
+            } else {
+                this.openReferenceImagesPanel();
+            }
+            // Debug: check classes after toggle
+            console.log('Panel classes after toggle:', panel.className);
+            console.log('Panel computed display:', window.getComputedStyle(panel).display);
+        } else {
+            console.error('Reference images panel not found!');
+        }
+    }
+    
+    openReferenceImagesPanel() {
+        console.log('Opening reference images panel...');
+        const panel = document.getElementById('saved-ref-images-panel');
+        if (panel) {
+            panel.classList.add('is-visible');
+            console.log('Panel classes after opening:', panel.className);
+            console.log('Panel computed display after opening:', window.getComputedStyle(panel).display);
+        } else {
+            console.error('Panel not found when trying to open');
+        }
+    }
+    
+    closeReferenceImagesPanel() {
+        console.log('Closing reference images panel...');
+        const panel = document.getElementById('saved-ref-images-panel');
+        if (panel) {
+            panel.classList.remove('is-visible');
+            console.log('Panel classes after closing:', panel.className);
+        } else {
+            console.error('Panel not found when trying to close');
+        }
+    }
+    
+    openReferenceImageViewer(imageId) {
+        console.log('Opening reference image viewer for:', imageId);
+        
+        // Check if viewer is already open for this image
+        if (this.openRefViewers.has(imageId)) {
+            console.log('Viewer already open for this image');
+            return;
+        }
+        
+        const refImage = this.referenceImages.find(img => img.id === imageId);
+        if (!refImage) {
+            console.error('Reference image not found:', imageId);
+            return;
+        }
+        
+        // Create new viewer element
+        const viewer = this.createRefImageViewer(refImage);
+        
+        // Add to container
+        const container = document.getElementById('ref-viewers-container');
+        if (container) {
+            container.appendChild(viewer);
+            this.openRefViewers.set(imageId, viewer);
+            console.log('Reference image viewer opened successfully');
+        } else {
+            console.error('Reference viewers container not found');
+        }
+    }
+    
+    createRefImageViewer(refImage) {
+        const viewer = document.createElement('div');
+        viewer.className = 'ref-image-viewer';
+        viewer.dataset.imageId = refImage.id;
+        
+        // Position viewer with offset to avoid overlap
+        const offset = this.viewerCounter * 30;
+        viewer.style.top = `${50 + offset}px`;
+        viewer.style.left = `${50 + offset}px`;
+        this.viewerCounter++;
+        
+        // Create content area (no header)
+        const content = document.createElement('div');
+        content.className = 'ref-viewer-content';
+        
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'ref-viewer-image-container';
+        
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'ref-viewer-image';
+        
+        const placeholder = document.createElement('div');
+        placeholder.className = 'ref-viewer-placeholder';
+        placeholder.innerHTML = `<span class="ref-viewer-text">${refImage.name}</span>`;
+        
+        imageDiv.appendChild(placeholder);
+        imageContainer.appendChild(imageDiv);
+        content.appendChild(imageContainer);
+        
+        viewer.appendChild(content);
+        
+        // Add drag functionality for viewer (drag from anywhere on the viewer)
+        this.makeViewerDraggable(viewer, viewer);
+        
+        // Add touch gesture support for image content
+        this.addTouchGestures(imageDiv, imageContainer);
+        
+        return viewer;
+    }
+    
+    makeViewerDraggable(viewer, dragElement) {
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+        
+        dragElement.addEventListener('mousedown', (e) => {
+            // Don't start dragging if clicking on:
+            // - Image content
+            // - Any interactive elements
+            if (e.target.closest('.ref-viewer-image') || 
+                e.target.closest('button') ||
+                e.target.closest('input')) {
+                return;
+            }
+            
+            // Only allow dragging from the border area (not the content)
+            const rect = viewer.getBoundingClientRect();
+            const borderSize = 3; // Match the CSS border width
+            
+            // Check if click is within the border area
+            const isInBorder = (
+                e.clientX < rect.left + borderSize || // Left border
+                e.clientX > rect.right - borderSize || // Right border
+                e.clientY < rect.top + borderSize || // Top border
+                e.clientY > rect.bottom - borderSize // Bottom border
+            );
+            
+            if (!isInBorder) return;
+            
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = parseInt(window.getComputedStyle(viewer).left);
+            startTop = parseInt(window.getComputedStyle(viewer).top);
+            
+            viewer.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            viewer.style.left = `${startLeft + deltaX}px`;
+            viewer.style.top = `${startTop + deltaY}px`;
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                viewer.style.cursor = 'default';
+            }
+        });
+    }
+    
+    addTouchGestures(imageDiv, imageContainer) {
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let lastDistance = 0;
+        let lastCenterX = 0;
+        let lastCenterY = 0;
+        let isGesturing = false;
+        
+        // Touch events
+        imageDiv.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                // Two finger gesture - pinch/zoom
+                isGesturing = true;
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                
+                lastDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                
+                lastCenterX = (touch1.clientX + touch2.clientX) / 2;
+                lastCenterY = (touch1.clientY + touch2.clientY) / 2;
+                
+                e.preventDefault();
+            } else if (e.touches.length === 1 && scale > 1) {
+                // Single finger pan when zoomed
+                isGesturing = true;
+                const touch = e.touches[0];
+                lastCenterX = touch.clientX;
+                lastCenterY = touch.clientY;
+                
+                e.preventDefault();
+            }
+        });
+        
+        imageDiv.addEventListener('touchmove', (e) => {
+            if (!isGesturing) return;
+            
+            if (e.touches.length === 2) {
+                // Pinch zoom
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                
+                const currentDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                
+                const scaleChange = currentDistance / lastDistance;
+                scale *= scaleChange;
+                scale = Math.max(0.5, Math.min(scale, 5)); // Limit zoom range
+                
+                // Update center point for zoom
+                const currentCenterX = (touch1.clientX + touch2.clientX) / 2;
+                const currentCenterY = (touch1.clientY + touch2.clientY) / 2;
+                
+                const rect = imageContainer.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const deltaX = currentCenterX - lastCenterX;
+                const deltaY = currentCenterY - lastCenterY;
+                
+                translateX += deltaX / scale;
+                translateY += deltaY / scale;
+                
+                lastDistance = currentDistance;
+                lastCenterX = currentCenterX;
+                lastCenterY = currentCenterY;
+                
+                this.updateImageTransform(imageDiv, scale, translateX, translateY);
+                e.preventDefault();
+            } else if (e.touches.length === 1 && scale > 1) {
+                // Pan when zoomed
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - lastCenterX;
+                const deltaY = touch.clientY - lastCenterY;
+                
+                translateX += deltaX / scale;
+                translateY += deltaY / scale;
+                
+                lastCenterX = touch.clientX;
+                lastCenterY = touch.clientY;
+                
+                this.updateImageTransform(imageDiv, scale, translateX, translateY);
+                e.preventDefault();
+            }
+        });
+        
+        imageDiv.addEventListener('touchend', (e) => {
+            isGesturing = false;
+        });
+        
+        // Mouse wheel zoom
+        imageDiv.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            
+            const rect = imageContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const deltaX = e.clientX - centerX;
+            const deltaY = e.clientY - centerY;
+            
+            const scaleChange = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = scale * scaleChange;
+            
+            if (newScale >= 0.5 && newScale <= 5) {
+                // Adjust translation to zoom towards mouse position
+                translateX = translateX * scaleChange - deltaX * (scaleChange - 1) / newScale;
+                translateY = translateY * scaleChange - deltaY * (scaleChange - 1) / newScale;
+                
+                scale = newScale;
+                this.updateImageTransform(imageDiv, scale, translateX, translateY);
+            }
+        });
+        
+        // Double tap to reset (separate event listener to avoid conflicts)
+        let lastTap = 0;
+        let tapTimeout;
+        
+        imageDiv.addEventListener('touchend', (e) => {
+            if (e.touches.length === 0 && !isGesturing) {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+                
+                if (tapLength < 500 && tapLength > 0) {
+                    // Double tap - reset zoom and pan
+                    clearTimeout(tapTimeout);
+                    scale = 1;
+                    translateX = 0;
+                    translateY = 0;
+                    this.updateImageTransform(imageDiv, scale, translateX, translateY);
+                } else {
+                    // Single tap - set timeout to prevent accidental double tap
+                    clearTimeout(tapTimeout);
+                    tapTimeout = setTimeout(() => {
+                        lastTap = currentTime;
+                    }, 500);
+                }
+            }
+        });
+    }
+    
+    updateImageTransform(imageDiv, scale, translateX, translateY) {
+        // Use transform3d for better performance and to prevent layout shifts
+        imageDiv.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
+        imageDiv.style.transformOrigin = 'center center';
+        imageDiv.style.willChange = 'transform'; // Optimize for animations
+    }
+    
+    closeReferenceImageViewer(imageId) {
+        const viewer = this.openRefViewers.get(imageId);
+        if (viewer) {
+            viewer.remove();
+            this.openRefViewers.delete(imageId);
+        }
+    }
+    
+    addNewReferenceImage() {
+        const newImageName = prompt('Enter name for new reference image:');
+        if (newImageName && newImageName.trim()) {
+            const newId = `ref-${Date.now()}`;
+            const newImage = {
+                id: newId,
+                name: newImageName,
+                image: null
+            };
+            
+            this.referenceImages.push(newImage);
+            this.renderReferenceImagesGrid();
+            
+            alert(`New reference image "${newImageName}" added!`);
+        }
+    }
+    
+    renderReferenceImagesGrid() {
+        const grid = document.querySelector('.ref-images-grid');
+        if (!grid) return;
+        
+        // Clear existing items except add new button
+        const existingItems = grid.querySelectorAll('.ref-image-item:not(.add-new)');
+        existingItems.forEach(item => item.remove());
+        
+        // Add reference image items
+        this.referenceImages.forEach((image, index) => {
+            const item = document.createElement('div');
+            item.className = 'ref-image-item';
+            item.dataset.imageId = image.id;
+            
+            item.innerHTML = `
+                <div class="ref-image-placeholder">
+                    <span class="ref-image-text">Ref ${index + 1}</span>
+                </div>
+                <div class="ref-image-name">${image.name}</div>
+            `;
+            
+            // Insert before add new button
+            const addNewBtn = document.getElementById('add-ref-image');
+            grid.insertBefore(item, addNewBtn);
+            
+            // Add click event
+            item.addEventListener('click', () => {
+                this.openReferenceImageViewer(image.id);
+            });
+        });
+    }
+    
+
     // ===== COLOR PICKER (FULLY FUNCTIONAL) =====
     setupColorPicker() {
         const colorPicker = document.getElementById('color-picker');
@@ -1951,7 +2733,8 @@ class IbisPaintWorkspace {
         const savedRefImagesBtn = document.getElementById('saved-ref-images');
         if (savedRefImagesBtn) {
             savedRefImagesBtn.addEventListener('click', () => {
-                this.toggleSavedRefImages();
+                console.log('Saved ref images button clicked');
+                this.toggleReferenceImagesPanel();
             });
         }
     }
@@ -2196,8 +2979,7 @@ class IbisPaintWorkspace {
     }
     
     toggleSavedRefImages() {
-        console.log('Saved reference images toggled');
-        // TODO: Implement saved reference images functionality
+        this.toggleReferenceImagesPanel();
     }
     
     // ===== ACTION HANDLERS (FULLY FUNCTIONAL) =====
