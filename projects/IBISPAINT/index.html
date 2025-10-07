@@ -1,0 +1,263 @@
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ibis Paint Workspace - Clean UI</title>
+    <link rel="stylesheet" href="css/styles.css">
+    </head>
+  <body>
+    <div id="app" class="app-container">
+      <div class="workspace">
+        <!-- Main stage: overlays + canvas + bottom bar -->
+        <main class="stage">
+          <!-- Top-right floating controls -->
+          <div class="top-right-controls">
+            <button class="circle-btn" id="navigation" title="Navigation">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </button>
+            <button class="circle-btn" id="selection-area" title="Selection Area">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm2 2h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z"/>
+              </svg>
+            </button>
+            <button class="circle-btn" id="stabilizer" title="Stabilizer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            </button>
+            <button class="circle-btn" id="ruler" title="Ruler">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path d="M2 4h20v2H2V4zm0 4h20v2H2V8zm0 4h20v2H2v-2zm0 4h20v2H2v-2z"/>
+              </svg>
+            </button>
+            <button class="circle-btn" id="saved-ref-images" title="Saved Reference Images">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Navigation popup -->
+          <div class="navigation-popup" id="navigation-popup">
+            <div class="nav-toggle">
+              <label class="nav-toggle-label">
+                <input type="checkbox" id="nav-panel-toggle" class="nav-toggle-input">
+                <span class="nav-toggle-text">Navigation Panel</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Navigation Panel -->
+          <div class="navigation-panel" id="navigation-panel">
+            <div class="nav-panel-content">
+              <div class="nav-viewport">
+                <canvas id="nav-canvas" class="nav-canvas"></canvas>
+              </div>
+            </div>
+            <div class="nav-resize-handle"></div>
+          </div>
+
+          <!-- Canvas Area -->
+          <div class="canvas-container">
+            <div id="canvas-container" class="canvas-frame">
+              <canvas id="drawing-canvas" class="w-full h-full cursor-crosshair"></canvas>
+            </div>
+          </div>
+
+          <!-- Right floating labeled toolbar -->
+          <aside class="right-float-toolbar" aria-label="Right tool toolbar">
+            <button class="tool-tile" data-tool="transform">
+              <div class="tool-icon icon-move"></div>
+              <span class="tool-label">Transform</span>
+            </button>
+            <button class="tool-tile" data-tool="magic">
+              <div class="tool-icon icon-wand"></div>
+              <span class="tool-label">Magic Wand</span>
+            </button>
+            <button class="tool-tile" data-tool="lasso">
+              <div class="tool-icon icon-lasso"></div>
+              <span class="tool-label">Lasso</span>
+            </button>
+            <button class="tool-tile" data-tool="fx">
+              <div class="tool-icon icon-fx"></div>
+              <span class="tool-label">Filter</span>
+            </button>
+            <button class="tool-tile is-active" data-tool="brush">
+              <div class="tool-icon icon-brush"></div>
+              <span class="tool-label">Brush</span>
+            </button>
+            <button class="tool-tile" data-tool="eraser">
+              <div class="tool-icon icon-eraser"></div>
+              <span class="tool-label">Eraser</span>
+            </button>
+            <button class="tool-tile" data-tool="smudge">
+              <div class="tool-icon icon-smudge"></div>
+              <span class="tool-label">Smudge</span>
+            </button>
+            <button class="tool-tile" data-tool="blur">
+              <div class="tool-icon icon-blur"></div>
+              <span class="tool-label">Blur</span>
+            </button>
+            <button class="tool-tile" data-tool="special">
+              <div class="tool-icon icon-star"></div>
+              <span class="tool-label">Special</span>
+            </button>
+            <button class="tool-tile" data-tool="bucket">
+              <div class="tool-icon icon-bucket"></div>
+              <span class="tool-label">Bucket</span>
+            </button>
+            <button class="tool-tile" data-tool="vector">
+              <div class="tool-icon icon-vector"></div>
+              <span class="tool-label">Vector</span>
+            </button>
+            <button class="tool-tile" data-tool="text">
+              <div class="tool-icon icon-text"></div>
+              <span class="tool-label">Text</span>
+            </button>
+            <button class="tool-tile" data-tool="frame">
+              <div class="tool-icon icon-frame"></div>
+              <span class="tool-label">Frame</span>
+            </button>
+            <button class="tool-tile" data-tool="eyedropper">
+              <div class="tool-icon icon-eyedropper"></div>
+              <span class="tool-label">Eyedropper</span>
+            </button>
+            <button class="tool-tile" data-tool="canvas">
+              <div class="tool-icon icon-canvas"></div>
+              <span class="tool-label">Canvas</span>
+            </button>
+          </aside>
+
+          <!-- Hide/Show toolbar button (always visible, positioned like it's in the toolbar) -->
+          <button id="btn-hidebar" class="hide-toolbar-btn icon-chevron-down" title="Hide toolbar"></button>
+
+          <!-- Layers Panel -->
+          <div id="layers-panel" class="layers-panel">
+            <div class="layers-content">
+              <!-- Selection Layer -->
+              <div class="layer-item selection-layer">
+                <div class="layer-thumbnail selection-thumbnail">
+                  <div class="checkered-pattern"></div>
+                </div>
+                <div class="layer-info">
+                  <span class="layer-name">No Selection</span>
+                </div>
+              </div>
+              
+              <!-- Layer List -->
+              <div id="layers-list" class="layers-list">
+                <!-- Layers will be dynamically added here -->
+              </div>
+              
+              <!-- Background Layer -->
+              <div class="layer-item background-layer">
+                <div class="layer-thumbnail background-thumbnail">
+                  <div class="bg-color-preview" style="background: #000000;"></div>
+                </div>
+                <div class="layer-info">
+                  <span class="layer-name">Background</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Layer Controls -->
+            <div class="layers-footer">
+              <div class="layer-controls">
+                <button class="layer-btn" id="add-layer" title="Add Layer">+</button>
+                <button class="layer-btn" id="add-folder" title="Create Folder">📁</button>
+                <button class="layer-btn" id="duplicate-layer" title="Duplicate Layer">⧉</button>
+                <button class="layer-btn" id="import-layer" title="Import Image">📷</button>
+                <button class="layer-btn" id="merge-layer" title="Merge Down">⤴</button>
+                <button class="layer-btn" id="delete-layer" title="Delete Layer">🗑</button>
+                <button class="layer-btn" id="move-up" title="Move Up">↑</button>
+                <button class="layer-btn" id="move-down" title="Move Down">↓</button>
+              </div>
+              
+              <div class="layer-settings">
+                <div class="opacity-control">
+                  <button class="opacity-btn">−</button>
+                  <div class="opacity-slider-container">
+                    <input type="range" id="layer-opacity" class="opacity-slider" min="0" max="100" value="100">
+                    <span class="opacity-value">100%</span>
+                  </div>
+                  <button class="opacity-btn">+</button>
+                </div>
+                
+                <div class="blend-mode-control">
+                  <select id="blend-mode" class="blend-mode-select">
+                    <option value="normal">Normal</option>
+                    <option value="multiply">Multiply</option>
+                    <option value="screen">Screen</option>
+                    <option value="overlay">Overlay</option>
+                    <option value="soft-light">Soft Light</option>
+                    <option value="hard-light">Hard Light</option>
+                    <option value="color-dodge">Color Dodge</option>
+                    <option value="color-burn">Color Burn</option>
+                    <option value="darken">Darken</option>
+                    <option value="lighten">Lighten</option>
+                    <option value="difference">Difference</option>
+                    <option value="exclusion">Exclusion</option>
+                  </select>
+                  <button class="color-picker-btn" id="layer-color-picker" title="Layer Color">●</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Bottom toolbar (placeholder controls) -->
+          <div class="bottom-toolbar" aria-label="Bottom toolbar">
+            <!-- 1) Switch Brush↔Eraser -->
+            <button id="btn-switch" class="bottom-btn icon-eraser" title="Switch Brush/Eraser"></button>
+            <!-- 2) Brush (opens brush types) -->
+            <button id="btn-brush" class="bottom-btn icon-brush" title="Brush"></button>
+            <!-- 3) Color (shows current color) -->
+            <button id="btn-color" class="bottom-btn bottom-btn-color" title="Color"></button>
+            <!-- 4) Spacer for hide button -->
+            <div class="toolbar-spacer"></div>
+            <!-- 5) Undo -->
+            <button id="btn-undo" class="bottom-btn icon-undo" title="Undo"></button>
+            <!-- 6) Redo -->
+            <button id="btn-redo" class="bottom-btn icon-redo" title="Redo"></button>
+            <!-- 7) Layers panel -->
+            <button id="btn-layers" class="bottom-btn icon-layers" title="Layers"></button>
+            <!-- 8) Back/Menu -->
+            <button id="btn-back" class="bottom-btn icon-back" title="Menu / Export"></button>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Hidden panels for core functionality -->
+    <div class="hidden-panel">
+        <!-- Layer management (hidden but functional) -->
+        <div id="layers-list"></div>
+        
+        <!-- Color picker (hidden but functional) -->
+        <input type="color" id="color-picker" value="#3b82f6">
+        <input type="text" id="hex-input" value="#3b82f6">
+        
+        <!-- Brush controls (hidden but functional) -->
+        <input type="range" id="brush-size-slider" min="1" max="100" value="20">
+        <input type="range" id="brush-opacity-slider" min="1" max="100" value="100">
+        <input type="range" id="stabilizer-slider" min="0" max="100" value="25">
+        
+        <!-- Undo/Redo buttons (hidden but functional) -->
+        <button id="undo-btn">Undo</button>
+        <button id="redo-btn">Redo</button>
+        <button id="bottom-undo-btn">Undo</button>
+        <button id="bottom-redo-btn">Redo</button>
+        
+        <!-- Add layer button (hidden but functional) -->
+        <button id="add-layer-btn">Add Layer</button>
+        
+        <!-- Play button (hidden but functional) -->
+        <button id="play-btn">Play</button>
+    </div>
+
+    <script src="js/icons.js"></script>
+    <script src="js/app.js"></script>
+    </body>
+  </html>
