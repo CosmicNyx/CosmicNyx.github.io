@@ -2356,6 +2356,11 @@ class IbisPaintWorkspace {
         viewer.style.left = `${50 + offset}px`;
         this.viewerCounter++;
         
+        // Top drag handle (invisible)
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'ref-viewer-drag-handle';
+        viewer.appendChild(dragHandle);
+        
         // Create content area (no header)
         const content = document.createElement('div');
         content.className = 'ref-viewer-content';
@@ -2376,8 +2381,8 @@ class IbisPaintWorkspace {
         
         viewer.appendChild(content);
         
-        // Add drag functionality for viewer (drag from anywhere on the viewer)
-        this.makeViewerDraggable(viewer, viewer);
+        // Add drag functionality: allow dragging from handle or borders
+        this.makeViewerDraggable(viewer, viewer, dragHandle);
         
         // Add touch gesture support for image content
         this.addTouchGestures(imageDiv, imageContainer);
@@ -2385,33 +2390,30 @@ class IbisPaintWorkspace {
         return viewer;
     }
     
-    makeViewerDraggable(viewer, dragElement) {
+    makeViewerDraggable(viewer, dragElement, dragHandle) {
         let isDragging = false;
         let startX, startY, startLeft, startTop;
         
-        dragElement.addEventListener('mousedown', (e) => {
-            // Don't start dragging if clicking on:
-            // - Image content
-            // - Any interactive elements
-            if (e.target.closest('.ref-viewer-image') || 
-                e.target.closest('button') ||
-                e.target.closest('input')) {
+        const onMouseDown = (e) => {
+            // Don't start dragging if clicking on image content or inputs
+            if (e.target.closest('.ref-viewer-image') || e.target.closest('button') || e.target.closest('input')) {
                 return;
             }
             
-            // Only allow dragging from the border area (not the content)
-            const rect = viewer.getBoundingClientRect();
-            const borderSize = 3; // Match the CSS border width
+            // Always allow drag when starting from the explicit handle
+            const startedOnHandle = !!(dragHandle && (e.target === dragHandle || dragHandle.contains(e.target)));
             
-            // Check if click is within the border area
+            // Otherwise, allow drag only when clicking near borders
+            const rect = viewer.getBoundingClientRect();
+            const borderSize = 6; // easier to grab
             const isInBorder = (
-                e.clientX < rect.left + borderSize || // Left border
-                e.clientX > rect.right - borderSize || // Right border
-                e.clientY < rect.top + borderSize || // Top border
-                e.clientY > rect.bottom - borderSize // Bottom border
+                e.clientX <= rect.left + borderSize ||
+                e.clientX >= rect.right - borderSize ||
+                e.clientY <= rect.top + borderSize ||
+                e.clientY >= rect.bottom - borderSize
             );
             
-            if (!isInBorder) return;
+            if (!startedOnHandle && !isInBorder) return;
             
             isDragging = true;
             startX = e.clientX;
@@ -2421,14 +2423,15 @@ class IbisPaintWorkspace {
             
             viewer.style.cursor = 'grabbing';
             e.preventDefault();
-        });
+        };
+        
+        dragElement.addEventListener('mousedown', onMouseDown);
+        if (dragHandle) dragHandle.addEventListener('mousedown', onMouseDown);
         
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-            
             const deltaX = e.clientX - startX;
             const deltaY = e.clientY - startY;
-            
             viewer.style.left = `${startLeft + deltaX}px`;
             viewer.style.top = `${startTop + deltaY}px`;
         });

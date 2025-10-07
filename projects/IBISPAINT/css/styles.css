@@ -1664,6 +1664,18 @@ body {
     max-height: 80vh;
 }
 
+/* Invisible drag handle at the top of each ref viewer */
+.ref-viewer-drag-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 14px; /* easy to grab, but unobtrusive */
+    cursor: grab;
+    /* keep invisible; no background */
+    z-index: 2;
+}
+
 
 
 
