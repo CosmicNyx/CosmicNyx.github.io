@@ -726,6 +726,7 @@ class IbisPaintWorkspace {
         // Add listener with a small delay to prevent immediate closing
         setTimeout(() => {
             document.addEventListener('click', this.clickOutsideHandler);
+            document.addEventListener('touchstart', this.clickOutsideHandler, { passive: true });
             document.addEventListener('keydown', this.escapeKeyHandler);
         }, 100);
     }
@@ -733,6 +734,7 @@ class IbisPaintWorkspace {
     removeClickOutsideListener() {
         if (this.clickOutsideHandler) {
             document.removeEventListener('click', this.clickOutsideHandler);
+            document.removeEventListener('touchstart', this.clickOutsideHandler);
             this.clickOutsideHandler = null;
         }
         if (this.escapeKeyHandler) {
@@ -2001,6 +2003,25 @@ class IbisPaintWorkspace {
             });
         });
         
+        // Only add brush outside click handler once
+        if (!this.brushOutsideClickHandler) {
+            // Click/touch outside to close brush panel
+            this.brushOutsideClickHandler = (e) => {
+                const brushPanel = document.getElementById('brush-panel');
+                const brushBtn = document.getElementById('btn-brush');
+                
+                // If panel is open and click/touch is outside the panel and not on the button
+                if (brushPanel && brushPanel.classList.contains('is-visible') &&
+                    !brushPanel.contains(e.target) && 
+                    !brushBtn.contains(e.target)) {
+                    this.closeBrushPanel();
+                }
+            };
+            
+            document.addEventListener('click', this.brushOutsideClickHandler);
+            document.addEventListener('touchstart', this.brushOutsideClickHandler, { passive: true });
+        }
+        
         // Brush control sliders
         const brushSliders = document.querySelectorAll('.brush-slider');
         brushSliders.forEach(slider => {
@@ -2215,6 +2236,7 @@ class IbisPaintWorkspace {
         
         this.openRefViewers = new Map(); // Track open viewers
         this.viewerCounter = 0; // For unique positioning
+        this.refViewerZIndex = 1000; // Base z-index for reference viewers
         
         this.setupReferenceImagesEvents();
         this.renderReferenceImagesGrid();
@@ -2225,13 +2247,24 @@ class IbisPaintWorkspace {
         const refImagesPanel = document.getElementById('saved-ref-images-panel');
         console.log('Reference images panel:', refImagesPanel);
         
-        // Close button for reference images panel
-        const refImagesClose = document.querySelector('.ref-images-close');
-        if (refImagesClose) {
-            refImagesClose.addEventListener('click', () => {
+        // Only add event listeners once
+        if (this.refImagesOutsideClickHandler) return;
+        
+        // Click/touch outside to close reference images panel
+        this.refImagesOutsideClickHandler = (e) => {
+            const refImagesPanel = document.getElementById('saved-ref-images-panel');
+            const savedRefImagesBtn = document.getElementById('saved-ref-images');
+            
+            // If panel is open and click/touch is outside the panel and not on the button
+            if (refImagesPanel && refImagesPanel.classList.contains('show') &&
+                !refImagesPanel.contains(e.target) && 
+                !savedRefImagesBtn.contains(e.target)) {
                 this.closeReferenceImagesPanel();
-            });
-        }
+            }
+        };
+        
+        document.addEventListener('click', this.refImagesOutsideClickHandler);
+        document.addEventListener('touchstart', this.refImagesOutsideClickHandler, { passive: true });
         
         // Reference image items - use event delegation since items are dynamically created
         const refImagesGrid = document.querySelector('.ref-images-grid');
@@ -2361,6 +2394,19 @@ class IbisPaintWorkspace {
         dragHandle.className = 'ref-viewer-drag-handle';
         viewer.appendChild(dragHandle);
         
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'ref-viewer-close';
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('click', () => {
+            this.closeReferenceImageViewer(refImage.id);
+        });
+        closeBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.closeReferenceImageViewer(refImage.id);
+        }, { passive: false });
+        viewer.appendChild(closeBtn);
+        
         // Create content area (no header)
         const content = document.createElement('div');
         content.className = 'ref-viewer-content';
@@ -2381,8 +2427,19 @@ class IbisPaintWorkspace {
         
         viewer.appendChild(content);
         
+        // Add resize handle
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'resize-handle';
+        viewer.appendChild(resizeHandle);
+        
         // Add drag functionality: allow dragging from handle or borders
         this.makeViewerDraggable(viewer, viewer, dragHandle);
+        
+        // Add resize functionality
+        this.makeViewerResizable(viewer);
+        
+        // Add click-to-front functionality
+        this.addClickToFront(viewer);
         
         // Add touch gesture support for image content
         this.addTouchGestures(imageDiv, imageContainer);
@@ -2394,38 +2451,200 @@ class IbisPaintWorkspace {
         let isDragging = false;
         let startX, startY, startLeft, startTop;
         
+        const bringToFront = () => {
+            this.bringRefViewerToFront(viewer);
+        };
+        
+        const startDrag = (clientX, clientY) => {
+            // Bring this viewer to the front
+            bringToFront();
+            
+            isDragging = true;
+            startX = clientX;
+            startY = clientY;
+            startLeft = parseInt(window.getComputedStyle(viewer).left);
+            startTop = parseInt(window.getComputedStyle(viewer).top);
+            
+            viewer.style.cursor = 'grabbing';
+        };
+        
         const onMouseDown = (e) => {
             // Only allow dragging when starting from the explicit top handle
             const startedOnHandle = !!(dragHandle && (e.target === dragHandle || dragHandle.contains(e.target)));
             if (!startedOnHandle) return;
             
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            startLeft = parseInt(window.getComputedStyle(viewer).left);
-            startTop = parseInt(window.getComputedStyle(viewer).top);
-            
-            viewer.style.cursor = 'grabbing';
+            startDrag(e.clientX, e.clientY);
             e.preventDefault();
         };
         
-        // Listen only on the handle
-        if (dragHandle) dragHandle.addEventListener('mousedown', onMouseDown);
+        const onTouchStart = (e) => {
+            // Only allow dragging when starting from the explicit top handle
+            const startedOnHandle = !!(dragHandle && (e.target === dragHandle || dragHandle.contains(e.target)));
+            if (!startedOnHandle || e.touches.length !== 1) return;
+            
+            const touch = e.touches[0];
+            startDrag(touch.clientX, touch.clientY);
+            e.preventDefault();
+        };
         
-        document.addEventListener('mousemove', (e) => {
+        const updatePosition = (clientX, clientY) => {
             if (!isDragging) return;
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
+            const deltaX = clientX - startX;
+            const deltaY = clientY - startY;
             viewer.style.left = `${startLeft + deltaX}px`;
             viewer.style.top = `${startTop + deltaY}px`;
-        });
+        };
         
-        document.addEventListener('mouseup', () => {
+        const stopDrag = () => {
             if (isDragging) {
                 isDragging = false;
                 viewer.style.cursor = 'default';
             }
+        };
+        
+        // Mouse events
+        if (dragHandle) dragHandle.addEventListener('mousedown', onMouseDown);
+        
+        // Touch events
+        if (dragHandle) dragHandle.addEventListener('touchstart', onTouchStart, { passive: false });
+        
+        document.addEventListener('mousemove', (e) => updatePosition(e.clientX, e.clientY));
+        document.addEventListener('mouseup', stopDrag);
+        
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                const touch = e.touches[0];
+                updatePosition(touch.clientX, touch.clientY);
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', stopDrag);
+    }
+    
+    makeViewerResizable(viewer) {
+        const resizeHandle = viewer.querySelector('.resize-handle');
+        if (!resizeHandle) return;
+        
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+        let mouseMoveHandler, mouseUpHandler, touchMoveHandler, touchEndHandler;
+        
+        const startResize = (clientX, clientY) => {
+            isResizing = true;
+            startX = clientX;
+            startY = clientY;
+            startWidth = parseInt(document.defaultView.getComputedStyle(viewer).width, 10);
+            startHeight = parseInt(document.defaultView.getComputedStyle(viewer).height, 10);
+            
+            // Add visual feedback
+            viewer.style.cursor = 'nw-resize';
+            document.body.style.cursor = 'nw-resize';
+        };
+        
+        const doResize = (clientX, clientY) => {
+            if (!isResizing) return;
+            
+            const newWidth = startWidth + clientX - startX;
+            const newHeight = startHeight + clientY - startY;
+            
+            viewer.style.width = Math.max(200, newWidth) + 'px';
+            viewer.style.height = Math.max(150, newHeight) + 'px';
+        };
+        
+        const stopResize = () => {
+            if (!isResizing) return;
+            
+            isResizing = false;
+            viewer.style.cursor = 'default';
+            document.body.style.cursor = 'default';
+            
+            // Remove event listeners
+            if (mouseMoveHandler) document.removeEventListener('mousemove', mouseMoveHandler);
+            if (mouseUpHandler) document.removeEventListener('mouseup', mouseUpHandler);
+            if (touchMoveHandler) document.removeEventListener('touchmove', touchMoveHandler);
+            if (touchEndHandler) document.removeEventListener('touchend', touchEndHandler);
+        };
+        
+        // Mouse events
+        resizeHandle.addEventListener('mousedown', (e) => {
+            startResize(e.clientX, e.clientY);
+            e.preventDefault();
+            
+            // Create bound event handlers
+            mouseMoveHandler = (e) => doResize(e.clientX, e.clientY);
+            mouseUpHandler = stopResize;
+            
+            document.addEventListener('mousemove', mouseMoveHandler);
+            document.addEventListener('mouseup', mouseUpHandler);
         });
+        
+        // Touch events
+        resizeHandle.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                startResize(touch.clientX, touch.clientY);
+                e.preventDefault();
+                
+                // Create bound event handlers
+                touchMoveHandler = (e) => {
+                    if (isResizing && e.touches.length === 1) {
+                        const touch = e.touches[0];
+                        doResize(touch.clientX, touch.clientY);
+                        e.preventDefault();
+                    }
+                };
+                touchEndHandler = stopResize;
+                
+                document.addEventListener('touchmove', touchMoveHandler, { passive: false });
+                document.addEventListener('touchend', touchEndHandler);
+            }
+        }, { passive: false });
+    }
+    
+    addClickToFront(viewer) {
+        const bringToFront = () => {
+            // Get the highest z-index among all reference viewers
+            let maxZIndex = 1000;
+            this.openRefViewers.forEach((otherViewer) => {
+                const zIndex = parseInt(window.getComputedStyle(otherViewer).zIndex) || 1000;
+                if (zIndex > maxZIndex) {
+                    maxZIndex = zIndex;
+                }
+            });
+            
+            // Set this viewer to be on top, but keep it below navigation panel (z-index: 2000)
+            const newZIndex = Math.min(maxZIndex + 1, 1999);
+            viewer.style.zIndex = newZIndex;
+        };
+        
+        // Mouse click events
+        viewer.addEventListener('click', (e) => {
+            // Don't bring to front if clicking on interactive elements
+            if (e.target.closest('button') || e.target.closest('input')) {
+                return;
+            }
+            
+            // Don't bring to front if this was a drag operation
+            if (e.detail === 0) return; // Programmatic click
+            
+            bringToFront();
+        });
+        
+        // Touch events
+        viewer.addEventListener('touchstart', (e) => {
+            // Don't bring to front if touching interactive elements
+            if (e.target.closest('button') || e.target.closest('input')) {
+                return;
+            }
+            
+            // Small delay to distinguish from drag gestures
+            setTimeout(() => {
+                if (!e.defaultPrevented) {
+                    bringToFront();
+                }
+            }, 100);
+        }, { passive: true });
     }
     
     addTouchGestures(imageDiv, imageContainer) {
@@ -2586,6 +2805,39 @@ class IbisPaintWorkspace {
         if (viewer) {
             viewer.remove();
             this.openRefViewers.delete(imageId);
+            this.cleanupZIndex();
+        }
+    }
+    
+    // Clean z-index management
+    bringRefViewerToFront(viewer) {
+        // Increment the global z-index counter
+        this.refViewerZIndex++;
+        
+        // Cap it at 9999 to stay below navigation panel (z-index: 10000)
+        if (this.refViewerZIndex >= 9999) {
+            this.refViewerZIndex = 1000;
+            this.reassignZIndexes();
+        }
+        
+        viewer.style.zIndex = this.refViewerZIndex;
+    }
+    
+    reassignZIndexes() {
+        // Reset all reference viewers to clean z-index values
+        let currentZIndex = 1000;
+        this.openRefViewers.forEach((viewer) => {
+            viewer.style.zIndex = currentZIndex;
+            currentZIndex++;
+        });
+        this.refViewerZIndex = currentZIndex - 1;
+    }
+    
+    cleanupZIndex() {
+        // If we have very few viewers open, reset the z-index counter
+        if (this.openRefViewers.size <= 2) {
+            this.refViewerZIndex = 1000;
+            this.reassignZIndexes();
         }
     }
     
@@ -2638,7 +2890,7 @@ class IbisPaintWorkspace {
         });
     }
     
-
+    
     // ===== COLOR PICKER (FULLY FUNCTIONAL) =====
     setupColorPicker() {
         const colorPicker = document.getElementById('color-picker');
@@ -2690,6 +2942,10 @@ class IbisPaintWorkspace {
             navigationBtn.addEventListener('click', () => {
                 this.toggleNavigationPopup();
             });
+            navigationBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.toggleNavigationPopup();
+            }, { passive: false });
         }
         
         // Selection area button
@@ -2791,8 +3047,36 @@ class IbisPaintWorkspace {
         // Make panel resizable
         this.makeResizable(panel);
         
+        // Make panel draggable
+        this.makeNavigationPanelDraggable(panel);
+        
+        // Add click-outside-to-close functionality
+        this.addNavigationPanelOutsideClick();
+        
         // Setup navigation canvas
         this.setupNavigationCanvas();
+    }
+    
+    addNavigationPanelOutsideClick() {
+        // Only add event listeners once
+        if (this.navPanelOutsideClickHandler) return;
+        
+        this.navPanelOutsideClickHandler = (e) => {
+            const panel = document.getElementById('navigation-panel');
+            const navigationBtn = document.getElementById('navigation');
+            const navToggle = document.getElementById('nav-panel-toggle');
+            
+            // If panel is open and click/touch is outside the panel and not on the button or toggle
+            if (panel && panel.classList.contains('show') &&
+                !panel.contains(e.target) && 
+                !navigationBtn.contains(e.target) &&
+                !navToggle.contains(e.target)) {
+                this.closeNavigationPanel();
+            }
+        };
+        
+        document.addEventListener('click', this.navPanelOutsideClickHandler);
+        document.addEventListener('touchstart', this.navPanelOutsideClickHandler, { passive: true });
     }
     
     setupNavigationCanvas() {
@@ -2916,38 +3200,153 @@ class IbisPaintWorkspace {
     }
     
     makeResizable(element) {
-        const resizeHandle = element.querySelector('.nav-resize-handle');
+        const resizeHandle = element.querySelector('.resize-handle');
         if (!resizeHandle) return;
         
         let isResizing = false;
         let startX, startY, startWidth, startHeight;
+        let mouseMoveHandler, mouseUpHandler, touchMoveHandler, touchEndHandler;
         
-        resizeHandle.addEventListener('mousedown', (e) => {
+        const startResize = (clientX, clientY) => {
             isResizing = true;
-            startX = e.clientX;
-            startY = e.clientY;
+            startX = clientX;
+            startY = clientY;
             startWidth = parseInt(document.defaultView.getComputedStyle(element).width, 10);
             startHeight = parseInt(document.defaultView.getComputedStyle(element).height, 10);
             
-            document.addEventListener('mousemove', doResize);
-            document.addEventListener('mouseup', stopResize);
-        });
+            // Add visual feedback
+            element.style.cursor = 'nw-resize';
+            document.body.style.cursor = 'nw-resize';
+        };
         
-        function doResize(e) {
+        const doResize = (clientX, clientY) => {
             if (!isResizing) return;
             
-            const newWidth = startWidth + e.clientX - startX;
-            const newHeight = startHeight + e.clientY - startY;
+            const newWidth = startWidth + clientX - startX;
+            const newHeight = startHeight + clientY - startY;
             
             element.style.width = Math.max(200, newWidth) + 'px';
             element.style.height = Math.max(150, newHeight) + 'px';
-        }
+        };
         
-        function stopResize() {
+        const stopResize = () => {
+            if (!isResizing) return;
+            
             isResizing = false;
-            document.removeEventListener('mousemove', doResize);
-            document.removeEventListener('mouseup', stopResize);
-        }
+            element.style.cursor = 'default';
+            document.body.style.cursor = 'default';
+            
+            // Remove event listeners
+            if (mouseMoveHandler) document.removeEventListener('mousemove', mouseMoveHandler);
+            if (mouseUpHandler) document.removeEventListener('mouseup', mouseUpHandler);
+            if (touchMoveHandler) document.removeEventListener('touchmove', touchMoveHandler);
+            if (touchEndHandler) document.removeEventListener('touchend', touchEndHandler);
+        };
+        
+        // Mouse events
+        resizeHandle.addEventListener('mousedown', (e) => {
+            startResize(e.clientX, e.clientY);
+            e.preventDefault();
+            
+            // Create bound event handlers
+            mouseMoveHandler = (e) => doResize(e.clientX, e.clientY);
+            mouseUpHandler = stopResize;
+            
+            document.addEventListener('mousemove', mouseMoveHandler);
+            document.addEventListener('mouseup', mouseUpHandler);
+        });
+        
+        // Touch events
+        resizeHandle.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                startResize(touch.clientX, touch.clientY);
+                e.preventDefault();
+                
+                // Create bound event handlers
+                touchMoveHandler = (e) => {
+                    if (isResizing && e.touches.length === 1) {
+                        const touch = e.touches[0];
+                        doResize(touch.clientX, touch.clientY);
+                        e.preventDefault();
+                    }
+                };
+                touchEndHandler = stopResize;
+                
+                document.addEventListener('touchmove', touchMoveHandler, { passive: false });
+                document.addEventListener('touchend', touchEndHandler);
+            }
+        }, { passive: false });
+    }
+    
+    makeNavigationPanelDraggable(panel) {
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+        
+        const startDrag = (clientX, clientY) => {
+            isDragging = true;
+            startX = clientX;
+            startY = clientY;
+            startLeft = parseInt(window.getComputedStyle(panel).left);
+            startTop = parseInt(window.getComputedStyle(panel).top);
+            
+            panel.style.cursor = 'grabbing';
+        };
+        
+        const onMouseDown = (e) => {
+            // Don't start dragging if clicking on resize handle or canvas
+            if (e.target.closest('.nav-resize-handle') || e.target.closest('canvas')) {
+                return;
+            }
+            
+            startDrag(e.clientX, e.clientY);
+            e.preventDefault();
+        };
+        
+        const onTouchStart = (e) => {
+            // Don't start dragging if clicking on resize handle or canvas
+            if (e.target.closest('.nav-resize-handle') || e.target.closest('canvas') || e.touches.length !== 1) {
+                return;
+            }
+            
+            const touch = e.touches[0];
+            startDrag(touch.clientX, touch.clientY);
+            e.preventDefault();
+        };
+        
+        const updatePosition = (clientX, clientY) => {
+            if (!isDragging) return;
+            const deltaX = clientX - startX;
+            const deltaY = clientY - startY;
+            panel.style.left = `${startLeft + deltaX}px`;
+            panel.style.top = `${startTop + deltaY}px`;
+        };
+        
+        const stopDrag = () => {
+            if (isDragging) {
+                isDragging = false;
+                panel.style.cursor = 'default';
+            }
+        };
+        
+        // Mouse events
+        panel.addEventListener('mousedown', onMouseDown);
+        
+        // Touch events
+        panel.addEventListener('touchstart', onTouchStart, { passive: false });
+        
+        document.addEventListener('mousemove', (e) => updatePosition(e.clientX, e.clientY));
+        document.addEventListener('mouseup', stopDrag);
+        
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                const touch = e.touches[0];
+                updatePosition(touch.clientX, touch.clientY);
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', stopDrag);
     }
     
     toggleSelectionArea() {
