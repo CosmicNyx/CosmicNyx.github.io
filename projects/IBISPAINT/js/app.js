@@ -3050,34 +3050,12 @@ class IbisPaintWorkspace {
         // Make panel draggable
         this.makeNavigationPanelDraggable(panel);
         
-        // Add click-outside-to-close functionality
-        this.addNavigationPanelOutsideClick();
+        // Navigation panel should not close when clicking outside
         
         // Setup navigation canvas
         this.setupNavigationCanvas();
     }
     
-    addNavigationPanelOutsideClick() {
-        // Only add event listeners once
-        if (this.navPanelOutsideClickHandler) return;
-        
-        this.navPanelOutsideClickHandler = (e) => {
-            const panel = document.getElementById('navigation-panel');
-            const navigationBtn = document.getElementById('navigation');
-            const navToggle = document.getElementById('nav-panel-toggle');
-            
-            // If panel is open and click/touch is outside the panel and not on the button or toggle
-            if (panel && panel.classList.contains('show') &&
-                !panel.contains(e.target) && 
-                !navigationBtn.contains(e.target) &&
-                !navToggle.contains(e.target)) {
-                this.closeNavigationPanel();
-            }
-        };
-        
-        document.addEventListener('click', this.navPanelOutsideClickHandler);
-        document.addEventListener('touchstart', this.navPanelOutsideClickHandler, { passive: true });
-    }
     
     setupNavigationCanvas() {
         const navCanvas = document.getElementById('nav-canvas');

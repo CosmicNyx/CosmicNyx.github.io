@@ -1705,7 +1705,13 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 10;
-    transition: background-color 0.2s ease;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+    opacity: 0; /* Hidden by default */
+}
+
+/* Show close button on hover */
+.ref-image-viewer:hover .ref-viewer-close {
+    opacity: 1;
 }
 
 .ref-viewer-close:hover {
