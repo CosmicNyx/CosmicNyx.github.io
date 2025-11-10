@@ -714,13 +714,13 @@ class IbisPaintWorkspace {
     setupCanvasEvents() {
         // Mouse events for drawing
         this.canvas.addEventListener('mousedown', (e) => {
-            if ((this.currentTool === 'brush' && this.selectedBrushId === 'pen') || this.currentTool === 'eraser') {
+            if (this.currentTool === 'brush' || this.currentTool === 'eraser') {
                 this.handleCanvasMouseDown(e);
             }
         });
         
         this.canvas.addEventListener('mousemove', (e) => {
-            if (this.isDrawing && ((this.currentTool === 'brush' && this.selectedBrushId === 'pen') || this.currentTool === 'eraser')) {
+            if (this.isDrawing && (this.currentTool === 'brush' || this.currentTool === 'eraser')) {
                 this.handleCanvasMouseMove(e);
             }
         });
@@ -734,14 +734,14 @@ class IbisPaintWorkspace {
         // Touch-only canvas events for drawing
         this.canvas.addEventListener('touchstart', (e) => {
             // Only handle drawing if single touch (not gesture)
-            if (e.touches.length === 1 && ((this.currentTool === 'brush' && this.selectedBrushId === 'pen') || this.currentTool === 'eraser')) {
+            if (e.touches.length === 1 && (this.currentTool === 'brush' || this.currentTool === 'eraser')) {
                 this.handleCanvasTouchStart(e);
             }
         });
         
         this.canvas.addEventListener('touchmove', (e) => {
             // Only handle drawing if single touch (not gesture)
-            if (e.touches.length === 1 && this.isDrawing && ((this.currentTool === 'brush' && this.selectedBrushId === 'pen') || this.currentTool === 'eraser')) {
+            if (e.touches.length === 1 && this.isDrawing && (this.currentTool === 'brush' || this.currentTool === 'eraser')) {
                 this.handleCanvasTouchMove(e);
             }
         });
@@ -872,47 +872,74 @@ class IbisPaintWorkspace {
         // Set up drawing context on active layer canvas
         layerCtx.save();
         
-        // Set drawing style
-        layerCtx.strokeStyle = this.currentColor;
-        layerCtx.lineWidth = this.brushSize;
-        layerCtx.lineCap = 'round';
-        layerCtx.lineJoin = 'round';
-        layerCtx.globalAlpha = this.brushOpacity / 100;
+        // Initialize brush engine if needed (always reinitialize with current context)
+        if (this.currentTool === 'brush') {
+            const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+            const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+            this.brushEngine = new BrushEngine(layerCtx, canvasWidth, canvasHeight);
+            
+            // Always initialize brushes
+            if (typeof brushRegistry !== 'undefined') {
+                brushRegistry.initialize(this.brushEngine);
+            }
+        }
         
-        // Convert coordinates to drawing canvas coordinates
-        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
-        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
-        const halfWidth = canvasWidth / 2;
-        const halfHeight = canvasHeight / 2;
-        const drawX = coords.x + halfWidth;
-        const drawY = coords.y + halfHeight;
-        
-        // Start path
-        layerCtx.beginPath();
-        layerCtx.moveTo(drawX, drawY);
+        // For eraser, set up drawing style
+        if (this.currentTool === 'eraser') {
+            layerCtx.strokeStyle = '#000000';
+            layerCtx.lineWidth = this.brushSize;
+            layerCtx.lineCap = 'round';
+            layerCtx.lineJoin = 'round';
+            
+            // Convert coordinates to drawing canvas coordinates
+            const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+            const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+            const halfWidth = canvasWidth / 2;
+            const halfHeight = canvasHeight / 2;
+            const drawX = coords.x + halfWidth;
+            const drawY = coords.y + halfHeight;
+            
+            // Start path
+            layerCtx.beginPath();
+            layerCtx.moveTo(drawX, drawY);
+        }
     }
     
     drawLine(from, to) {
         const layerCtx = this.getActiveLayerContext();
         if (!layerCtx) return;
         
-        // Convert coordinates to drawing canvas coordinates
-        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
-        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
-        const halfWidth = canvasWidth / 2;
-        const halfHeight = canvasHeight / 2;
-        const fromX = from.x + halfWidth;
-        const fromY = from.y + halfHeight;
-        const toX = to.x + halfWidth;
-        const toY = to.y + halfHeight;
-        
-        if (this.currentTool === 'brush' && this.selectedBrushId === 'pen') {
-            layerCtx.lineTo(toX, toY);
-            layerCtx.stroke();
+        if (this.currentTool === 'brush') {
+            // Always reinitialize brush engine with current context
+            const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+            const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+            this.brushEngine = new BrushEngine(layerCtx, canvasWidth, canvasHeight);
+            
+            // Always initialize brushes
+            if (typeof brushRegistry !== 'undefined') {
+                brushRegistry.initialize(this.brushEngine);
+            }
+            
+            // Get brush type from selected brush (if any)
+            const brush = this.getBrushById(this.selectedBrushId);
+            const brushType = brush ? brush.type : 'default';
+            
+            // Draw with selected brush
+            this.brushEngine.draw(from, to, brushType, this.currentColor, this.brushSize, this.brushOpacity);
             
             // Redraw the canvas to show the new stroke
             this.applyTransformations();
         } else if (this.currentTool === 'eraser') {
+            // Convert coordinates to drawing canvas coordinates
+            const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+            const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+            const halfWidth = canvasWidth / 2;
+            const halfHeight = canvasHeight / 2;
+            const fromX = from.x + halfWidth;
+            const fromY = from.y + halfHeight;
+            const toX = to.x + halfWidth;
+            const toY = to.y + halfHeight;
+            
             // Erase only from the layer canvas, not the white background
             layerCtx.globalCompositeOperation = 'destination-out';
             layerCtx.lineTo(toX, toY);
@@ -922,6 +949,12 @@ class IbisPaintWorkspace {
             // Redraw the canvas to show the new stroke
             this.applyTransformations();
         }
+    }
+    
+    getBrushById(brushId) {
+        // Search in all brush arrays
+        const allBrushes = [...this.basicBrushes, ...this.customBrushes, ...this.specialBrushes];
+        return allBrushes.find(brush => brush.id === brushId);
     }
     
     endStroke() {
@@ -2176,24 +2209,57 @@ class IbisPaintWorkspace {
     
     // ===== BRUSH PANEL (FULLY FUNCTIONAL) =====
     setupBrushPanel() {
-        this.basicBrushes = [
-            { id: 'pen', name: 'Pen', value: 8.0, isStarred: false, preview: 'pen' }
-        ];
+        // Initialize brush engine
+        this.brushEngine = null;
         
-        this.customBrushes = [
-            { id: 'crystal-shards', name: 'Crystal Shards', value: 18.8, isStarred: false, preview: 'textured' }
-        ];
-        
-        this.specialBrushes = [
-            { id: 'dragon-scale', name: 'Dragon Scale', value: 33.0, isStarred: false, preview: 'textured' }
-        ];
+        // Load brushes from registry
+        this.loadBrushesFromRegistry();
         
         this.currentTab = 'basic';
-        this.currentBrush = this.basicBrushes[0];
-        this.selectedBrushId = 'pen';
+        this.currentBrush = this.basicBrushes.length > 0 ? this.basicBrushes[0] : null;
+        this.selectedBrushId = this.basicBrushes.length > 0 ? this.basicBrushes[0].id : null;
         
         this.renderBrushList();
         this.setupBrushPanelEvents();
+    }
+    
+    loadBrushesFromRegistry() {
+        // Initialize empty arrays
+        this.basicBrushes = [];
+        this.customBrushes = [];
+        this.specialBrushes = [];
+        
+        // Load brushes from registry if available
+        if (typeof brushRegistry !== 'undefined') {
+            const allBrushes = brushRegistry.getAll();
+            
+            for (const [id, brush] of Object.entries(allBrushes)) {
+                const metadata = brush.metadata || {};
+                const category = metadata.category || 'basic';
+                const name = metadata.name || id;
+                
+                const brushData = {
+                    id: id,
+                    name: name,
+                    value: metadata.value || 10.0,
+                    isStarred: metadata.isStarred || false,
+                    preview: metadata.preview || 'pen',
+                    type: id
+                };
+                
+                // Add to appropriate category
+                if (category === 'basic') {
+                    this.basicBrushes.push(brushData);
+                } else if (category === 'custom') {
+                    this.customBrushes.push(brushData);
+                } else if (category === 'special') {
+                    this.specialBrushes.push(brushData);
+                } else {
+                    // Default to basic
+                    this.basicBrushes.push(brushData);
+                }
+            }
+        }
     }
     
     renderBrushList() {
@@ -4113,6 +4179,9 @@ class IbisPaintWorkspace {
         
         // Reinitialize any new layers that might be created later
         this.initializeLayerCanvases();
+        
+        // Reset brush engine to use new canvas dimensions
+        this.brushEngine = null;
         
         // Fit canvas to viewport so it's fully visible with void space
         this.fitCanvasToViewport();
