@@ -2,10 +2,11 @@
 // Supports brushes from different libraries (p5.js, native Canvas, etc.)
 
 class BrushEngine {
-    constructor(ctx, canvasWidth, canvasHeight) {
+    constructor(ctx, canvasWidth, canvasHeight, workspace = null) {
         this.ctx = ctx;
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
+        this.workspace = workspace; // Reference to workspace for accessing configs
         
         // Initialize p5.js if available
         this.p5 = null;

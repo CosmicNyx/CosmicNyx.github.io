@@ -11,6 +11,12 @@ class IbisPaintWorkspace {
         // Brush settings per brush ID (size and opacity)
         this.brushSettings = {};
         
+        // Brush configs per brush ID (additional parameters like flow, spacing, etc.)
+        this.brushConfigs = {};
+        
+        // easy-brush integration
+        this.easyBrushIntegration = null;
+        
         // Layer management
         this.layers = [
             { id: 'layer-1', name: '1', visible: true, opacity: 100, blendMode: 'normal', isActive: true, thumbnail: null, color: '#feca57', type: 'layer', parentId: null, canvas: null, ctx: null },
@@ -29,6 +35,9 @@ class IbisPaintWorkspace {
         this.isDragging = false; // Track if we're currently dragging
         
         // History for undo/redo
+        // History entries can be:
+        // - { type: 'canvas', imageData: ImageData } - canvas drawing state
+        // - { type: 'layers', layers: Array } - layer structure state
         this.history = [];
         this.historyStep = -1;
         
@@ -72,6 +81,18 @@ class IbisPaintWorkspace {
         this.setupTopToolbar();
         this.setupBrushPanel();
         this.setupReferenceImages();
+        
+        // Initialize easy-brush integration
+        if (typeof EasyBrushIntegration !== 'undefined') {
+            this.easyBrushIntegration = new EasyBrushIntegration(this);
+            this.easyBrushIntegration.initialize();
+            // Reload brush panel to include easy-brush
+            setTimeout(() => {
+                this.loadBrushesFromRegistry();
+                this.renderBrushList();
+            }, 100);
+        }
+        
         this.updateUI();
         this.updateToolSelectionByTool(); // Set initial tool selection
         this.updateBrushSlidersVisibility(); // Show/hide brush sliders based on initial tool
@@ -173,6 +194,17 @@ class IbisPaintWorkspace {
         // Clear the entire canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
+        // Update navigation canvas if visible (but throttle to avoid too many updates)
+        if (document.getElementById('navigation-panel')?.classList.contains('show')) {
+            if (!this.navCanvasUpdatePending) {
+                this.navCanvasUpdatePending = true;
+                requestAnimationFrame(() => {
+                    this.updateNavigationCanvas();
+                    this.navCanvasUpdatePending = false;
+                });
+            }
+        }
+        
         // Fill background with void color from CSS variable
         const voidColor = getComputedStyle(document.documentElement).getPropertyValue('--void-color').trim() || '#383838';
         this.ctx.fillStyle = voidColor;
@@ -217,7 +249,9 @@ class IbisPaintWorkspace {
         this.ctx.fillRect(-halfWidth, -halfHeight, canvasWidth, canvasHeight);
         
         // Draw all visible layers from bottom to top
-        for (let i = this.layers.length - 1; i >= 0; i--) {
+        // In the layers array, index 0 is at the bottom, higher indices are on top
+        // So we draw from index 0 to length-1 (bottom to top)
+        for (let i = 0; i < this.layers.length; i++) {
             const layer = this.layers[i];
             if (layer.type === 'layer' && layer.visible && layer.canvas) {
                 this.ctx.globalAlpha = layer.opacity / 100;
@@ -503,7 +537,7 @@ class IbisPaintWorkspace {
         const btnRedo2 = el('btn-redo');
         const btnLayers = el('btn-layers');
         const btnBack = el('btn-back');
-        
+
         if (btnSwitch) {
             btnSwitch.addEventListener('click', () => {
                 if (this.currentTool === 'brush') {
@@ -891,6 +925,43 @@ class IbisPaintWorkspace {
         const layerCtx = this.getActiveLayerContext();
         if (!layerCtx) return;
         
+        // Check if easy-brush is selected
+        if (this.selectedBrushId === 'easyBrush' && this.easyBrushIntegration) {
+            // Update easy-brush config with current color, size, and opacity
+            const config = this.easyBrushIntegration.getConfig();
+            config.color = this.currentColor;
+            config.size = this.brushSize;
+            config.opacity = this.brushOpacity / 100;
+            this.easyBrushIntegration.updateConfig(config);
+            this.easyBrushIntegration.startStroke(coords);
+            return;
+        }
+        
+                // Reset path-based bristle brush state when starting new stroke
+                if (typeof resetBristleBrush === 'function') {
+                    resetBristleBrush();
+                }
+                
+                // Reset p5 easy brush state when starting new stroke
+                if (typeof resetP5EasyBrush === 'function') {
+                    resetP5EasyBrush();
+                }
+        
+        // Handle bucket tool (fill on click)
+        if (this.currentTool === 'bucket') {
+            if (!this.isDrawing) {
+        this.saveCanvasState();
+                this.isDrawing = true;
+                
+                // Simple flood fill
+                this.simpleFloodFill(coords.x, coords.y, this.currentColor);
+                
+                this.isDrawing = false;
+                this.endStroke();
+                return;
+            }
+        }
+        
         // Save current drawing canvas state for undo (before drawing)
         // Only save if this is the start of a new stroke (not continuing)
         if (!this.isDrawing) {
@@ -904,7 +975,7 @@ class IbisPaintWorkspace {
         if (this.currentTool === 'brush') {
             const canvasWidth = this.canvasWidth || this.drawingAreaSize;
             const canvasHeight = this.canvasHeight || this.drawingAreaSize;
-            this.brushEngine = new BrushEngine(layerCtx, canvasWidth, canvasHeight);
+            this.brushEngine = new BrushEngine(layerCtx, canvasWidth, canvasHeight, this);
             
             // Always initialize brushes
             if (typeof brushRegistry !== 'undefined') {
@@ -915,33 +986,115 @@ class IbisPaintWorkspace {
         // For eraser, set up drawing style
         if (this.currentTool === 'eraser') {
             layerCtx.strokeStyle = '#000000';
-            layerCtx.lineWidth = this.brushSize;
-            layerCtx.lineCap = 'round';
-            layerCtx.lineJoin = 'round';
-            
-            // Convert coordinates to drawing canvas coordinates
+        layerCtx.lineWidth = this.brushSize;
+        layerCtx.lineCap = 'round';
+        layerCtx.lineJoin = 'round';
+        
+        // Convert coordinates to drawing canvas coordinates
             const canvasWidth = this.canvasWidth || this.drawingAreaSize;
             const canvasHeight = this.canvasHeight || this.drawingAreaSize;
             const halfWidth = canvasWidth / 2;
             const halfHeight = canvasHeight / 2;
             const drawX = coords.x + halfWidth;
             const drawY = coords.y + halfHeight;
-            
-            // Start path
-            layerCtx.beginPath();
-            layerCtx.moveTo(drawX, drawY);
+        
+        // Start path
+        layerCtx.beginPath();
+        layerCtx.moveTo(drawX, drawY);
         }
+    }
+    
+    // Simple flood fill (fallback for bucket tool)
+    simpleFloodFill(x, y, fillColor) {
+        const layerCtx = this.getActiveLayerContext();
+        if (!layerCtx) return;
+        
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        const halfWidth = canvasWidth / 2;
+        const halfHeight = canvasHeight / 2;
+        const canvasX = x + halfWidth;
+        const canvasY = y + halfHeight;
+        
+        // Get image data
+        const imageData = layerCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+        const data = imageData.data;
+        const width = canvasWidth;
+        const height = canvasHeight;
+        
+        // Get target color at click point
+        const targetIndex = (Math.floor(canvasY) * width + Math.floor(canvasX)) * 4;
+        const targetR = data[targetIndex];
+        const targetG = data[targetIndex + 1];
+        const targetB = data[targetIndex + 2];
+        const targetA = data[targetIndex + 3];
+        
+        // Convert fill color to RGB
+        const fill = this.hexToRgb(fillColor);
+        if (!fill) return;
+        
+        // Flood fill algorithm
+        const stack = [[Math.floor(canvasX), Math.floor(canvasY)]];
+        const visited = new Set();
+        
+        while (stack.length > 0) {
+            const [px, py] = stack.pop();
+            const key = `${px},${py}`;
+            
+            if (visited.has(key)) continue;
+            if (px < 0 || px >= width || py < 0 || py >= height) continue;
+            
+            const index = (py * width + px) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+            const a = data[index + 3];
+            
+            // Check if pixel matches target color (with tolerance)
+            if (Math.abs(r - targetR) < 10 && Math.abs(g - targetG) < 10 && 
+                Math.abs(b - targetB) < 10 && Math.abs(a - targetA) < 10) {
+                
+                // Fill pixel
+                data[index] = fill.r;
+                data[index + 1] = fill.g;
+                data[index + 2] = fill.b;
+                data[index + 3] = 255;
+                
+                visited.add(key);
+                
+                // Add neighbors
+                stack.push([px + 1, py]);
+                stack.push([px - 1, py]);
+                stack.push([px, py + 1]);
+                stack.push([px, py - 1]);
+            }
+        }
+        
+        // Put image data back
+        layerCtx.putImageData(imageData, 0, 0);
+        this.applyTransformations();
+    }
+    
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
     }
     
     drawLine(from, to) {
         const layerCtx = this.getActiveLayerContext();
         if (!layerCtx) return;
         
-        if (this.currentTool === 'brush') {
+                if (this.currentTool === 'brush') {
+                    // P5 Easy Brush is handled through the normal brush system
+            
             // Always reinitialize brush engine with current context
             const canvasWidth = this.canvasWidth || this.drawingAreaSize;
             const canvasHeight = this.canvasHeight || this.drawingAreaSize;
-            this.brushEngine = new BrushEngine(layerCtx, canvasWidth, canvasHeight);
+            this.brushEngine = new BrushEngine(layerCtx, canvasWidth, canvasHeight, this);
             
             // Always initialize brushes
             if (typeof brushRegistry !== 'undefined') {
@@ -986,15 +1139,24 @@ class IbisPaintWorkspace {
     }
     
     endStroke() {
+                // P5 Easy Brush is handled through the normal brush system
+                
         const layerCtx = this.getActiveLayerContext();
         if (layerCtx) {
             layerCtx.restore();
         }
         this.applyTransformations(); // Redraw the canvas with new stroke
-        
-        // Save canvas state after stroke is complete
-        this.saveCanvasState();
-    }
+                
+                // Update navigation canvas if visible - do it immediately, not throttled
+                const navPanel = document.getElementById('navigation-panel');
+                if (navPanel && navPanel.classList.contains('show')) {
+                    // Update immediately after stroke ends
+                    this.updateNavigationCanvas();
+                }
+                
+                // Save canvas state after stroke is complete
+                this.saveCanvasState();
+            }
     
     saveInitialCanvasState() {
         // Save initial empty canvas state
@@ -1026,7 +1188,34 @@ class IbisPaintWorkspace {
             this.history = this.history.slice(0, this.historyStep + 1);
         }
         
-        this.history.push(imageData);
+        this.history.push({ type: 'canvas', imageData: imageData });
+        this.historyStep++;
+        
+        // Limit history size
+        if (this.history.length > 50) {
+            this.history.shift();
+            this.historyStep--;
+        }
+        
+        // Update button states
+        this.updateUndoRedoButtons();
+    }
+    
+    saveLayerState() {
+        // Save current layer structure state for undo functionality
+        // Deep clone the layers array structure
+        const layersSnapshot = this.layers.map(layer => {
+            const layerCopy = { ...layer };
+            // Don't clone canvas/ctx references, just the structure
+            return layerCopy;
+        });
+        
+        // Remove any history after current step (when undoing and then doing layer operations)
+        if (this.historyStep < this.history.length - 1) {
+            this.history = this.history.slice(0, this.historyStep + 1);
+        }
+        
+        this.history.push({ type: 'layers', layers: layersSnapshot });
         this.historyStep++;
         
         // Limit history size
@@ -1775,6 +1964,8 @@ class IbisPaintWorkspace {
     }
     
     // Insert new item above currently selected item
+    // In the layers array, lower indices are at the bottom, higher indices are at the top
+    // So "above" means higher index (insert after the selected item)
     insertAboveSelected(newItem) {
         // Find the currently selected item
         let selectedItem = null;
@@ -1785,17 +1976,18 @@ class IbisPaintWorkspace {
             selectedItem = this.layers.find(l => l.id === selectedId);
         }
         
-        // If no selected item, add to top
+        // If no selected item, add to top (highest index)
         if (!selectedItem) {
-            this.layers.unshift(newItem);
+            this.layers.push(newItem);
             return;
         }
         
         // Find the index of the selected item
         const selectedIndex = this.layers.findIndex(l => l.id === selectedItem.id);
         
-        // Insert the new item above the selected item
-        this.layers.splice(selectedIndex, 0, newItem);
+        // Insert the new item above the selected item (at selectedIndex + 1)
+        // This puts it on top of the selected layer
+        this.layers.splice(selectedIndex + 1, 0, newItem);
     }
     
     // Move multiple layers to position
@@ -1962,7 +2154,16 @@ class IbisPaintWorkspace {
         this.updateNavigationCanvas();
     }
     
+    // Renumber layers after any movement operation
+    renumberLayersAfterMove() {
+        this.renumberLayers();
+        this.updateLayersPanel();
+    }
+    
     moveMultipleLayersToDropZone(layerIds, dropZone) {
+        // Save layer state before moving
+        this.saveLayerState();
+        
         // Remove all dragged layers from their current positions
         const draggedLayers = [];
         layerIds.forEach(layerId => {
@@ -1989,6 +2190,9 @@ class IbisPaintWorkspace {
             this.layers.push(...draggedLayers);
         }
         
+        // Renumber layers after movement
+        this.renumberLayers();
+        
         this.updateLayersPanel();
         // Immediately redraw canvas to show new layer order
         this.applyTransformations();
@@ -1998,14 +2202,30 @@ class IbisPaintWorkspace {
     addLayer() {
         // Create canvas for new layer
         const layerCanvas = document.createElement('canvas');
-        layerCanvas.width = this.drawingAreaSize;
-        layerCanvas.height = this.drawingAreaSize;
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        layerCanvas.width = canvasWidth;
+        layerCanvas.height = canvasHeight;
         const layerCtx = layerCanvas.getContext('2d');
-        layerCtx.clearRect(0, 0, this.drawingAreaSize, this.drawingAreaSize);
+        layerCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+        
+        // Calculate layer number based on position in array
+        // Layer 1 is at the bottom (index 0), higher numbers are on top
+        // Find the highest layer number currently in use
+        let maxLayerNumber = 0;
+        for (const layer of this.layers) {
+            if (layer.type === 'layer') {
+                const layerNum = parseInt(layer.name);
+                if (!isNaN(layerNum) && layerNum > maxLayerNumber) {
+                    maxLayerNumber = layerNum;
+                }
+            }
+        }
+        const newLayerNumber = maxLayerNumber + 1;
         
         const newLayer = {
             id: `layer-${this.nextLayerId}`,
-            name: `${this.nextLayerId}`,
+            name: `${newLayerNumber}`, // Use the calculated layer number
             visible: true,
             opacity: 100,
             blendMode: 'normal',
@@ -2022,7 +2242,32 @@ class IbisPaintWorkspace {
         this.insertAboveSelected(newLayer);
         this.nextLayerId++;
         this.selectLayer(newLayer.id);
+        
+        // Renumber all layers to match their positions
+        this.renumberLayers();
+        
         this.updateLayersPanel();
+    }
+    
+    // Renumber layers based on their position in the array
+    // Layer 1 is at the bottom (index 0), higher numbers are on top
+    renumberLayers() {
+        // Only renumber layers that have numeric names (not custom names)
+        let layerNumber = 1;
+        for (let i = 0; i < this.layers.length; i++) {
+            const layer = this.layers[i];
+            if (layer.type === 'layer') {
+                // Check if the layer name is just a number (not a custom name)
+                const currentName = layer.name.trim();
+                const isNumericName = /^\d+$/.test(currentName);
+                
+                if (isNumericName) {
+                    // Rename to the new number based on position
+                    layer.name = `${layerNumber}`;
+                }
+                layerNumber++;
+            }
+        }
     }
     
     toggleLayerVisibility(layerId) {
@@ -2295,9 +2540,22 @@ class IbisPaintWorkspace {
         this.customBrushes = [];
         this.specialBrushes = [];
         
+        // Add easy-brush to basic brushes if available
+        if (this.easyBrushIntegration && this.easyBrushIntegration.isInitialized) {
+            this.basicBrushes.push({
+                id: 'easyBrush',
+                name: 'Easy Brush',
+                value: 10.0,
+                isStarred: false,
+                preview: 'pen',
+                type: 'easyBrush'
+            });
+        }
+        
         // Load brushes from registry if available
         if (typeof brushRegistry !== 'undefined') {
             const allBrushes = brushRegistry.getAll();
+            console.log('Loading brushes from registry:', Object.keys(allBrushes).length, 'total');
             
             for (const [id, brush] of Object.entries(allBrushes)) {
                 const metadata = brush.metadata || {};
@@ -2319,18 +2577,26 @@ class IbisPaintWorkspace {
                 } else if (category === 'custom') {
                     this.customBrushes.push(brushData);
                 } else if (category === 'special') {
+                    // Add special brushes
                     this.specialBrushes.push(brushData);
                 } else {
                     // Default to basic
                     this.basicBrushes.push(brushData);
                 }
             }
+            
+            console.log(`Loaded brushes - Basic: ${this.basicBrushes.length}, Custom: ${this.customBrushes.length}, Special: ${this.specialBrushes.length}`);
+        } else {
+            console.warn('brushRegistry is undefined');
         }
     }
     
     renderBrushList() {
         const brushList = document.getElementById('brush-list');
-        if (!brushList) return;
+        if (!brushList) {
+            console.warn('brush-list element not found');
+            return;
+        }
         
         brushList.innerHTML = '';
         
@@ -2348,6 +2614,8 @@ class IbisPaintWorkspace {
             default:
                 currentBrushSet = this.basicBrushes;
         }
+        
+        console.log(`Rendering ${currentBrushSet.length} brushes for tab: ${this.currentTab}`);
         
         currentBrushSet.forEach(brush => {
             const brushItem = document.createElement('div');
@@ -2395,17 +2663,62 @@ class IbisPaintWorkspace {
             });
         });
         
-        // Brush item selection
+        // Brush item selection and menu button
         if (brushList) {
+            // Track last click time for double-click detection
+            let lastClickTime = 0;
+            let lastClickBrushId = null;
+            const doubleClickDelay = 300; // milliseconds
+            
             brushList.addEventListener('click', (e) => {
+                // Check if menu button (⋮) was clicked - single click opens settings
+                if (e.target.classList.contains('brush-menu-btn') || e.target.closest('.brush-menu-btn')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
                 const brushItem = e.target.closest('.brush-item');
                 if (brushItem) {
                     const brushId = brushItem.dataset.brushId;
-                    this.selectBrush(brushId);
-                    
-                    // Double click to open settings
-                    if (e.detail === 2) {
+                        
+                        if (brushId === 'p5EasyBrush') {
+                            this.openP5EasyBrushSettings();
+                        } else if (brushId === 'easyBrush') {
+                            this.openEasyBrushSettings();
+                        } else {
                         this.openBrushSettings(brushId);
+                        }
+                        return;
+                    }
+                }
+                
+                // Handle brush item clicks (for selection and double-click)
+                const brushItem = e.target.closest('.brush-item');
+                if (brushItem && !e.target.classList.contains('brush-menu-btn') && !e.target.closest('.brush-menu-btn')) {
+                    const brushId = brushItem.dataset.brushId;
+                    const currentTime = Date.now();
+                    
+                    // Check for double-click
+                    if (brushId === lastClickBrushId && (currentTime - lastClickTime) < doubleClickDelay) {
+                        // Double-click detected
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        if (brushId === 'p5EasyBrush') {
+                            this.openP5EasyBrushSettings();
+                        } else if (brushId === 'easyBrush') {
+                            this.openEasyBrushSettings();
+                        } else {
+                            this.openBrushSettings(brushId);
+                        }
+                        
+                        // Reset double-click tracking
+                        lastClickTime = 0;
+                        lastClickBrushId = null;
+                    } else {
+                        // Single click - select brush
+                        this.selectBrush(brushId);
+                        lastClickTime = currentTime;
+                        lastClickBrushId = brushId;
                     }
                 }
             });
@@ -2610,17 +2923,164 @@ class IbisPaintWorkspace {
     }
     
     openBrushSettings(brushId) {
-        const brushSettings = document.getElementById('brush-settings');
-        if (brushSettings) {
-            this.selectBrush(brushId);
-            brushSettings.classList.add('is-visible');
+        // Create or show brush config panel
+        this.createBrushConfigPanel(brushId);
+    }
+    
+    // Get default config for a brush type
+    getBrushDefaultConfig(brushId) {
+        const configs = {
+            'pen': {},
+            'marker': { intensity: 0.4 },
+            'beads': { intensity: 0.7 },
+            'calligraphy': { lineWidth: 1, lerps: 16 },
+            'hatching': { lineWidth: 1, lerps: 3 },
+            'sprayPaint': { density: 10, minRadius: 0.5 },
+            'realisticSketchingPencil': { bristleCount: 5, gridSize: 4, skipThreshold: 0.3 },
+            'p5EasyBrush': { flow: 0.8, spacing: 0.15, roundness: 1.00, angle: 0.00 }
+        };
+        return configs[brushId] || {};
+    }
+    
+    // Get config for a brush (with defaults)
+    getBrushConfig(brushId) {
+        if (!this.brushConfigs[brushId]) {
+            this.brushConfigs[brushId] = { ...this.getBrushDefaultConfig(brushId) };
         }
+        return this.brushConfigs[brushId];
+    }
+    
+    // Update config for a brush
+    updateBrushConfig(brushId, config) {
+        if (!this.brushConfigs[brushId]) {
+            this.brushConfigs[brushId] = {};
+        }
+        Object.assign(this.brushConfigs[brushId], config);
+    }
+    
+    // Create config panel for a brush
+    createBrushConfigPanel(brushId) {
+        // Remove existing config panel if any
+        const existingPanel = document.getElementById('brush-config-panel');
+        if (existingPanel) {
+            existingPanel.remove();
+        }
+        
+        // Get brush info
+        const brush = this.getBrushById(brushId);
+        if (!brush) {
+            console.warn('Brush not found:', brushId);
+            return;
+        }
+        
+        // Get current config
+        const config = this.getBrushConfig(brushId);
+        
+        // Create panel
+        const panel = document.createElement('div');
+        panel.id = 'brush-config-panel';
+        panel.className = 'tool-settings-panel is-visible';
+        
+        // Build config HTML based on brush type
+        let configHTML = '';
+        const configFields = this.getBrushConfigFields(brushId);
+        
+        if (configFields.length === 0) {
+            configHTML = '<p style="padding: 20px; text-align: center; color: #94a3b8;">No additional settings for this brush.</p>';
+        } else {
+            configFields.forEach(field => {
+                const value = config[field.key] !== undefined ? config[field.key] : field.default;
+                configHTML += `
+                    <div class="tool-setting-group">
+                        <label>${field.label}:</label>
+                        <input type="range" id="brush-config-${brushId}-${field.key}" 
+                               min="${field.min}" max="${field.max}" step="${field.step}" value="${value}">
+                        <span id="brush-config-${brushId}-${field.key}-value">${field.key === 'angle' ? value : value.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+        }
+        
+        panel.innerHTML = `
+            <div class="tool-settings-header">
+                <span class="tool-settings-title">${brush.name} Settings</span>
+                <button class="tool-settings-close">×</button>
+            </div>
+            <div class="tool-settings-content">
+                ${configHTML}
+            </div>
+        `;
+        
+        document.body.appendChild(panel);
+        this.setupBrushConfigEvents(panel, brushId, configFields);
+    }
+    
+    // Get config fields for a brush type
+    getBrushConfigFields(brushId) {
+        const fields = {
+            'pen': [],
+            'marker': [
+                { key: 'intensity', label: 'Intensity', min: 0, max: 1, step: 0.01, default: 0.4 }
+            ],
+            'beads': [
+                { key: 'intensity', label: 'Intensity', min: 0, max: 1, step: 0.01, default: 0.7 }
+            ],
+            'calligraphy': [
+                { key: 'lineWidth', label: 'Line Width', min: 0.5, max: 5, step: 0.1, default: 1 },
+                { key: 'lerps', label: 'Smoothness', min: 4, max: 32, step: 1, default: 16 }
+            ],
+            'hatching': [
+                { key: 'lineWidth', label: 'Line Width', min: 0.5, max: 5, step: 0.1, default: 1 },
+                { key: 'lerps', label: 'Lines', min: 1, max: 10, step: 1, default: 3 }
+            ],
+            'sprayPaint': [
+                { key: 'density', label: 'Density', min: 5, max: 50, step: 1, default: 10 },
+                { key: 'minRadius', label: 'Min Radius', min: 0.1, max: 1, step: 0.1, default: 0.5 }
+            ],
+            'realisticSketchingPencil': [
+                { key: 'bristleCount', label: 'Bristle Count', min: 3, max: 20, step: 1, default: 5 },
+                { key: 'gridSize', label: 'Texture Size', min: 2, max: 10, step: 1, default: 4 },
+                { key: 'skipThreshold', label: 'Skip Threshold', min: 0, max: 1, step: 0.01, default: 0.3 }
+            ],
+            'p5EasyBrush': [
+                { key: 'flow', label: 'Flow', min: 0, max: 1, step: 0.01, default: 0.8 },
+                { key: 'spacing', label: 'Spacing', min: 0, max: 1, step: 0.01, default: 0.15 },
+                { key: 'roundness', label: 'Roundness', min: 0, max: 1, step: 0.01, default: 1.00 },
+                { key: 'angle', label: 'Angle', min: 0, max: 360, step: 1, default: 0.00 }
+            ]
+        };
+        return fields[brushId] || [];
+    }
+    
+    // Setup events for brush config panel
+    setupBrushConfigEvents(panel, brushId, configFields) {
+        const closeBtn = panel.querySelector('.tool-settings-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
+        }
+        
+        configFields.forEach(field => {
+            const slider = document.getElementById(`brush-config-${brushId}-${field.key}`);
+            const valueSpan = document.getElementById(`brush-config-${brushId}-${field.key}-value`);
+            
+            if (slider && valueSpan) {
+                slider.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    valueSpan.textContent = field.key === 'angle' ? value : value.toFixed(2);
+                    this.updateBrushConfig(brushId, { [field.key]: value });
+                });
+            }
+        });
     }
     
     closeBrushSettings() {
         const brushSettings = document.getElementById('brush-settings');
+        const configPanel = document.getElementById('brush-config-panel');
         if (brushSettings) {
             brushSettings.classList.remove('is-visible');
+        }
+        if (configPanel) {
+            configPanel.classList.remove('is-visible');
         }
     }
     
@@ -2802,6 +3262,7 @@ class IbisPaintWorkspace {
                 }
             }
             
+            const refImageViewer = document.querySelector('.ref-image-viewer');
             if (refImageViewer && refImageViewer.classList.contains('is-visible')) {
                 if (!refImageViewer.contains(e.target)) {
                     this.closeReferenceImageViewer();
@@ -3524,6 +3985,25 @@ class IbisPaintWorkspace {
         if (panel) {
             panel.classList.add('show');
             this.setupNavigationPanel();
+            // Update navigation canvas after panel is shown
+            // Use a longer timeout to ensure DOM is ready
+            setTimeout(() => {
+                // Check if elements exist before trying to setup
+                const navViewport = document.getElementById('nav-viewport');
+                const navCanvas = document.getElementById('nav-canvas');
+                if (navViewport && navCanvas) {
+                    this.setupNavigationCanvas();
+                    // Also update the canvas content immediately
+                    this.updateNavigationCanvas();
+                } else {
+                    console.warn('Navigation canvas elements not ready yet, retrying...');
+                    // Retry after another delay
+                    setTimeout(() => {
+                        this.setupNavigationCanvas();
+                        this.updateNavigationCanvas();
+                    }, 100);
+                }
+            }, 200);
         }
         // Update toggle state
         const navToggle = document.getElementById('nav-panel-toggle');
@@ -3556,102 +4036,304 @@ class IbisPaintWorkspace {
         
         // Navigation panel should not close when clicking outside
         
-        // Setup navigation canvas
-        this.setupNavigationCanvas();
+        // Don't setup navigation canvas here - it will be called from openNavigationPanel
+        // after the panel is shown and elements are ready
     }
     
     
     setupNavigationCanvas() {
+        const navViewport = document.getElementById('nav-viewport');
         const navCanvas = document.getElementById('nav-canvas');
         const mainCanvas = document.getElementById('drawing-canvas');
         
-        if (!navCanvas || !mainCanvas) return;
+        if (!navCanvas || !mainCanvas || !navViewport) {
+            console.warn('Navigation canvas elements not found', {
+                navViewport: !!navViewport,
+                navCanvas: !!navCanvas,
+                mainCanvas: !!mainCanvas,
+                navViewportId: navViewport ? navViewport.id : 'not found',
+                navCanvasId: navCanvas ? navCanvas.id : 'not found',
+                mainCanvasId: mainCanvas ? mainCanvas.id : 'not found'
+            });
+            return;
+        }
         
-        // Set navigation canvas size
-        const navViewport = navCanvas.parentElement;
-        const navWidth = navViewport.clientWidth;
-        const navHeight = navViewport.clientHeight;
-        
-        navCanvas.width = navWidth;
-        navCanvas.height = navHeight;
-        
-        // Copy main canvas to navigation canvas
+        // Use setTimeout to ensure viewport dimensions are available
+        setTimeout(() => {
+            // Get actual drawing canvas dimensions (use actual pixel dimensions)
+            // Ensure we use the correct dimensions - if canvasWidth and canvasHeight are set, use them
+            // Otherwise fall back to drawingAreaSize for both (square)
+            const drawingWidth = this.canvasWidth || this.drawingAreaSize;
+            const drawingHeight = this.canvasHeight || this.drawingAreaSize;
+            
+            // Debug: Log the actual canvas dimensions
+            console.log('Canvas dimensions:', {
+                canvasWidth: this.canvasWidth,
+                canvasHeight: this.canvasHeight,
+                drawingAreaSize: this.drawingAreaSize,
+                drawingWidth,
+                drawingHeight
+            });
+            
+            const drawingAspectRatio = drawingWidth / drawingHeight;
+            
+            // Get viewport dimensions (accounting for padding)
+            const viewportRect = navViewport.getBoundingClientRect();
+            const computedStyle = window.getComputedStyle(navViewport);
+            const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+            const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
+            const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
+            const paddingBottom = parseFloat(computedStyle.paddingBottom) || 0;
+            
+            // Calculate available space (viewport minus padding)
+            const viewportWidth = viewportRect.width - paddingLeft - paddingRight;
+            const viewportHeight = viewportRect.height - paddingTop - paddingBottom;
+            
+            if (viewportWidth <= 0 || viewportHeight <= 0) {
+                console.warn('Viewport dimensions are zero or negative:', viewportWidth, viewportHeight);
+                return;
+            }
+            
+            const viewportAspectRatio = viewportWidth / viewportHeight;
+            
+            // Calculate canvas size to fit within viewport while maintaining aspect ratio
+            // CRITICAL: Always maintain the exact aspect ratio of the drawing canvas
+            let navCanvasWidth, navCanvasHeight;
+            
+            // Calculate both dimensions based on which constraint is tighter
+            const widthBasedHeight = viewportWidth / drawingAspectRatio;
+            const heightBasedWidth = viewportHeight * drawingAspectRatio;
+            
+            if (widthBasedHeight <= viewportHeight) {
+                // Width is the limiting factor - fit to width
+                navCanvasWidth = viewportWidth;
+                navCanvasHeight = widthBasedHeight;
+            } else {
+                // Height is the limiting factor - fit to height
+                navCanvasHeight = viewportHeight;
+                navCanvasWidth = heightBasedWidth;
+            }
+            
+            // Double-check: ensure aspect ratio is EXACTLY maintained
+            const calculatedAspectRatio = navCanvasWidth / navCanvasHeight;
+            const aspectRatioDiff = Math.abs(calculatedAspectRatio - drawingAspectRatio);
+            
+            if (aspectRatioDiff > 0.0001) {
+                console.error('Aspect ratio mismatch detected! Correcting...', {
+                    drawingAspectRatio,
+                    calculatedAspectRatio,
+                    diff: aspectRatioDiff,
+                    navCanvasWidth,
+                    navCanvasHeight,
+                    viewportWidth,
+                    viewportHeight
+                });
+                // Force correct aspect ratio - recalculate based on the tighter constraint
+                if (widthBasedHeight <= viewportHeight) {
+                    navCanvasWidth = viewportWidth;
+                    navCanvasHeight = viewportWidth / drawingAspectRatio;
+                } else {
+                    navCanvasHeight = viewportHeight;
+                    navCanvasWidth = viewportHeight * drawingAspectRatio;
+                }
+                // Verify again
+                const correctedAspectRatio = navCanvasWidth / navCanvasHeight;
+                const correctedDiff = Math.abs(correctedAspectRatio - drawingAspectRatio);
+                if (correctedDiff > 0.0001) {
+                    console.error('Failed to correct aspect ratio!', {
+                        expected: drawingAspectRatio,
+                        got: correctedAspectRatio,
+                        diff: correctedDiff
+                    });
+                }
+            }
+            
+            // Set navigation canvas internal size to match the display size
+            // This ensures no stretching - internal size matches display size
+            // Calculate the display size first, then set internal size to match
+            // Round to ensure integer pixel values
+            const finalWidth = Math.round(navCanvasWidth);
+            const finalHeight = Math.round(navCanvasHeight);
+            
+            // Verify aspect ratio one more time before setting
+            const finalAspectRatio = finalWidth / finalHeight;
+            if (Math.abs(finalAspectRatio - drawingAspectRatio) > 0.0001) {
+                console.error('FINAL ASPECT RATIO MISMATCH!', {
+                    expected: drawingAspectRatio,
+                    got: finalAspectRatio,
+                    width: finalWidth,
+                    height: finalHeight
+                });
+                // Force correct aspect ratio
+                if (drawingAspectRatio > viewportAspectRatio) {
+                    navCanvas.width = finalWidth;
+                    navCanvas.height = Math.round(finalWidth / drawingAspectRatio);
+                } else {
+                    navCanvas.height = finalHeight;
+                    navCanvas.width = Math.round(finalHeight * drawingAspectRatio);
+                }
+            } else {
+                navCanvas.width = finalWidth;
+                navCanvas.height = finalHeight;
+            }
+            
+            // Set display size to match internal size exactly (no scaling)
+            // Clear any conflicting styles first
+            navCanvas.style.width = '';
+            navCanvas.style.height = '';
+            navCanvas.style.maxWidth = '';
+            navCanvas.style.maxHeight = '';
+            navCanvas.style.minWidth = '';
+            navCanvas.style.minHeight = '';
+            navCanvas.style.aspectRatio = '';
+            
+            // Set the calculated dimensions (same as internal size)
+            navCanvas.style.width = navCanvas.width + 'px';
+            navCanvas.style.height = navCanvas.height + 'px';
+            navCanvas.style.margin = 'auto';
+            navCanvas.style.display = 'block';
+            navCanvas.style.imageRendering = 'auto'; // Use default rendering
+            navCanvas.style.objectFit = 'none'; // Don't scale
+            navCanvas.style.aspectRatio = `${navCanvas.width} / ${navCanvas.height}`; // Force aspect ratio
+            // Verify the aspect ratio is correct
+            const verifiedAspectRatio = navCanvas.width / navCanvas.height;
+            const expectedAspectRatio = drawingWidth / drawingHeight;
+            const aspectRatioError = Math.abs(verifiedAspectRatio - expectedAspectRatio);
+            
+            console.log('Navigation canvas setup:', {
+                actualCanvasWidth: this.canvasWidth,
+                actualCanvasHeight: this.canvasHeight,
+                drawingWidth,
+                drawingHeight,
+                drawingAspectRatio: expectedAspectRatio,
+                viewportWidth,
+                viewportHeight,
+                viewportAspectRatio,
+                calculatedNavWidth: navCanvasWidth,
+                calculatedNavHeight: navCanvasHeight,
+                canvasInternalWidth: navCanvas.width,
+                canvasInternalHeight: navCanvas.height,
+                canvasDisplayWidth: navCanvas.style.width,
+                canvasDisplayHeight: navCanvas.style.height,
+                verifiedAspectRatio,
+                aspectRatioError: aspectRatioError > 0.001 ? 'MISMATCH!' : 'OK'
+            });
+            
+            if (aspectRatioError > 0.001) {
+                console.error('Aspect ratio mismatch detected!', {
+                    expected: expectedAspectRatio,
+                    actual: verifiedAspectRatio,
+                    error: aspectRatioError
+                });
+            }
+            
+            // Copy main canvas to navigation canvas immediately
         this.updateNavigationCanvas();
         
         // Listen for canvas changes
         this.setupCanvasUpdateListener();
+        }, 100);
     }
     
     updateNavigationCanvas() {
         const navCanvas = document.getElementById('nav-canvas');
         
-        if (!navCanvas) return;
+        if (!navCanvas) {
+            console.warn('Navigation canvas not found');
+            return;
+        }
         
         const navCtx = navCanvas.getContext('2d');
         const navWidth = navCanvas.width;
         const navHeight = navCanvas.height;
         
+        if (navWidth === 0 || navHeight === 0) {
+            console.warn('Navigation canvas size is zero:', navWidth, navHeight);
+            return;
+        }
+        
         // Clear navigation canvas with light gray background (panel background)
         navCtx.fillStyle = '#f8f9fa';
         navCtx.fillRect(0, 0, navWidth, navHeight);
         
-        // Get the actual drawing canvas dimensions (500x500)
-        const drawingWidth = this.drawingAreaSize;
-        const drawingHeight = this.drawingAreaSize;
+        // Get the actual drawing canvas dimensions
+        const drawingWidth = this.canvasWidth || this.drawingAreaSize;
+        const drawingHeight = this.canvasHeight || this.drawingAreaSize;
         
-        // Calculate scale to fit the drawing canvas in navigation panel
-        const scaleX = navWidth / drawingWidth;
-        const scaleY = navHeight / drawingHeight;
-        const scale = Math.min(scaleX, scaleY);
-        
-        // Calculate centered position for the drawing canvas
-        const scaledWidth = drawingWidth * scale;
-        const scaledHeight = drawingHeight * scale;
-        const offsetX = (navWidth - scaledWidth) / 2;
-        const offsetY = (navHeight - scaledHeight) / 2;
-        
+        // Canvas is already sized to maintain aspect ratio, so draw at full size
         // Draw white background
         navCtx.fillStyle = '#ffffff';
-        navCtx.fillRect(offsetX, offsetY, scaledWidth, scaledHeight);
+        navCtx.fillRect(0, 0, navWidth, navHeight);
         
         // Draw all visible layers from bottom to top
-        for (let i = this.layers.length - 1; i >= 0; i--) {
+        // In the layers array, index 0 is at the bottom, higher indices are on top
+        // So we draw from index 0 to length-1 (bottom to top)
+        let hasContent = false;
+        for (let i = 0; i < this.layers.length; i++) {
             const layer = this.layers[i];
             if (layer.type === 'layer' && layer.visible && layer.canvas) {
+                try {
                 navCtx.globalAlpha = layer.opacity / 100;
                 navCtx.globalCompositeOperation = layer.blendMode || 'source-over';
                 navCtx.drawImage(
                     layer.canvas,
                     0, 0, drawingWidth, drawingHeight,
-                    offsetX, offsetY, scaledWidth, scaledHeight
+                        0, 0, navWidth, navHeight
                 );
+                    hasContent = true;
+                } catch (e) {
+                    console.warn('Error drawing layer to navigation canvas:', e, layer);
+                }
             }
         }
         
         // Reset composite operation
         navCtx.globalAlpha = 1;
         navCtx.globalCompositeOperation = 'source-over';
+        
+        if (!hasContent && this.layers.length > 0) {
+            console.log('No content drawn - layers:', this.layers.map(l => ({
+                type: l.type,
+                visible: l.visible,
+                hasCanvas: !!l.canvas
+            })));
+        }
     }
     
     setupCanvasUpdateListener() {
+        // Clear any existing interval
+        if (this.navCanvasUpdateInterval) {
+            clearInterval(this.navCanvasUpdateInterval);
+        }
+        
         // Update navigation canvas when main canvas changes
         const mainCanvas = document.getElementById('drawing-canvas');
         if (mainCanvas) {
             // Listen for canvas redraws (this is a simple approach)
             // In a real implementation, you'd want to listen to drawing events
-            setInterval(() => {
-                if (document.getElementById('navigation-panel').classList.contains('show')) {
+            this.navCanvasUpdateInterval = setInterval(() => {
+                const panel = document.getElementById('navigation-panel');
+                if (panel && panel.classList.contains('show')) {
                     this.updateNavigationCanvas();
                 }
-            }, 100); // Update every 100ms
+            }, 200); // Update every 200ms
         }
         
         // Update navigation canvas on resize
-        window.addEventListener('resize', () => {
-            if (document.getElementById('navigation-panel').classList.contains('show')) {
-                this.updateNavigationCanvas();
+        const resizeHandler = () => {
+            const panel = document.getElementById('navigation-panel');
+            if (panel && panel.classList.contains('show')) {
+                this.setupNavigationCanvas(); // Recalculate size
             }
-        });
+        };
+        
+        // Remove old listener if exists
+        if (this.navCanvasResizeHandler) {
+            window.removeEventListener('resize', this.navCanvasResizeHandler);
+        }
+        
+        this.navCanvasResizeHandler = resizeHandler;
+        window.addEventListener('resize', resizeHandler);
     }
     
     makeDraggable(element, handle) {
@@ -3700,9 +4382,20 @@ class IbisPaintWorkspace {
         const resizeHandle = element.querySelector('.resize-handle');
         if (!resizeHandle) return;
         
+        // Check if this is the navigation panel
+        const isNavPanel = element.id === 'navigation-panel';
+        
         let isResizing = false;
         let startX, startY, startWidth, startHeight;
         let mouseMoveHandler, mouseUpHandler, touchMoveHandler, touchEndHandler;
+        
+        // Get canvas aspect ratio for navigation panel
+        const getCanvasAspectRatio = () => {
+            if (!isNavPanel) return null;
+            const drawingWidth = this.canvasWidth || this.drawingAreaSize;
+            const drawingHeight = this.canvasHeight || this.drawingAreaSize;
+            return drawingWidth / drawingHeight;
+        };
         
         const startResize = (clientX, clientY) => {
             isResizing = true;
@@ -3719,11 +4412,49 @@ class IbisPaintWorkspace {
         const doResize = (clientX, clientY) => {
             if (!isResizing) return;
             
+            if (isNavPanel) {
+                // For navigation panel, maintain canvas aspect ratio
+                const aspectRatio = getCanvasAspectRatio();
+                if (aspectRatio) {
+                    const deltaX = clientX - startX;
+                    const deltaY = clientY - startY;
+                    
+                    // Use the larger delta to maintain aspect ratio
+                    const delta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+                    const signX = deltaX >= 0 ? 1 : -1;
+                    const signY = deltaY >= 0 ? 1 : -1;
+                    
+                    const newWidth = startWidth + delta * signX;
+                    const newHeight = startHeight + delta * signY;
+                    
+                    // Calculate which dimension to use based on aspect ratio
+                    let finalWidth, finalHeight;
+                    if (aspectRatio > 1) {
+                        // Canvas is wider - use width as primary
+                        finalWidth = Math.max(200, newWidth);
+                        finalHeight = finalWidth / aspectRatio;
+                    } else {
+                        // Canvas is taller - use height as primary
+                        finalHeight = Math.max(150, newHeight);
+                        finalWidth = finalHeight * aspectRatio;
+                    }
+                    
+                    element.style.width = finalWidth + 'px';
+                    element.style.height = finalHeight + 'px';
+                } else {
+                    // Fallback to normal resize
             const newWidth = startWidth + clientX - startX;
             const newHeight = startHeight + clientY - startY;
-            
             element.style.width = Math.max(200, newWidth) + 'px';
             element.style.height = Math.max(150, newHeight) + 'px';
+                }
+            } else {
+                // Normal resize for other panels
+                const newWidth = startWidth + clientX - startX;
+                const newHeight = startHeight + clientY - startY;
+                element.style.width = Math.max(200, newWidth) + 'px';
+                element.style.height = Math.max(150, newHeight) + 'px';
+            }
         };
         
         const stopResize = () => {
@@ -3732,6 +4463,13 @@ class IbisPaintWorkspace {
             isResizing = false;
             element.style.cursor = 'default';
             document.body.style.cursor = 'default';
+            
+            // Update navigation canvas if this is the nav panel
+            if (isNavPanel) {
+                setTimeout(() => {
+                    this.setupNavigationCanvas();
+                }, 50);
+            }
             
             // Remove event listeners
             if (mouseMoveHandler) document.removeEventListener('mousemove', mouseMoveHandler);
@@ -3869,20 +4607,28 @@ class IbisPaintWorkspace {
     handleUndo() {
         if (this.historyStep > 0) {
             this.historyStep--;
-            const imageData = this.history[this.historyStep];
-            const layerCtx = this.getActiveLayerContext();
+            const historyEntry = this.history[this.historyStep];
             
-            if (layerCtx && imageData) {
-                // Clear the canvas first
-                const canvasWidth = this.canvasWidth || this.drawingAreaSize;
-                const canvasHeight = this.canvasHeight || this.drawingAreaSize;
-                layerCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-                
-                // Restore the previous state
-                layerCtx.putImageData(imageData, 0, 0);
-                
-                // Redraw the canvas with current transformations
-                this.applyTransformations();
+            if (historyEntry) {
+                if (historyEntry.type === 'canvas') {
+                    // Restore canvas drawing state
+                    const layerCtx = this.getActiveLayerContext();
+                    if (layerCtx && historyEntry.imageData) {
+                        // Clear the canvas first
+                        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+                        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+                        layerCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+                        
+                        // Restore the previous state
+                        layerCtx.putImageData(historyEntry.imageData, 0, 0);
+                        
+                        // Redraw the canvas with current transformations
+                        this.applyTransformations();
+                    }
+                } else if (historyEntry.type === 'layers') {
+                    // Restore layer structure state
+                    this.restoreLayerState(historyEntry.layers);
+                }
                 
                 // Update button states
                 this.updateUndoRedoButtons();
@@ -3893,25 +4639,101 @@ class IbisPaintWorkspace {
     handleRedo() {
         if (this.historyStep < this.history.length - 1) {
             this.historyStep++;
-            const imageData = this.history[this.historyStep];
-            const layerCtx = this.getActiveLayerContext();
+            const historyEntry = this.history[this.historyStep];
             
-            if (layerCtx && imageData) {
-                // Clear the canvas first
-                const canvasWidth = this.canvasWidth || this.drawingAreaSize;
-                const canvasHeight = this.canvasHeight || this.drawingAreaSize;
-                layerCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-                
-                // Restore the next state
-                layerCtx.putImageData(imageData, 0, 0);
-                
-                // Redraw the canvas with current transformations
-                this.applyTransformations();
+            if (historyEntry) {
+                if (historyEntry.type === 'canvas') {
+                    // Restore canvas drawing state
+                    const layerCtx = this.getActiveLayerContext();
+                    if (layerCtx && historyEntry.imageData) {
+                        // Clear the canvas first
+                        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+                        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+                        layerCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+                        
+                        // Restore the next state
+                        layerCtx.putImageData(historyEntry.imageData, 0, 0);
+                        
+                        // Redraw the canvas with current transformations
+                        this.applyTransformations();
+                    }
+                } else if (historyEntry.type === 'layers') {
+                    // Restore layer structure state
+                    this.restoreLayerState(historyEntry.layers);
+                }
                 
                 // Update button states
                 this.updateUndoRedoButtons();
             }
         }
+    }
+    
+    restoreLayerState(layersSnapshot) {
+        // Restore layer structure from snapshot
+        // First, save canvas content from current layers
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        
+        // Create a map of old layer IDs to their canvas content
+        const layerCanvasMap = new Map();
+        this.layers.forEach(layer => {
+            if (layer.canvas && layer.ctx) {
+                const imageData = layer.ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+                layerCanvasMap.set(layer.id, imageData);
+            }
+        });
+        
+        // Restore layers structure
+        this.layers = layersSnapshot.map(layerData => {
+            const restoredLayer = { ...layerData };
+            
+            // Restore canvas if it existed before
+            if (layerCanvasMap.has(restoredLayer.id)) {
+                // Recreate canvas
+                if (!restoredLayer.canvas) {
+                    restoredLayer.canvas = document.createElement('canvas');
+                    restoredLayer.canvas.width = canvasWidth;
+                    restoredLayer.canvas.height = canvasHeight;
+                    restoredLayer.ctx = restoredLayer.canvas.getContext('2d');
+                }
+                // Restore canvas content
+                restoredLayer.ctx.putImageData(layerCanvasMap.get(restoredLayer.id), 0, 0);
+            } else {
+                // New layer or layer that didn't exist - create empty canvas
+                restoredLayer.canvas = document.createElement('canvas');
+                restoredLayer.canvas.width = canvasWidth;
+                restoredLayer.canvas.height = canvasHeight;
+                restoredLayer.ctx = restoredLayer.canvas.getContext('2d');
+                restoredLayer.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            }
+            
+            return restoredLayer;
+        });
+        
+        // Update active layer if it still exists
+        if (this.activeLayerId && !this.layers.find(l => l.id === this.activeLayerId)) {
+            // Active layer was deleted, select the first available layer
+            const firstLayer = this.layers.find(l => l.type === 'layer');
+            if (firstLayer) {
+                this.activeLayerId = firstLayer.id;
+                this.selectLayer(firstLayer.id);
+            }
+        }
+        
+        // Update selected layers
+        this.selectedLayerIds = new Set(
+            Array.from(this.selectedLayerIds).filter(id => 
+                this.layers.find(l => l.id === id)
+            )
+        );
+        
+        // Renumber layers after restoration
+        this.renumberLayers();
+        
+        // Update UI
+        this.updateLayersPanel();
+        this.applyTransformations();
+        this.updateNavigationCanvas();
     }
     
     updateUndoRedoButtons() {
@@ -4122,6 +4944,8 @@ class IbisPaintWorkspace {
     openToolSettings() {
         // Open the appropriate settings panel based on current tool
         if (this.currentTool === 'brush') {
+            // Always open the brush panel (brush menu)
+            // User can double-click brushes in the menu to open their settings
             this.toggleBrushPanel();
         } else if (this.currentTool === 'canvas') {
             // Toggle canvas settings (don't open if already open from tool selection)
@@ -4131,9 +4955,16 @@ class IbisPaintWorkspace {
             } else {
                 this.openCanvasSettings();
             }
+        } else if (this.currentTool === 'bucket') {
+            this.openBucketSettings();
+        } else if (this.currentTool === 'vector') {
+            this.openVectorSettings();
+        } else if (this.currentTool === 'hatch') {
+            this.openHatchSettings();
+        } else if (this.currentTool === 'smudge' || this.currentTool === 'blur') {
+            this.openEffectSettings();
         } else {
             // For other tools, show a placeholder or create tool-specific panels
-            // For now, we'll show a simple alert or create a generic tool settings panel
             this.showToolSettingsPlaceholder();
         }
     }
@@ -4385,8 +5216,18 @@ class IbisPaintWorkspace {
         // Reset brush engine to use new canvas dimensions
         this.brushEngine = null;
         
+        // Update easy-brush canvas size
+        if (this.easyBrushIntegration) {
+            this.easyBrushIntegration.updateCanvasSize(newWidth, newHeight);
+        }
+        
         // Fit canvas to viewport so it's fully visible with void space
         this.fitCanvasToViewport();
+        
+        // Update navigation canvas if visible (recalculate size for new aspect ratio)
+        if (document.getElementById('navigation-panel')?.classList.contains('show')) {
+            this.setupNavigationCanvas();
+        }
         
         // Update the display
         this.applyTransformations();
@@ -4394,6 +5235,533 @@ class IbisPaintWorkspace {
         
         // Save state to history
         this.saveCanvasState();
+    }
+    
+    openBucketSettings() {
+        // Create or show bucket settings panel
+        let panel = document.getElementById('bucket-settings-panel');
+        if (!panel) {
+            panel = this.createBucketSettingsPanel();
+        }
+        panel.classList.add('is-visible');
+    }
+    
+    openVectorSettings() {
+        // Create or show vector field settings panel
+        let panel = document.getElementById('vector-settings-panel');
+        if (!panel) {
+            panel = this.createVectorSettingsPanel();
+        }
+        panel.classList.add('is-visible');
+    }
+    
+    openHatchSettings() {
+        // Create or show hatch settings panel
+        let panel = document.getElementById('hatch-settings-panel');
+        if (!panel) {
+            panel = this.createHatchSettingsPanel();
+        }
+        panel.classList.add('is-visible');
+    }
+    
+    openEffectSettings() {
+        // Create or show effect settings panel (for smudge/blur)
+        let panel = document.getElementById('effect-settings-panel');
+        if (!panel) {
+            panel = this.createEffectSettingsPanel();
+        }
+        panel.classList.add('is-visible');
+    }
+    
+    openP5EasyBrushSettings() {
+        // Create or show p5 easy brush settings panel
+        console.log('Opening P5 Easy Brush Settings');
+        let panel = document.getElementById('p5-easy-brush-settings-panel');
+        if (!panel) {
+            console.log('Creating new P5 Easy Brush Settings panel');
+            panel = this.createP5EasyBrushSettingsPanel();
+        }
+        panel.classList.add('is-visible');
+        console.log('Panel visible:', panel.classList.contains('is-visible'));
+    }
+    
+    createP5EasyBrushSettingsPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'p5-easy-brush-settings-panel';
+        panel.className = 'tool-settings-panel';
+        
+        // Get current config
+        const config = typeof getP5EasyBrushConfig === 'function' ? getP5EasyBrushConfig() : {
+            color: "#000000",
+            size: 8,
+            flow: 0.8,
+            opacity: 0.5,
+            spacing: 0.15,
+            roundness: 1.00,
+            angle: 0.00
+        };
+        
+        panel.innerHTML = `
+            <div class="tool-settings-header">
+                <span class="tool-settings-title">P5 Easy Brush Settings</span>
+                <button class="tool-settings-close">×</button>
+            </div>
+            <div class="tool-settings-content">
+                <div class="tool-setting-group">
+                    <label>Flow:</label>
+                    <input type="range" id="p5-easy-brush-flow" min="0" max="1" step="0.01" value="${config.flow}">
+                    <span id="p5-easy-brush-flow-value">${config.flow}</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Spacing:</label>
+                    <input type="range" id="p5-easy-brush-spacing" min="0" max="1" step="0.01" value="${config.spacing}">
+                    <span id="p5-easy-brush-spacing-value">${config.spacing}</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Roundness:</label>
+                    <input type="range" id="p5-easy-brush-roundness" min="0" max="1" step="0.01" value="${config.roundness}">
+                    <span id="p5-easy-brush-roundness-value">${config.roundness}</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Angle:</label>
+                    <input type="range" id="p5-easy-brush-angle" min="0" max="360" step="1" value="${config.angle}">
+                    <span id="p5-easy-brush-angle-value">${config.angle}</span>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(panel);
+        this.setupP5EasyBrushSettingsEvents(panel);
+        return panel;
+    }
+    
+    setupP5EasyBrushSettingsEvents(panel) {
+        const closeBtn = panel.querySelector('.tool-settings-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
+        }
+        
+        // Flow slider
+        const flowSlider = document.getElementById('p5-easy-brush-flow');
+        if (flowSlider) {
+            flowSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('p5-easy-brush-flow-value').textContent = value.toFixed(2);
+                if (typeof updateP5EasyBrushConfig === 'function') {
+                    updateP5EasyBrushConfig({ flow: value });
+                }
+            });
+        }
+        
+        // Spacing slider
+        const spacingSlider = document.getElementById('p5-easy-brush-spacing');
+        if (spacingSlider) {
+            spacingSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('p5-easy-brush-spacing-value').textContent = value.toFixed(2);
+                if (typeof updateP5EasyBrushConfig === 'function') {
+                    updateP5EasyBrushConfig({ spacing: value });
+                }
+            });
+        }
+        
+        // Roundness slider
+        const roundnessSlider = document.getElementById('p5-easy-brush-roundness');
+        if (roundnessSlider) {
+            roundnessSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('p5-easy-brush-roundness-value').textContent = value.toFixed(2);
+                if (typeof updateP5EasyBrushConfig === 'function') {
+                    updateP5EasyBrushConfig({ roundness: value });
+                }
+            });
+        }
+        
+        // Angle slider
+        const angleSlider = document.getElementById('p5-easy-brush-angle');
+        if (angleSlider) {
+            angleSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('p5-easy-brush-angle-value').textContent = value;
+                if (typeof updateP5EasyBrushConfig === 'function') {
+                    updateP5EasyBrushConfig({ angle: value });
+                }
+            });
+        }
+    }
+    
+    openEasyBrushSettings() {
+        // Create or show easy-brush settings panel
+        let panel = document.getElementById('easy-brush-settings-panel');
+        if (!panel) {
+            panel = this.createEasyBrushSettingsPanel();
+        }
+        panel.classList.add('is-visible');
+    }
+    
+    createEasyBrushSettingsPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'easy-brush-settings-panel';
+        panel.className = 'tool-settings-panel';
+        
+        // Get current config
+        const config = this.easyBrushIntegration ? this.easyBrushIntegration.getConfig() : {
+            color: "#000000",
+            size: 8,
+            flow: 0.8,
+            opacity: 0.5,
+            spacing: 0.15,
+            roundness: 1.00,
+            angle: 0.00
+        };
+        
+        panel.innerHTML = `
+            <div class="tool-settings-header">
+                <span class="tool-settings-title">Easy Brush Settings</span>
+                <button class="tool-settings-close">×</button>
+            </div>
+            <div class="tool-settings-content">
+                <div class="tool-setting-group">
+                    <label>Size:</label>
+                    <input type="range" id="easy-brush-size" min="1" max="100" value="${config.size}">
+                    <span id="easy-brush-size-value">${config.size}</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Flow:</label>
+                    <input type="range" id="easy-brush-flow" min="0" max="1" step="0.01" value="${config.flow}">
+                    <span id="easy-brush-flow-value">${config.flow}</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Opacity:</label>
+                    <input type="range" id="easy-brush-opacity" min="0" max="1" step="0.01" value="${config.opacity}">
+                    <span id="easy-brush-opacity-value">${config.opacity}</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Spacing:</label>
+                    <input type="range" id="easy-brush-spacing" min="0" max="1" step="0.01" value="${config.spacing}">
+                    <span id="easy-brush-spacing-value">${config.spacing}</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Roundness:</label>
+                    <input type="range" id="easy-brush-roundness" min="0" max="1" step="0.01" value="${config.roundness}">
+                    <span id="easy-brush-roundness-value">${config.roundness}</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Angle:</label>
+                    <input type="range" id="easy-brush-angle" min="0" max="360" step="1" value="${config.angle}">
+                    <span id="easy-brush-angle-value">${config.angle}</span>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(panel);
+        this.setupEasyBrushSettingsEvents(panel);
+        return panel;
+    }
+    
+    setupEasyBrushSettingsEvents(panel) {
+        const closeBtn = panel.querySelector('.tool-settings-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
+        }
+        
+        // Size slider
+        const sizeSlider = document.getElementById('easy-brush-size');
+        if (sizeSlider) {
+            sizeSlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                document.getElementById('easy-brush-size-value').textContent = value;
+                if (this.easyBrushIntegration) {
+                    this.easyBrushIntegration.updateConfig({ size: value });
+                }
+            });
+        }
+        
+        // Flow slider
+        const flowSlider = document.getElementById('easy-brush-flow');
+        if (flowSlider) {
+            flowSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('easy-brush-flow-value').textContent = value.toFixed(2);
+                if (this.easyBrushIntegration) {
+                    this.easyBrushIntegration.updateConfig({ flow: value });
+                }
+            });
+        }
+        
+        // Opacity slider
+        const opacitySlider = document.getElementById('easy-brush-opacity');
+        if (opacitySlider) {
+            opacitySlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('easy-brush-opacity-value').textContent = value.toFixed(2);
+                if (this.easyBrushIntegration) {
+                    this.easyBrushIntegration.updateConfig({ opacity: value });
+                }
+            });
+        }
+        
+        // Spacing slider
+        const spacingSlider = document.getElementById('easy-brush-spacing');
+        if (spacingSlider) {
+            spacingSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('easy-brush-spacing-value').textContent = value.toFixed(2);
+                if (this.easyBrushIntegration) {
+                    this.easyBrushIntegration.updateConfig({ spacing: value });
+                }
+            });
+        }
+        
+        // Roundness slider
+        const roundnessSlider = document.getElementById('easy-brush-roundness');
+        if (roundnessSlider) {
+            roundnessSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('easy-brush-roundness-value').textContent = value.toFixed(2);
+                if (this.easyBrushIntegration) {
+                    this.easyBrushIntegration.updateConfig({ roundness: value });
+                }
+            });
+        }
+        
+        // Angle slider
+        const angleSlider = document.getElementById('easy-brush-angle');
+        if (angleSlider) {
+            angleSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('easy-brush-angle-value').textContent = value;
+                if (this.easyBrushIntegration) {
+                    this.easyBrushIntegration.updateConfig({ angle: value });
+                }
+            });
+        }
+    }
+    
+    // Create tool settings panels
+    createBucketSettingsPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'bucket-settings-panel';
+        panel.className = 'tool-settings-panel';
+        panel.innerHTML = `
+            <div class="tool-settings-header">
+                <span class="tool-settings-title">Bucket Fill Settings</span>
+                <button class="tool-settings-close">×</button>
+            </div>
+            <div class="tool-settings-content">
+                <div class="tool-setting-group">
+                    <label>Opacity:</label>
+                    <input type="range" id="bucket-opacity" min="0" max="100" value="80">
+                    <span id="bucket-opacity-value">80</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Bleed:</label>
+                    <input type="range" id="bucket-bleed" min="0" max="60" value="7" step="1">
+                    <span id="bucket-bleed-value">7</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Texture:</label>
+                    <input type="range" id="bucket-texture" min="0" max="100" value="40" step="1">
+                    <span id="bucket-texture-value">40</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Border:</label>
+                    <input type="range" id="bucket-border" min="0" max="100" value="40" step="1">
+                    <span id="bucket-border-value">40</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Direction:</label>
+                    <select id="bucket-direction">
+                        <option value="out">Out</option>
+                        <option value="in">In</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(panel);
+        this.setupBucketSettingsEvents(panel);
+        return panel;
+    }
+    
+    createVectorSettingsPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'vector-settings-panel';
+        panel.className = 'tool-settings-panel';
+        const fields = ['curved', 'truncated', 'zigzag', 'waves', 'seabed'];
+        panel.innerHTML = `
+            <div class="tool-settings-header">
+                <span class="tool-settings-title">Vector Field Settings</span>
+                <button class="tool-settings-close">×</button>
+            </div>
+            <div class="tool-settings-content">
+                <div class="tool-setting-group">
+                    <label>Field Type:</label>
+                    <select id="vector-field-type">
+                        ${fields.map(f => `<option value="${f}">${f.charAt(0).toUpperCase() + f.slice(1)}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Strength:</label>
+                    <input type="range" id="vector-strength" min="0" max="200" value="100" step="1">
+                    <span id="vector-strength-value">100</span>%
+                </div>
+                <div class="tool-setting-group">
+                    <button id="vector-toggle" class="tool-toggle-btn">Enable Vector Field</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(panel);
+        this.setupVectorSettingsEvents(panel);
+        return panel;
+    }
+    
+    createHatchSettingsPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'hatch-settings-panel';
+        panel.className = 'tool-settings-panel';
+        panel.innerHTML = `
+            <div class="tool-settings-header">
+                <span class="tool-settings-title">Hatch Settings</span>
+                <button class="tool-settings-close">×</button>
+            </div>
+            <div class="tool-settings-content">
+                <div class="tool-setting-group">
+                    <label>Distance:</label>
+                    <input type="range" id="hatch-distance" min="1" max="20" value="5" step="1">
+                    <span id="hatch-distance-value">5</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Angle:</label>
+                    <input type="range" id="hatch-angle" min="0" max="180" value="45" step="1">
+                    <span id="hatch-angle-value">45</span>°
+                </div>
+                <div class="tool-setting-group">
+                    <label>
+                        <input type="checkbox" id="hatch-random"> Random
+                    </label>
+                </div>
+                <div class="tool-setting-group">
+                    <label>
+                        <input type="checkbox" id="hatch-continuous"> Continuous
+                    </label>
+                </div>
+                <div class="tool-setting-group">
+                    <label>
+                        <input type="checkbox" id="hatch-gradient"> Gradient
+                    </label>
+                </div>
+                <div class="tool-setting-group">
+                    <button id="hatch-toggle" class="tool-toggle-btn">Enable Hatch</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(panel);
+        this.setupHatchSettingsEvents(panel);
+        return panel;
+    }
+    
+    createEffectSettingsPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'effect-settings-panel';
+        panel.className = 'tool-settings-panel';
+        panel.innerHTML = `
+            <div class="tool-settings-header">
+                <span class="tool-settings-title">${this.currentTool === 'smudge' ? 'Smudge' : 'Blur'} Settings</span>
+                <button class="tool-settings-close">×</button>
+            </div>
+            <div class="tool-settings-content">
+                <div class="tool-setting-group">
+                    <label>Intensity:</label>
+                    <input type="range" id="effect-intensity" min="0" max="100" value="50" step="1">
+                    <span id="effect-intensity-value">50</span>
+                </div>
+                <div class="tool-setting-group">
+                    <label>Size:</label>
+                    <input type="range" id="effect-size" min="1" max="100" value="20" step="1">
+                    <span id="effect-size-value">20</span>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(panel);
+        this.setupEffectSettingsEvents(panel);
+        return panel;
+    }
+    
+    setupBucketSettingsEvents(panel) {
+        const closeBtn = panel.querySelector('.tool-settings-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
+        }
+        
+        // Setup sliders
+        const opacitySlider = document.getElementById('bucket-opacity');
+        const bleedSlider = document.getElementById('bucket-bleed');
+        const textureSlider = document.getElementById('bucket-texture');
+        const borderSlider = document.getElementById('bucket-border');
+        
+        if (opacitySlider) {
+            opacitySlider.addEventListener('input', (e) => {
+                const value = e.target.value;
+                document.getElementById('bucket-opacity-value').textContent = value;
+            });
+        }
+        
+        if (bleedSlider) {
+            bleedSlider.addEventListener('input', (e) => {
+                const value = e.target.value / 100;
+                document.getElementById('bucket-bleed-value').textContent = e.target.value;
+            });
+        }
+        
+        if (textureSlider) {
+            textureSlider.addEventListener('input', (e) => {
+                const value = e.target.value / 100;
+                document.getElementById('bucket-texture-value').textContent = e.target.value;
+            });
+        }
+        
+        if (borderSlider) {
+            borderSlider.addEventListener('input', (e) => {
+                const value = e.target.value / 100;
+                document.getElementById('bucket-border-value').textContent = e.target.value;
+            });
+        }
+    }
+    
+    setupVectorSettingsEvents(panel) {
+        const closeBtn = panel.querySelector('.tool-settings-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
+        }
+        
+        const toggleBtn = document.getElementById('vector-toggle');
+        const typeSelect = document.getElementById('vector-field-type');
+        
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+            });
+        }
+    }
+    
+    setupHatchSettingsEvents(panel) {
+        const closeBtn = panel.querySelector('.tool-settings-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
+        }
+        
+        const toggleBtn = document.getElementById('hatch-toggle');
+        const distanceSlider = document.getElementById('hatch-distance');
+        const angleSlider = document.getElementById('hatch-angle');
+        
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+            });
+        }
+    }
+    
+    setupEffectSettingsEvents(panel) {
+        const closeBtn = panel.querySelector('.tool-settings-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
+        }
     }
     
     showToolSettingsPlaceholder() {
