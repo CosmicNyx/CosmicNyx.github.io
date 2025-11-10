@@ -10,16 +10,11 @@ class IbisPaintWorkspace {
         
         // Layer management
         this.layers = [
-            { id: 'layer-6', name: '6', visible: true, opacity: 100, blendMode: 'normal', isActive: false, thumbnail: null, color: '#ff6b6b', type: 'layer', parentId: null },
-            { id: 'layer-5', name: '5', visible: true, opacity: 100, blendMode: 'normal', isActive: false, thumbnail: null, color: '#4ecdc4', type: 'layer', parentId: null },
-            { id: 'layer-4', name: '4', visible: true, opacity: 100, blendMode: 'normal', isActive: false, thumbnail: null, color: '#45b7d1', type: 'layer', parentId: null },
-            { id: 'layer-3', name: '3', visible: true, opacity: 100, blendMode: 'normal', isActive: false, thumbnail: null, color: '#96ceb4', type: 'layer', parentId: null },
-            { id: 'layer-2', name: '2', visible: true, opacity: 100, blendMode: 'normal', isActive: true, thumbnail: null, color: '#feca57', type: 'layer', parentId: null },
-            { id: 'layer-1', name: '1', visible: true, opacity: 100, blendMode: 'normal', isActive: false, thumbnail: null, color: '#ff9ff3', type: 'layer', parentId: null },
+            { id: 'layer-1', name: '1', visible: true, opacity: 100, blendMode: 'normal', isActive: true, thumbnail: null, color: '#feca57', type: 'layer', parentId: null, canvas: null, ctx: null },
         ];
-        this.activeLayerId = 'layer-2';
-        this.selectedLayerIds = new Set(['layer-2']); // Multi-select support
-        this.nextLayerId = 7;
+        this.activeLayerId = 'layer-1';
+        this.selectedLayerIds = new Set(['layer-1']); // Multi-select support
+        this.nextLayerId = 2;
         this.nextFolderId = 1;
         
         // Multi-select mode state
@@ -58,9 +53,7 @@ class IbisPaintWorkspace {
         this.lastPoint = null;
         this.drawingData = [];
         
-        // Create offscreen canvas for drawing
-        this.drawingCanvas = null;
-        this.drawingCtx = null;
+        // Layer canvases are now stored in each layer object
         
         this.init();
     }
@@ -75,6 +68,8 @@ class IbisPaintWorkspace {
         this.setupBrushPanel();
         this.setupReferenceImages();
         this.updateUI();
+        this.updateToolSelectionByTool(); // Set initial tool selection
+        this.updateBrushSlidersVisibility(); // Show/hide brush sliders based on initial tool
         
         // Dev access in console
         window.workspace = this;
@@ -85,21 +80,42 @@ class IbisPaintWorkspace {
         this.canvas = document.getElementById('drawing-canvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // Create offscreen canvas for drawing
-        this.drawingCanvas = document.createElement('canvas');
-        this.drawingCanvas.width = this.drawingAreaSize;
-        this.drawingCanvas.height = this.drawingAreaSize;
-        this.drawingCtx = this.drawingCanvas.getContext('2d');
-        
-        // Fill drawing canvas with white background
-        this.drawingCtx.fillStyle = '#ffffff';
-        this.drawingCtx.fillRect(0, 0, this.drawingAreaSize, this.drawingAreaSize);
+        // Create canvas for each layer
+        this.initializeLayerCanvases();
         
         // Simple canvas setup for workspace display
         this.setupCanvasDisplay();
         
         // Handle window resize
         window.addEventListener('resize', () => this.handleResize());
+    }
+    
+    initializeLayerCanvases() {
+        // Create a canvas for each layer
+        this.layers.forEach(layer => {
+            if (layer.type === 'layer' && !layer.canvas) {
+                layer.canvas = document.createElement('canvas');
+                layer.canvas.width = this.drawingAreaSize;
+                layer.canvas.height = this.drawingAreaSize;
+                layer.ctx = layer.canvas.getContext('2d');
+                // Start with transparent background for each layer
+                layer.ctx.clearRect(0, 0, this.drawingAreaSize, this.drawingAreaSize);
+            }
+        });
+    }
+    
+    getActiveLayer() {
+        return this.layers.find(l => l.id === this.activeLayerId);
+    }
+    
+    getActiveLayerCanvas() {
+        const activeLayer = this.getActiveLayer();
+        return activeLayer ? activeLayer.canvas : null;
+    }
+    
+    getActiveLayerContext() {
+        const activeLayer = this.getActiveLayer();
+        return activeLayer ? activeLayer.ctx : null;
     }
     
     setupCanvasDisplay() {
@@ -129,8 +145,9 @@ class IbisPaintWorkspace {
         // Clear the entire canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Fill background with void color
-        this.ctx.fillStyle = '#383838';
+        // Fill background with void color from CSS variable
+        const voidColor = getComputedStyle(document.documentElement).getPropertyValue('--void-color').trim() || '#383838';
+        this.ctx.fillStyle = voidColor;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Save context for transformations
@@ -158,13 +175,31 @@ class IbisPaintWorkspace {
     drawDrawingArea() {
         const halfSize = this.drawingAreaSize / 2;
         
-        // Draw the offscreen drawing canvas
-        this.ctx.drawImage(this.drawingCanvas, -halfSize, -halfSize, this.drawingAreaSize, this.drawingAreaSize);
+        // Draw white background first
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillRect(-halfSize, -halfSize, this.drawingAreaSize, this.drawingAreaSize);
         
-        // Draw border
-        this.ctx.strokeStyle = '#374151';
-        this.ctx.lineWidth = 2 / this.zoom;
-        this.ctx.strokeRect(-halfSize, -halfSize, this.drawingAreaSize, this.drawingAreaSize);
+        // Draw all visible layers from bottom to top
+        for (let i = this.layers.length - 1; i >= 0; i--) {
+            const layer = this.layers[i];
+            if (layer.type === 'layer' && layer.visible && layer.canvas) {
+                this.ctx.globalAlpha = layer.opacity / 100;
+                this.ctx.globalCompositeOperation = layer.blendMode || 'source-over';
+                this.ctx.drawImage(layer.canvas, -halfSize, -halfSize, this.drawingAreaSize, this.drawingAreaSize);
+            }
+        }
+        
+        // Reset composite operation
+        this.ctx.globalAlpha = 1;
+        this.ctx.globalCompositeOperation = 'source-over';
+        
+        // Draw border using CSS variable (optional - set to 'none' in CSS to remove)
+        const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-border-color').trim() || '#374151';
+        if (borderColor !== 'none' && borderColor !== 'transparent') {
+            this.ctx.strokeStyle = borderColor;
+            this.ctx.lineWidth = 2 / this.zoom;
+            this.ctx.strokeRect(-halfSize, -halfSize, this.drawingAreaSize, this.drawingAreaSize);
+        }
     }
     
     handleResize() {
@@ -217,9 +252,8 @@ class IbisPaintWorkspace {
         let initialPanY = 0;
         
         this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            
             if (e.touches.length === 2) {
+                e.preventDefault();
                 // Two finger gesture - pinch to zoom, rotate, and pan
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
@@ -253,9 +287,8 @@ class IbisPaintWorkspace {
         });
         
         this.canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            
             if (e.touches.length === 2) {
+                e.preventDefault();
                 // Two finger gesture
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
@@ -302,7 +335,6 @@ class IbisPaintWorkspace {
         });
         
         this.canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
             // Reset touch tracking
             lastTouchDistance = 0;
             lastTouchAngle = 0;
@@ -411,11 +443,11 @@ class IbisPaintWorkspace {
         if (btnSwitch) {
             btnSwitch.addEventListener('click', () => {
                 if (this.currentTool === 'brush') {
-                    this.currentTool = 'eraser';
+                    this.setCurrentTool('eraser');
                     btnSwitch.classList.remove('icon-eraser');
                     btnSwitch.classList.add('icon-brush');
                 } else {
-                    this.currentTool = 'brush';
+                    this.setCurrentTool('brush');
                     btnSwitch.classList.remove('icon-brush');
                     btnSwitch.classList.add('icon-eraser');
                 }
@@ -467,9 +499,28 @@ class IbisPaintWorkspace {
                 this.toggleLayersPanel();
             });
         }
-        if (btnBack) {
-            btnBack.addEventListener('click', () => {
-                alert('Menu: Back / Export / Save / Settings (placeholder)');
+        // Back button with options menu
+        const optionsMenu = document.getElementById('options-menu');
+        if (btnBack && optionsMenu) {
+            btnBack.addEventListener('click', (e) => {
+                e.stopPropagation();
+                optionsMenu.classList.toggle('is-visible');
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (optionsMenu && !optionsMenu.contains(e.target) && !btnBack.contains(e.target)) {
+                    optionsMenu.classList.remove('is-visible');
+                }
+            });
+        }
+        
+        // Clear canvas option
+        const optionClearCanvas = document.getElementById('option-clear-canvas');
+        if (optionClearCanvas) {
+            optionClearCanvas.addEventListener('click', () => {
+                this.clearCanvas();
+                if (optionsMenu) optionsMenu.classList.remove('is-visible');
             });
         }
         
@@ -499,27 +550,86 @@ class IbisPaintWorkspace {
             });
         }
         
+        // Vertical brush control sliders (shown when brush is selected)
+        const brushSizeVerticalSlider = document.getElementById('brush-size-vertical-slider');
+        const brushOpacityVerticalSlider = document.getElementById('brush-opacity-vertical-slider');
+        const brushSizeValue = document.getElementById('brush-size-value');
+        const brushOpacityValue = document.getElementById('brush-opacity-value');
+        
+        if (brushSizeVerticalSlider) {
+            brushSizeVerticalSlider.value = this.brushSize;
+            const updateBrushSize = (e) => {
+                const value = parseInt(e.target.value);
+                this.brushSize = value;
+                if (brushSizeValue) brushSizeValue.textContent = value;
+                // Also update hidden slider if it exists
+                if (brushSizeSlider) brushSizeSlider.value = value;
+            };
+            brushSizeVerticalSlider.addEventListener('input', updateBrushSize);
+            brushSizeVerticalSlider.addEventListener('change', updateBrushSize);
+        }
+        
+        if (brushOpacityVerticalSlider) {
+            brushOpacityVerticalSlider.value = this.brushOpacity;
+            const updateBrushOpacity = (e) => {
+                const value = parseInt(e.target.value);
+                this.brushOpacity = value;
+                if (brushOpacityValue) brushOpacityValue.textContent = value;
+                // Also update hidden slider if it exists
+                if (brushOpacitySlider) brushOpacitySlider.value = value;
+            };
+            brushOpacityVerticalSlider.addEventListener('input', updateBrushOpacity);
+            brushOpacityVerticalSlider.addEventListener('change', updateBrushOpacity);
+        }
+        
+        // Initialize slider values
+        if (brushSizeValue) brushSizeValue.textContent = this.brushSize;
+        if (brushOpacityValue) brushOpacityValue.textContent = this.brushOpacity;
+        
         // Canvas events (placeholder for future drawing functionality)
         this.setupCanvasEvents();
     }
     
     setupCanvasEvents() {
-        // Touch-only canvas events for drawing (disabled)
-        // this.canvas.addEventListener('touchstart', (e) => {
-        //     // Only handle drawing if single touch (not gesture)
-        //     if (e.touches.length === 1) {
-        //         this.handleCanvasTouchStart(e);
-        //     }
-        // });
+        // Mouse events for drawing
+        this.canvas.addEventListener('mousedown', (e) => {
+            if ((this.currentTool === 'brush' && this.selectedBrushId === 'pen') || this.currentTool === 'eraser') {
+                this.handleCanvasMouseDown(e);
+            }
+        });
         
-        // this.canvas.addEventListener('touchmove', (e) => {
-        //     // Only handle drawing if single touch (not gesture)
-        //     if (e.touches.length === 1) {
-        //         this.handleCanvasTouchMove(e);
-        //     }
-        // });
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.isDrawing && ((this.currentTool === 'brush' && this.selectedBrushId === 'pen') || this.currentTool === 'eraser')) {
+                this.handleCanvasMouseMove(e);
+            }
+        });
         
-        // this.canvas.addEventListener('touchend', (e) => this.handleCanvasTouchEnd(e));
+        this.canvas.addEventListener('mouseup', () => {
+            if (this.isDrawing) {
+                this.handleCanvasMouseUp();
+            }
+        });
+        
+        // Touch-only canvas events for drawing
+        this.canvas.addEventListener('touchstart', (e) => {
+            // Only handle drawing if single touch (not gesture)
+            if (e.touches.length === 1 && ((this.currentTool === 'brush' && this.selectedBrushId === 'pen') || this.currentTool === 'eraser')) {
+                this.handleCanvasTouchStart(e);
+            }
+        });
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            // Only handle drawing if single touch (not gesture)
+            if (e.touches.length === 1 && this.isDrawing && ((this.currentTool === 'brush' && this.selectedBrushId === 'pen') || this.currentTool === 'eraser')) {
+                this.handleCanvasTouchMove(e);
+            }
+        });
+        
+        this.canvas.addEventListener('touchend', (e) => {
+            if (this.isDrawing) {
+                this.handleCanvasTouchEnd(e);
+            }
+        });
     }
     
     // ===== CANVAS EVENT HANDLERS (PLACEHOLDERS) =====
@@ -557,55 +667,68 @@ class IbisPaintWorkspace {
     
     handleCanvasMouseDown(e) {
         const coords = this.getCanvasCoordinates(e);
-        // noop
+        
+        // Check if click is within drawing area
+        if (this.isPointInDrawingArea(coords)) {
+            this.isDrawing = true;
+            this.lastPoint = coords;
+            
+            // Start drawing stroke
+            this.startStroke(coords);
+        }
     }
     
     handleCanvasMouseMove(e) {
-        // TODO: Implement drawing functionality
+        if (this.isDrawing && this.lastPoint) {
+            const coords = this.getCanvasCoordinates(e);
+            
+            // Continue drawing stroke
+            this.drawLine(this.lastPoint, coords);
+            this.lastPoint = coords;
+        }
     }
     
     handleCanvasMouseUp() {
-        // TODO: Implement drawing functionality
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            this.lastPoint = null;
+            this.endStroke();
+        }
     }
     
     handleCanvasTouchStart(e) {
         e.preventDefault();
-        // Drawing disabled - do nothing
-        // const coords = this.getCanvasCoordinates(e);
+        const coords = this.getCanvasCoordinates(e);
         
-        // // Check if touch is within drawing area
-        // if (this.isPointInDrawingArea(coords)) {
-        //     this.isDrawing = true;
-        //     this.lastPoint = coords;
+        // Check if touch is within drawing area
+        if (this.isPointInDrawingArea(coords)) {
+            this.isDrawing = true;
+            this.lastPoint = coords;
             
-        //     // Start drawing stroke
-        //     this.startStroke(coords);
-        //     console.log('Started drawing at:', coords);
-        // }
+            // Start drawing stroke
+            this.startStroke(coords);
+        }
     }
     
     handleCanvasTouchMove(e) {
         e.preventDefault();
-        // Drawing disabled - do nothing
-        // const coords = this.getCanvasCoordinates(e);
+        const coords = this.getCanvasCoordinates(e);
         
-        // if (this.isDrawing && this.lastPoint) {
-        //     // Continue drawing stroke
-        //     this.drawLine(this.lastPoint, coords);
-        //     this.lastPoint = coords;
-        // }
+        if (this.isDrawing && this.lastPoint) {
+            // Continue drawing stroke
+            this.drawLine(this.lastPoint, coords);
+            this.lastPoint = coords;
+        }
     }
     
     handleCanvasTouchEnd(e) {
         e.preventDefault();
         
-        // Drawing disabled - do nothing
-        // if (this.isDrawing) {
-        //     this.isDrawing = false;
-        //     this.lastPoint = null;
-        //     this.endStroke();
-        //     console.log('Finished drawing stroke');
-        // }
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            this.lastPoint = null;
+            this.endStroke();
+        }
     }
     
     // ===== DRAWING ENGINE =====
@@ -616,59 +739,75 @@ class IbisPaintWorkspace {
     }
     
     startStroke(coords) {
-        // Drawing disabled - do nothing
-        // // Save current drawing canvas state for undo
-        // this.saveCanvasState();
+        const layerCtx = this.getActiveLayerContext();
+        if (!layerCtx) return;
         
-        // // Set up drawing context on offscreen canvas
-        // this.drawingCtx.save();
+        // Save current drawing canvas state for undo
+        this.saveCanvasState();
         
-        // // Set drawing style
-        // this.drawingCtx.strokeStyle = this.currentColor;
-        // this.drawingCtx.lineWidth = this.brushSize;
-        // this.drawingCtx.lineCap = 'round';
-        // this.drawingCtx.lineJoin = 'round';
-        // this.drawingCtx.globalAlpha = this.brushOpacity / 100;
+        // Set up drawing context on active layer canvas
+        layerCtx.save();
         
-        // // Convert coordinates to drawing canvas coordinates
-        // const halfSize = this.drawingAreaSize / 2;
-        // const drawX = coords.x + halfSize;
-        // const drawY = coords.y + halfSize;
+        // Set drawing style
+        layerCtx.strokeStyle = this.currentColor;
+        layerCtx.lineWidth = this.brushSize;
+        layerCtx.lineCap = 'round';
+        layerCtx.lineJoin = 'round';
+        layerCtx.globalAlpha = this.brushOpacity / 100;
         
-        // // Start path
-        // this.drawingCtx.beginPath();
-        // this.drawingCtx.moveTo(drawX, drawY);
+        // Convert coordinates to drawing canvas coordinates
+        const halfSize = this.drawingAreaSize / 2;
+        const drawX = coords.x + halfSize;
+        const drawY = coords.y + halfSize;
+        
+        // Start path
+        layerCtx.beginPath();
+        layerCtx.moveTo(drawX, drawY);
     }
     
     drawLine(from, to) {
-        // Drawing disabled - do nothing
-        // // Convert coordinates to drawing canvas coordinates
-        // const halfSize = this.drawingAreaSize / 2;
-        // const fromX = from.x + halfSize;
-        // const fromY = from.y + halfSize;
-        // const toX = to.x + halfSize;
-        // const toY = to.y + halfSize;
+        const layerCtx = this.getActiveLayerContext();
+        if (!layerCtx) return;
         
-        // if (this.currentTool === 'brush') {
-        //     this.drawingCtx.lineTo(toX, toY);
-        //     this.drawingCtx.stroke();
-        // } else if (this.currentTool === 'eraser') {
-        //     this.drawingCtx.globalCompositeOperation = 'destination-out';
-        //     this.drawingCtx.lineTo(toX, toY);
-        //     this.drawingCtx.stroke();
-        //     this.drawingCtx.globalCompositeOperation = 'source-over';
-        // }
+        // Convert coordinates to drawing canvas coordinates
+        const halfSize = this.drawingAreaSize / 2;
+        const fromX = from.x + halfSize;
+        const fromY = from.y + halfSize;
+        const toX = to.x + halfSize;
+        const toY = to.y + halfSize;
+        
+        if (this.currentTool === 'brush' && this.selectedBrushId === 'pen') {
+            layerCtx.lineTo(toX, toY);
+            layerCtx.stroke();
+            
+            // Redraw the canvas to show the new stroke
+            this.applyTransformations();
+        } else if (this.currentTool === 'eraser') {
+            // Erase only from the layer canvas, not the white background
+            layerCtx.globalCompositeOperation = 'destination-out';
+            layerCtx.lineTo(toX, toY);
+            layerCtx.stroke();
+            layerCtx.globalCompositeOperation = 'source-over';
+            
+            // Redraw the canvas to show the new stroke
+            this.applyTransformations();
+        }
     }
     
     endStroke() {
-        // Drawing disabled - do nothing
-        // this.drawingCtx.restore();
-        // this.applyTransformations(); // Redraw the canvas with new stroke
+        const layerCtx = this.getActiveLayerContext();
+        if (layerCtx) {
+            layerCtx.restore();
+        }
+        this.applyTransformations(); // Redraw the canvas with new stroke
     }
     
     saveCanvasState() {
-        // Save current drawing canvas state for undo functionality
-        const imageData = this.drawingCtx.getImageData(0, 0, this.drawingAreaSize, this.drawingAreaSize);
+        // Save current active layer canvas state for undo functionality
+        const layerCtx = this.getActiveLayerContext();
+        if (!layerCtx) return;
+        
+        const imageData = layerCtx.getImageData(0, 0, this.drawingAreaSize, this.drawingAreaSize);
         this.history.push(imageData);
         this.historyStep++;
         
@@ -1458,6 +1597,9 @@ class IbisPaintWorkspace {
         });
         
         this.updateLayersPanel();
+        // Immediately redraw canvas to show new layer order
+        this.applyTransformations();
+        this.updateNavigationCanvas();
     }
     
     // Move multiple selected layers to folder
@@ -1568,6 +1710,9 @@ class IbisPaintWorkspace {
         this.layers.splice(targetIndex, 0, draggedItem);
         
         this.updateLayersPanel();
+        // Immediately redraw canvas to show new layer order
+        this.applyTransformations();
+        this.updateNavigationCanvas();
     }
     
     moveLayerToDropZone(draggedId, dropZone) {
@@ -1591,6 +1736,9 @@ class IbisPaintWorkspace {
         }
         
         this.updateLayersPanel();
+        // Immediately redraw canvas to show new layer order
+        this.applyTransformations();
+        this.updateNavigationCanvas();
     }
     
     moveMultipleLayersToDropZone(layerIds, dropZone) {
@@ -1621,9 +1769,19 @@ class IbisPaintWorkspace {
         }
         
         this.updateLayersPanel();
+        // Immediately redraw canvas to show new layer order
+        this.applyTransformations();
+        this.updateNavigationCanvas();
     }
     
     addLayer() {
+        // Create canvas for new layer
+        const layerCanvas = document.createElement('canvas');
+        layerCanvas.width = this.drawingAreaSize;
+        layerCanvas.height = this.drawingAreaSize;
+        const layerCtx = layerCanvas.getContext('2d');
+        layerCtx.clearRect(0, 0, this.drawingAreaSize, this.drawingAreaSize);
+        
         const newLayer = {
             id: `layer-${this.nextLayerId}`,
             name: `${this.nextLayerId}`,
@@ -1634,7 +1792,9 @@ class IbisPaintWorkspace {
             thumbnail: null,
             color: this.getRandomColor(),
             type: 'layer',
-            parentId: null
+            parentId: null,
+            canvas: layerCanvas,
+            ctx: layerCtx
         };
         
         // Insert above currently selected item
@@ -1649,6 +1809,10 @@ class IbisPaintWorkspace {
         if (layer) {
             layer.visible = !layer.visible;
             this.updateLayersPanel();
+            // Redraw canvas to show/hide layer content
+            this.applyTransformations();
+            // Update navigation canvas if visible
+            this.updateNavigationCanvas();
         }
     }
     
@@ -1759,6 +1923,9 @@ class IbisPaintWorkspace {
         });
         
         this.updateLayersPanel();
+        // Immediately redraw canvas to show new layer order
+        this.applyTransformations();
+        this.updateNavigationCanvas();
     }
     
     moveLayerDown() {
@@ -1774,6 +1941,9 @@ class IbisPaintWorkspace {
         });
         
         this.updateLayersPanel();
+        // Immediately redraw canvas to show new layer order
+        this.applyTransformations();
+        this.updateNavigationCanvas();
     }
     
     setActiveLayer(layerId) {
@@ -1877,29 +2047,15 @@ class IbisPaintWorkspace {
     // ===== BRUSH PANEL (FULLY FUNCTIONAL) =====
     setupBrushPanel() {
         this.basicBrushes = [
-            { id: 'pen', name: 'Pen', value: 8.0, isStarred: false, preview: 'pen' },
-            { id: 'brush', name: 'Brush', value: 15.0, isStarred: false, preview: 'solid' },
-            { id: 'marker', name: 'Marker', value: 12.0, isStarred: false, preview: 'marker' },
-            { id: 'pencil', name: 'Pencil', value: 6.0, isStarred: false, preview: 'pen' }
+            { id: 'pen', name: 'Pen', value: 8.0, isStarred: false, preview: 'pen' }
         ];
         
         this.customBrushes = [
-            { id: 'rainbow-splash', name: 'Rainbow Splash', value: 45.0, isStarred: false, preview: 'spray' },
-            { id: 'cosmic-dust', name: 'Cosmic Dust', value: 23.5, isStarred: true, preview: 'soft' },
-            { id: 'neon-glow', name: 'Neon Glow', value: 67.0, isStarred: false, preview: 'thick' },
-            { id: 'mystic-waves', name: 'Mystic Waves', value: 34.2, isStarred: false, preview: 'wavy' },
-            { id: 'crystal-shards', name: 'Crystal Shards', value: 18.8, isStarred: false, preview: 'textured' },
-            { id: 'shadow-blend', name: 'Shadow Blend', value: 52.0, isStarred: false, preview: 'soft' },
-            { id: 'fire-strokes', name: 'Fire Strokes', value: 89.0, isStarred: true, preview: 'thick' },
-            { id: 'ice-crystals', name: 'Ice Crystals', value: 41.3, isStarred: false, preview: 'textured' }
+            { id: 'crystal-shards', name: 'Crystal Shards', value: 18.8, isStarred: false, preview: 'textured' }
         ];
         
         this.specialBrushes = [
-            { id: 'magic-wand', name: 'Magic Wand', value: 100.0, isStarred: true, preview: 'star' },
-            { id: 'galaxy-brush', name: 'Galaxy Brush', value: 75.5, isStarred: false, preview: 'spray' },
-            { id: 'dragon-scale', name: 'Dragon Scale', value: 33.0, isStarred: false, preview: 'textured' },
-            { id: 'phoenix-feather', name: 'Phoenix Feather', value: 58.7, isStarred: true, preview: 'soft' },
-            { id: 'unicorn-hair', name: 'Unicorn Hair', value: 42.1, isStarred: false, preview: 'wavy' }
+            { id: 'dragon-scale', name: 'Dragon Scale', value: 33.0, isStarred: false, preview: 'textured' }
         ];
         
         this.currentTab = 'basic';
@@ -3081,7 +3237,7 @@ class IbisPaintWorkspace {
     updateNavigationCanvas() {
         const navCanvas = document.getElementById('nav-canvas');
         
-        if (!navCanvas || !this.drawingCanvas) return;
+        if (!navCanvas) return;
         
         const navCtx = navCanvas.getContext('2d');
         const navWidth = navCanvas.width;
@@ -3092,8 +3248,8 @@ class IbisPaintWorkspace {
         navCtx.fillRect(0, 0, navWidth, navHeight);
         
         // Get the actual drawing canvas dimensions (500x500)
-        const drawingWidth = this.drawingCanvas.width;
-        const drawingHeight = this.drawingCanvas.height;
+        const drawingWidth = this.drawingAreaSize;
+        const drawingHeight = this.drawingAreaSize;
         
         // Calculate scale to fit the drawing canvas in navigation panel
         const scaleX = navWidth / drawingWidth;
@@ -3106,12 +3262,27 @@ class IbisPaintWorkspace {
         const offsetX = (navWidth - scaledWidth) / 2;
         const offsetY = (navHeight - scaledHeight) / 2;
         
-        // Draw the actual drawing canvas (the white 500x500 canvas with content)
-        navCtx.drawImage(
-            this.drawingCanvas, 
-            0, 0, drawingWidth, drawingHeight,  // Source: entire drawing canvas
-            offsetX, offsetY, scaledWidth, scaledHeight  // Destination: scaled and centered
-        );
+        // Draw white background
+        navCtx.fillStyle = '#ffffff';
+        navCtx.fillRect(offsetX, offsetY, scaledWidth, scaledHeight);
+        
+        // Draw all visible layers from bottom to top
+        for (let i = this.layers.length - 1; i >= 0; i--) {
+            const layer = this.layers[i];
+            if (layer.type === 'layer' && layer.visible && layer.canvas) {
+                navCtx.globalAlpha = layer.opacity / 100;
+                navCtx.globalCompositeOperation = layer.blendMode || 'source-over';
+                navCtx.drawImage(
+                    layer.canvas,
+                    0, 0, drawingWidth, drawingHeight,
+                    offsetX, offsetY, scaledWidth, scaledHeight
+                );
+            }
+        }
+        
+        // Reset composite operation
+        navCtx.globalAlpha = 1;
+        navCtx.globalCompositeOperation = 'source-over';
     }
     
     setupCanvasUpdateListener() {
@@ -3434,6 +3605,17 @@ class IbisPaintWorkspace {
         if (brushOpacitySlider) brushOpacitySlider.value = this.brushOpacity;
         if (stabilizerSlider) stabilizerSlider.value = this.stabilizer;
         
+        // Update vertical brush control sliders
+        const brushSizeVerticalSlider = document.getElementById('brush-size-vertical-slider');
+        const brushOpacityVerticalSlider = document.getElementById('brush-opacity-vertical-slider');
+        const brushSizeValue = document.getElementById('brush-size-value');
+        const brushOpacityValue = document.getElementById('brush-opacity-value');
+        
+        if (brushSizeVerticalSlider) brushSizeVerticalSlider.value = this.brushSize;
+        if (brushOpacityVerticalSlider) brushOpacityVerticalSlider.value = this.brushOpacity;
+        if (brushSizeValue) brushSizeValue.textContent = this.brushSize;
+        if (brushOpacityValue) brushOpacityValue.textContent = this.brushOpacity;
+        
         // Update bottom color swatch
         const btnColor = document.getElementById('btn-color');
         if (btnColor) {
@@ -3448,7 +3630,8 @@ class IbisPaintWorkspace {
     
     setCurrentTool(tool) {
         this.currentTool = tool;
-        // noop
+        this.updateToolSelectionByTool();
+        this.updateBrushSlidersVisibility();
     }
 
     updateToolSelection(selectedTile) {
@@ -3460,6 +3643,46 @@ class IbisPaintWorkspace {
         if (selectedTile) {
             selectedTile.classList.add('is-active');
         }
+    }
+    
+    updateToolSelectionByTool() {
+        // Update tool selection based on currentTool
+        const allTiles = document.querySelectorAll('.tool-tile');
+        allTiles.forEach(tile => {
+            tile.classList.remove('is-active');
+            const tool = tile.getAttribute('data-tool');
+            if (tool === this.currentTool) {
+                tile.classList.add('is-active');
+            }
+        });
+        this.updateBrushSlidersVisibility();
+    }
+    
+    updateBrushSlidersVisibility() {
+        const brushSliders = document.getElementById('brush-control-sliders');
+        if (brushSliders) {
+            if (this.currentTool === 'brush') {
+                brushSliders.classList.add('is-visible');
+            } else {
+                brushSliders.classList.remove('is-visible');
+            }
+        }
+    }
+    
+    clearCanvas() {
+        // Clear all layer canvases
+        this.layers.forEach(layer => {
+            if (layer.type === 'layer' && layer.ctx) {
+                layer.ctx.clearRect(0, 0, this.drawingAreaSize, this.drawingAreaSize);
+            }
+        });
+        
+        // Update the display
+        this.applyTransformations();
+        this.renderLayers();
+        
+        // Save state to history
+        this.saveCanvasState();
     }
     
     getBrushSize() {
@@ -3618,7 +3841,10 @@ class HistoryManager {
         if (this.historyStep > 0) {
             this.historyStep--;
             const imageData = this.history[this.historyStep];
-            this.drawingCtx.putImageData(imageData, 0, 0);
+            const layerCtx = this.getActiveLayerContext();
+            if (layerCtx) {
+                layerCtx.putImageData(imageData, 0, 0);
+            }
             this.applyTransformations(); // Redraw with current transformations
             this.updateUndoRedoButtons();
             // noop
@@ -3629,7 +3855,10 @@ class HistoryManager {
         if (this.historyStep < this.history.length - 1) {
             this.historyStep++;
             const imageData = this.history[this.historyStep];
-            this.drawingCtx.putImageData(imageData, 0, 0);
+            const layerCtx = this.getActiveLayerContext();
+            if (layerCtx) {
+                layerCtx.putImageData(imageData, 0, 0);
+            }
             this.applyTransformations(); // Redraw with current transformations
             this.updateUndoRedoButtons();
             // noop

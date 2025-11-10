@@ -324,6 +324,22 @@
             </div>
           </div>
           
+          <!-- Brush control sliders (shown when brush is selected) -->
+          <div class="brush-control-sliders" id="brush-control-sliders" aria-label="Brush controls">
+            <div class="brush-slider-container">
+              <label for="brush-size-vertical-slider" class="brush-slider-label">Size</label>
+              <input type="range" id="brush-size-vertical-slider" class="brush-vertical-slider" 
+                     min="1" max="100" value="20" title="Brush Size">
+              <span class="brush-slider-value" id="brush-size-value">20</span>
+            </div>
+            <div class="brush-slider-container">
+              <label for="brush-opacity-vertical-slider" class="brush-slider-label">Opacity</label>
+              <input type="range" id="brush-opacity-vertical-slider" class="brush-vertical-slider" 
+                     min="1" max="100" value="100" title="Brush Opacity">
+              <span class="brush-slider-value" id="brush-opacity-value">100</span>
+            </div>
+          </div>
+
           <!-- Bottom toolbar (placeholder controls) -->
           <div class="bottom-toolbar" aria-label="Bottom toolbar">
             <!-- 1) Switch Brush↔Eraser -->
@@ -342,6 +358,13 @@
             <button id="btn-layers" class="bottom-btn icon-layers" title="Layers"></button>
             <!-- 8) Back/Menu -->
             <button id="btn-back" class="bottom-btn icon-back" title="Menu / Export"></button>
+          </div>
+          
+          <!-- Options menu popup -->
+          <div class="options-menu" id="options-menu">
+            <button class="options-menu-item" id="option-clear-canvas">
+              <span class="options-menu-text">Clear Canvas</span>
+            </button>
           </div>
         </main>
       </div>
