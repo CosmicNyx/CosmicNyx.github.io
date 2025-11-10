@@ -8,6 +8,9 @@ class IbisPaintWorkspace {
         this.currentColor = '#3b82f6';
         this.stabilizer = 25;
         
+        // Brush settings per brush ID (size and opacity)
+        this.brushSettings = {};
+        
         // Layer management
         this.layers = [
             { id: 'layer-1', name: '1', visible: true, opacity: 100, blendMode: 'normal', isActive: true, thumbnail: null, color: '#feca57', type: 'layer', parentId: null, canvas: null, ctx: null },
@@ -73,6 +76,10 @@ class IbisPaintWorkspace {
         this.updateToolSelectionByTool(); // Set initial tool selection
         this.updateBrushSlidersVisibility(); // Show/hide brush sliders based on initial tool
         this.updateToolButtonIcon(); // Update tool button icon to match initial tool
+        
+        // Save initial canvas state for undo/redo
+        this.saveInitialCanvasState();
+        this.updateUndoRedoButtons(); // Update undo/redo button states
         
         // Dev access in console
         window.workspace = this;
@@ -496,7 +503,7 @@ class IbisPaintWorkspace {
         const btnRedo2 = el('btn-redo');
         const btnLayers = el('btn-layers');
         const btnBack = el('btn-back');
-
+        
         if (btnSwitch) {
             btnSwitch.addEventListener('click', () => {
                 if (this.currentTool === 'brush') {
@@ -549,8 +556,8 @@ class IbisPaintWorkspace {
             });
         }
 
-        if (btnUndo2) { btnUndo2.addEventListener('click', () => this.undo()); }
-        if (btnRedo2) { btnRedo2.addEventListener('click', () => this.redo()); }
+        if (btnUndo2) { btnUndo2.addEventListener('click', () => this.handleUndo()); }
+        if (btnRedo2) { btnRedo2.addEventListener('click', () => this.handleRedo()); }
         if (btnLayers) {
             btnLayers.addEventListener('click', () => {
                 this.toggleLayersPanel();
@@ -685,6 +692,17 @@ class IbisPaintWorkspace {
                 if (brushSizeValue) brushSizeValue.textContent = value;
                 // Also update hidden slider if it exists
                 if (brushSizeSlider) brushSizeSlider.value = value;
+                
+                // Save size to current brush settings
+                if (this.selectedBrushId) {
+                    if (!this.brushSettings[this.selectedBrushId]) {
+                        this.brushSettings[this.selectedBrushId] = {};
+                    }
+                    this.brushSettings[this.selectedBrushId].size = value;
+                    
+                    // Update the brush value in the brush list
+                    this.updateBrushValueInList(this.selectedBrushId, value);
+                }
             };
             brushSizeVerticalSlider.addEventListener('input', updateBrushSize);
             brushSizeVerticalSlider.addEventListener('change', updateBrushSize);
@@ -698,14 +716,21 @@ class IbisPaintWorkspace {
                 if (brushOpacityValue) brushOpacityValue.textContent = value;
                 // Also update hidden slider if it exists
                 if (brushOpacitySlider) brushOpacitySlider.value = value;
+                
+                // Save opacity to current brush settings
+                if (this.selectedBrushId) {
+                    if (!this.brushSettings[this.selectedBrushId]) {
+                        this.brushSettings[this.selectedBrushId] = {};
+                    }
+                    this.brushSettings[this.selectedBrushId].opacity = value;
+                }
             };
             brushOpacityVerticalSlider.addEventListener('input', updateBrushOpacity);
             brushOpacityVerticalSlider.addEventListener('change', updateBrushOpacity);
         }
         
         // Initialize slider values
-        if (brushSizeValue) brushSizeValue.textContent = this.brushSize;
-        if (brushOpacityValue) brushOpacityValue.textContent = this.brushOpacity;
+        this.updateBrushSliders();
         
         // Canvas events (placeholder for future drawing functionality)
         this.setupCanvasEvents();
@@ -866,8 +891,11 @@ class IbisPaintWorkspace {
         const layerCtx = this.getActiveLayerContext();
         if (!layerCtx) return;
         
-        // Save current drawing canvas state for undo
-        this.saveCanvasState();
+        // Save current drawing canvas state for undo (before drawing)
+        // Only save if this is the start of a new stroke (not continuing)
+        if (!this.isDrawing) {
+            this.saveCanvasState();
+        }
         
         // Set up drawing context on active layer canvas
         layerCtx.save();
@@ -963,6 +991,25 @@ class IbisPaintWorkspace {
             layerCtx.restore();
         }
         this.applyTransformations(); // Redraw the canvas with new stroke
+        
+        // Save canvas state after stroke is complete
+        this.saveCanvasState();
+    }
+    
+    saveInitialCanvasState() {
+        // Save initial empty canvas state
+        const layerCtx = this.getActiveLayerContext();
+        if (!layerCtx) return;
+        
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        const imageData = layerCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+        
+        this.history = [imageData];
+        this.historyStep = 0;
+        
+        // Update button states
+        this.updateUndoRedoButtons();
     }
     
     saveCanvasState() {
@@ -970,7 +1017,15 @@ class IbisPaintWorkspace {
         const layerCtx = this.getActiveLayerContext();
         if (!layerCtx) return;
         
-        const imageData = layerCtx.getImageData(0, 0, this.drawingAreaSize, this.drawingAreaSize);
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        const imageData = layerCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+        
+        // Remove any history after current step (when undoing and then drawing)
+        if (this.historyStep < this.history.length - 1) {
+            this.history = this.history.slice(0, this.historyStep + 1);
+        }
+        
         this.history.push(imageData);
         this.historyStep++;
         
@@ -979,6 +1034,9 @@ class IbisPaintWorkspace {
             this.history.shift();
             this.historyStep--;
         }
+        
+        // Update button states
+        this.updateUndoRedoButtons();
     }
     
     // ===== LAYER MANAGEMENT (FULLY FUNCTIONAL) =====
@@ -2219,6 +2277,14 @@ class IbisPaintWorkspace {
         this.currentBrush = this.basicBrushes.length > 0 ? this.basicBrushes[0] : null;
         this.selectedBrushId = this.basicBrushes.length > 0 ? this.basicBrushes[0].id : null;
         
+        // Initialize settings for the initial brush
+        if (this.selectedBrushId && !this.brushSettings[this.selectedBrushId]) {
+            this.brushSettings[this.selectedBrushId] = {
+                size: this.brushSize,
+                opacity: this.brushOpacity
+            };
+        }
+        
         this.renderBrushList();
         this.setupBrushPanelEvents();
     }
@@ -2288,11 +2354,19 @@ class IbisPaintWorkspace {
             brushItem.className = `brush-item ${brush.id === this.selectedBrushId ? 'selected' : ''}`;
             brushItem.dataset.brushId = brush.id;
             
+            // Get the current size for this brush from settings, or use brush.value as fallback
+            const currentSize = this.brushSettings[brush.id]?.size !== undefined 
+                ? this.brushSettings[brush.id].size 
+                : (brush.value || 20);
+            
+            // Update brush.value to match current size
+            brush.value = currentSize;
+            
             brushItem.innerHTML = `
                 <button class="brush-add-btn">+</button>
                 <div class="brush-preview-stroke ${brush.preview}"></div>
                 <span class="brush-name">${brush.name}</span>
-                <span class="brush-value">${brush.value}</span>
+                <span class="brush-value">${currentSize}</span>
                 <button class="brush-menu-btn">⋮</button>
             `;
             
@@ -2437,7 +2511,34 @@ class IbisPaintWorkspace {
     }
     
     selectBrush(brushId) {
+        // Save current brush settings before switching
+        if (this.selectedBrushId) {
+            if (!this.brushSettings[this.selectedBrushId]) {
+                this.brushSettings[this.selectedBrushId] = {};
+            }
+            this.brushSettings[this.selectedBrushId].size = this.brushSize;
+            this.brushSettings[this.selectedBrushId].opacity = this.brushOpacity;
+        }
+        
         this.selectedBrushId = brushId;
+        
+        // Restore brush settings for the selected brush
+        if (this.brushSettings[brushId]) {
+            this.brushSize = this.brushSettings[brushId].size !== undefined ? this.brushSettings[brushId].size : 20;
+            this.brushOpacity = this.brushSettings[brushId].opacity !== undefined ? this.brushSettings[brushId].opacity : 100;
+        } else {
+            // Initialize default settings for new brush
+            this.brushSize = 20;
+            this.brushOpacity = 100;
+            this.brushSettings[brushId] = {
+                size: 20,
+                opacity: 100
+            };
+        }
+        
+        // Update sliders to reflect the brush's settings
+        this.updateBrushSliders();
+        
         let currentBrushSet;
         switch(this.currentTab) {
             case 'basic':
@@ -2455,6 +2556,57 @@ class IbisPaintWorkspace {
         this.currentBrush = currentBrushSet.find(b => b.id === brushId);
         this.renderBrushList();
         this.updateBrushSettings();
+    }
+    
+    updateBrushSliders() {
+        // Update slider values and display values
+        const brushSizeVerticalSlider = document.getElementById('brush-size-vertical-slider');
+        const brushOpacityVerticalSlider = document.getElementById('brush-opacity-vertical-slider');
+        const brushSizeValue = document.getElementById('brush-size-value');
+        const brushOpacityValue = document.getElementById('brush-opacity-value');
+        const brushSizeSlider = document.getElementById('brush-size-slider');
+        const brushOpacitySlider = document.getElementById('brush-opacity-slider');
+        
+        if (brushSizeVerticalSlider) {
+            brushSizeVerticalSlider.value = this.brushSize;
+        }
+        if (brushSizeValue) {
+            brushSizeValue.textContent = this.brushSize;
+        }
+        if (brushSizeSlider) {
+            brushSizeSlider.value = this.brushSize;
+        }
+        
+        if (brushOpacityVerticalSlider) {
+            brushOpacityVerticalSlider.value = this.brushOpacity;
+        }
+        if (brushOpacityValue) {
+            brushOpacityValue.textContent = this.brushOpacity;
+        }
+        if (brushOpacitySlider) {
+            brushOpacitySlider.value = this.brushOpacity;
+        }
+    }
+    
+    updateBrushValueInList(brushId, size) {
+        // Update the brush value display in the brush list
+        const brushList = document.getElementById('brush-list');
+        if (!brushList) return;
+        
+        const brushItem = brushList.querySelector(`[data-brush-id="${brushId}"]`);
+        if (brushItem) {
+            const brushValueElement = brushItem.querySelector('.brush-value');
+            if (brushValueElement) {
+                brushValueElement.textContent = size;
+            }
+            
+            // Also update the brush object's value property
+            const allBrushes = [...this.basicBrushes, ...this.customBrushes, ...this.specialBrushes];
+            const brush = allBrushes.find(b => b.id === brushId);
+            if (brush) {
+                brush.value = size;
+            }
+        }
     }
     
     openBrushSettings(brushId) {
@@ -3717,14 +3869,64 @@ class IbisPaintWorkspace {
     handleUndo() {
         if (this.historyStep > 0) {
             this.historyStep--;
-            // noop
+            const imageData = this.history[this.historyStep];
+            const layerCtx = this.getActiveLayerContext();
+            
+            if (layerCtx && imageData) {
+                // Clear the canvas first
+                const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+                const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+                layerCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+                
+                // Restore the previous state
+                layerCtx.putImageData(imageData, 0, 0);
+                
+                // Redraw the canvas with current transformations
+                this.applyTransformations();
+                
+                // Update button states
+                this.updateUndoRedoButtons();
+            }
         }
     }
     
     handleRedo() {
         if (this.historyStep < this.history.length - 1) {
             this.historyStep++;
-            // noop
+            const imageData = this.history[this.historyStep];
+            const layerCtx = this.getActiveLayerContext();
+            
+            if (layerCtx && imageData) {
+                // Clear the canvas first
+                const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+                const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+                layerCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+                
+                // Restore the next state
+                layerCtx.putImageData(imageData, 0, 0);
+                
+                // Redraw the canvas with current transformations
+                this.applyTransformations();
+                
+                // Update button states
+                this.updateUndoRedoButtons();
+            }
+        }
+    }
+    
+    updateUndoRedoButtons() {
+        // Update bottom toolbar buttons
+        const btnUndo = document.getElementById('btn-undo');
+        const btnRedo = document.getElementById('btn-redo');
+        
+        if (btnUndo) {
+            btnUndo.disabled = this.historyStep <= 0;
+            btnUndo.style.opacity = this.historyStep <= 0 ? '0.5' : '1';
+        }
+        
+        if (btnRedo) {
+            btnRedo.disabled = this.historyStep >= this.history.length - 1;
+            btnRedo.style.opacity = this.historyStep >= this.history.length - 1 ? '0.5' : '1';
         }
     }
     
