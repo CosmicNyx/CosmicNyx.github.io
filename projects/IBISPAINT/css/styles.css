@@ -672,6 +672,148 @@ body {
     flex: 1;
 }
 
+/* Canvas Settings Popup */
+.canvas-settings-popup {
+    position: absolute;
+    bottom: 50px;
+    right: 10px;
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+    display: none;
+    width: 240px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #f1f5f9;
+}
+
+.canvas-settings-popup.is-visible {
+    display: block;
+}
+
+.canvas-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.canvas-settings-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.canvas-settings-close {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.canvas-settings-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+}
+
+.canvas-settings-content {
+    padding: 14px;
+}
+
+.canvas-size-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.canvas-size-control label {
+    font-size: 12px;
+    color: #cbd5e1;
+    min-width: 50px;
+}
+
+.canvas-size-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #f1f5f9;
+    padding: 6px 10px;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.canvas-size-input:focus {
+    border-color: #3b82f6;
+}
+
+.canvas-size-unit {
+    font-size: 12px;
+    color: #94a3b8;
+    min-width: 25px;
+}
+
+.canvas-settings-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.canvas-settings-btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.canvas-settings-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+}
+
+.canvas-settings-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.canvas-settings-apply {
+    background: #3b82f6;
+    color: white;
+}
+
+.canvas-settings-apply:hover {
+    background: #2563eb;
+}
+
+/* Canvas Preview Overlay */
+.canvas-preview-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 10001;
+}
+
 /* Icon masks (using data URIs for simplicity) */
 
 .icon-chevron-down { -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000"><path d="m6 9 6 6 6-6"/></svg>'); mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000"><path d="m6 9 6 6 6-6"/></svg>'); }

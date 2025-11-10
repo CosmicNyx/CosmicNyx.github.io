@@ -328,15 +328,39 @@
           <div class="brush-control-sliders" id="brush-control-sliders" aria-label="Brush controls">
             <div class="brush-slider-container">
               <label for="brush-size-vertical-slider" class="brush-slider-label">Size</label>
-              <input type="range" id="brush-size-vertical-slider" class="brush-vertical-slider" 
+              <input type="range" id="brush-size-vertical-slider" class="brush-vertical-slider"
                      min="1" max="100" value="20" title="Brush Size">
               <span class="brush-slider-value" id="brush-size-value">20</span>
             </div>
             <div class="brush-slider-container">
               <label for="brush-opacity-vertical-slider" class="brush-slider-label">Opacity</label>
-              <input type="range" id="brush-opacity-vertical-slider" class="brush-vertical-slider" 
+              <input type="range" id="brush-opacity-vertical-slider" class="brush-vertical-slider"
                      min="1" max="100" value="100" title="Brush Opacity">
               <span class="brush-slider-value" id="brush-opacity-value">100</span>
+            </div>
+          </div>
+
+          <!-- Canvas Settings Popup -->
+          <div class="canvas-settings-popup" id="canvas-settings-popup">
+            <div class="canvas-settings-header">
+              <span class="canvas-settings-title">Canvas Size</span>
+              <button class="canvas-settings-close" id="canvas-settings-close">×</button>
+            </div>
+            <div class="canvas-settings-content">
+              <div class="canvas-size-control">
+                <label for="canvas-width">Width:</label>
+                <input type="number" id="canvas-width" class="canvas-size-input" min="100" max="5000" value="500">
+                <span class="canvas-size-unit">px</span>
+              </div>
+              <div class="canvas-size-control">
+                <label for="canvas-height">Height:</label>
+                <input type="number" id="canvas-height" class="canvas-size-input" min="100" max="5000" value="500">
+                <span class="canvas-size-unit">px</span>
+              </div>
+              <div class="canvas-settings-actions">
+                <button class="canvas-settings-btn canvas-settings-cancel" id="canvas-settings-cancel">Cancel</button>
+                <button class="canvas-settings-btn canvas-settings-apply" id="canvas-settings-apply">Apply</button>
+              </div>
             </div>
           </div>
 
@@ -358,13 +382,6 @@
             <button id="btn-layers" class="bottom-btn icon-layers" title="Layers"></button>
             <!-- 8) Back/Menu -->
             <button id="btn-back" class="bottom-btn icon-back" title="Menu / Export"></button>
-          </div>
-          
-          <!-- Options menu popup -->
-          <div class="options-menu" id="options-menu">
-            <button class="options-menu-item" id="option-clear-canvas">
-              <span class="options-menu-text">Clear Canvas</span>
-            </button>
           </div>
         </main>
       </div>

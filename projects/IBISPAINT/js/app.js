@@ -47,6 +47,8 @@ class IbisPaintWorkspace {
         
         // Drawing area (white square)
         this.drawingAreaSize = 500;
+        this.canvasWidth = 500;
+        this.canvasHeight = 500;
         
         // Drawing state (disabled)
         this.isDrawing = false;
@@ -70,6 +72,7 @@ class IbisPaintWorkspace {
         this.updateUI();
         this.updateToolSelectionByTool(); // Set initial tool selection
         this.updateBrushSlidersVisibility(); // Show/hide brush sliders based on initial tool
+        this.updateToolButtonIcon(); // Update tool button icon to match initial tool
         
         // Dev access in console
         window.workspace = this;
@@ -95,11 +98,29 @@ class IbisPaintWorkspace {
         this.layers.forEach(layer => {
             if (layer.type === 'layer' && !layer.canvas) {
                 layer.canvas = document.createElement('canvas');
-                layer.canvas.width = this.drawingAreaSize;
-                layer.canvas.height = this.drawingAreaSize;
+                layer.canvas.width = this.canvasWidth || this.drawingAreaSize;
+                layer.canvas.height = this.canvasHeight || this.drawingAreaSize;
                 layer.ctx = layer.canvas.getContext('2d');
                 // Start with transparent background for each layer
-                layer.ctx.clearRect(0, 0, this.drawingAreaSize, this.drawingAreaSize);
+                layer.ctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+            } else if (layer.type === 'layer' && layer.canvas) {
+                // Update existing canvas size if it doesn't match
+                const targetWidth = this.canvasWidth || this.drawingAreaSize;
+                const targetHeight = this.canvasHeight || this.drawingAreaSize;
+                if (layer.canvas.width !== targetWidth || layer.canvas.height !== targetHeight) {
+                    // Preserve content
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = layer.canvas.width;
+                    tempCanvas.height = layer.canvas.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(layer.canvas, 0, 0);
+                    
+                    // Resize
+                    layer.canvas.width = targetWidth;
+                    layer.canvas.height = targetHeight;
+                    layer.ctx.clearRect(0, 0, targetWidth, targetHeight);
+                    layer.ctx.drawImage(tempCanvas, 0, 0);
+                }
             }
         });
     }
@@ -170,14 +191,23 @@ class IbisPaintWorkspace {
         
         // Restore context
         this.ctx.restore();
+        
+        // Redraw preview if canvas settings popup is visible
+        const popup = document.getElementById('canvas-settings-popup');
+        if (popup && popup.classList.contains('is-visible')) {
+            this.updateCanvasPreview();
+        }
     }
     
     drawDrawingArea() {
-        const halfSize = this.drawingAreaSize / 2;
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        const halfWidth = canvasWidth / 2;
+        const halfHeight = canvasHeight / 2;
         
         // Draw white background first
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillRect(-halfSize, -halfSize, this.drawingAreaSize, this.drawingAreaSize);
+        this.ctx.fillRect(-halfWidth, -halfHeight, canvasWidth, canvasHeight);
         
         // Draw all visible layers from bottom to top
         for (let i = this.layers.length - 1; i >= 0; i--) {
@@ -185,7 +215,7 @@ class IbisPaintWorkspace {
             if (layer.type === 'layer' && layer.visible && layer.canvas) {
                 this.ctx.globalAlpha = layer.opacity / 100;
                 this.ctx.globalCompositeOperation = layer.blendMode || 'source-over';
-                this.ctx.drawImage(layer.canvas, -halfSize, -halfSize, this.drawingAreaSize, this.drawingAreaSize);
+                this.ctx.drawImage(layer.canvas, -halfWidth, -halfHeight, canvasWidth, canvasHeight);
             }
         }
         
@@ -198,7 +228,7 @@ class IbisPaintWorkspace {
         if (borderColor !== 'none' && borderColor !== 'transparent') {
             this.ctx.strokeStyle = borderColor;
             this.ctx.lineWidth = 2 / this.zoom;
-            this.ctx.strokeRect(-halfSize, -halfSize, this.drawingAreaSize, this.drawingAreaSize);
+            this.ctx.strokeRect(-halfWidth, -halfHeight, canvasWidth, canvasHeight);
         }
     }
     
@@ -389,6 +419,33 @@ class IbisPaintWorkspace {
         // noop
     }
     
+    fitCanvasToViewport() {
+        // Calculate zoom level to fit canvas in viewport with void space around it
+        const container = this.canvas.parentElement;
+        if (!container) return;
+        
+        const rect = container.getBoundingClientRect();
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        
+        // Leave some padding (void space) around the canvas - use 80% of viewport
+        const paddingRatio = 0.8;
+        const availableWidth = rect.width * paddingRatio;
+        const availableHeight = rect.height * paddingRatio;
+        
+        // Calculate zoom to fit both width and height
+        const zoomX = availableWidth / canvasWidth;
+        const zoomY = availableHeight / canvasHeight;
+        const fitZoom = Math.min(zoomX, zoomY);
+        
+        // Set zoom and center the canvas
+        this.setZoom(fitZoom);
+        this.panX = 0;
+        this.panY = 0;
+        this.rotation = 0;
+        this.applyTransformations();
+    }
+    
     updateZoomDisplay() {
         const zoomDisplay = document.getElementById('zoom-display');
         if (zoomDisplay) {
@@ -457,7 +514,7 @@ class IbisPaintWorkspace {
 
         if (btnBrush) {
             btnBrush.addEventListener('click', () => {
-                this.toggleBrushPanel();
+                this.openToolSettings();
             });
         }
 
@@ -521,6 +578,70 @@ class IbisPaintWorkspace {
             optionClearCanvas.addEventListener('click', () => {
                 this.clearCanvas();
                 if (optionsMenu) optionsMenu.classList.remove('is-visible');
+            });
+        }
+        
+        // Canvas settings popup
+        const canvasSettingsPopup = document.getElementById('canvas-settings-popup');
+        const canvasSettingsClose = document.getElementById('canvas-settings-close');
+        const canvasSettingsCancel = document.getElementById('canvas-settings-cancel');
+        const canvasSettingsApply = document.getElementById('canvas-settings-apply');
+        const canvasWidthInput = document.getElementById('canvas-width');
+        const canvasHeightInput = document.getElementById('canvas-height');
+        
+        if (canvasSettingsClose) {
+            canvasSettingsClose.addEventListener('click', () => {
+                this.closeCanvasSettings();
+            });
+        }
+        
+        if (canvasSettingsCancel) {
+            canvasSettingsCancel.addEventListener('click', () => {
+                this.closeCanvasSettings();
+            });
+        }
+        
+        if (canvasWidthInput && canvasHeightInput) {
+            // Update preview when inputs change
+            const updatePreview = () => {
+                this.updateCanvasPreview();
+            };
+            
+            canvasWidthInput.addEventListener('input', updatePreview);
+            canvasHeightInput.addEventListener('input', updatePreview);
+        }
+        
+        if (canvasSettingsApply && canvasWidthInput && canvasHeightInput) {
+            canvasSettingsApply.addEventListener('click', () => {
+                const newWidth = parseInt(canvasWidthInput.value);
+                const newHeight = parseInt(canvasHeightInput.value);
+                
+                if (newWidth >= 100 && newWidth <= 5000 && newHeight >= 100 && newHeight <= 5000) {
+                    this.resizeCanvas(newWidth, newHeight);
+                    this.closeCanvasSettings();
+                    // Automatically select brush tool after applying canvas size
+                    this.setCurrentTool('brush');
+                } else {
+                    alert('Canvas size must be between 100 and 5000 pixels');
+                }
+            });
+        }
+        
+        // Close canvas settings when clicking outside
+        if (canvasSettingsPopup) {
+            document.addEventListener('click', (e) => {
+                if (canvasSettingsPopup.classList.contains('is-visible')) {
+                    // Don't close if clicking on the popup itself, the tool button, or a tool tile
+                    const isClickOnPopup = canvasSettingsPopup.contains(e.target);
+                    const isClickOnToolButton = document.getElementById('btn-brush')?.contains(e.target);
+                    const isClickOnToolTile = e.target.closest('.tool-tile');
+                    const isClickOnCanvasTool = isClickOnToolTile && isClickOnToolTile.getAttribute('data-tool') === 'canvas';
+                    
+                    // Only close if clicking outside and not on canvas tool tile
+                    if (!isClickOnPopup && !isClickOnToolButton && !isClickOnCanvasTool) {
+                        this.closeCanvasSettings();
+                    }
+                }
             });
         }
         
@@ -733,9 +854,12 @@ class IbisPaintWorkspace {
     
     // ===== DRAWING ENGINE =====
     isPointInDrawingArea(coords) {
-        const halfSize = this.drawingAreaSize / 2;
-        return coords.x >= -halfSize && coords.x <= halfSize && 
-               coords.y >= -halfSize && coords.y <= halfSize;
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        const halfWidth = canvasWidth / 2;
+        const halfHeight = canvasHeight / 2;
+        return coords.x >= -halfWidth && coords.x <= halfWidth && 
+               coords.y >= -halfHeight && coords.y <= halfHeight;
     }
     
     startStroke(coords) {
@@ -756,9 +880,12 @@ class IbisPaintWorkspace {
         layerCtx.globalAlpha = this.brushOpacity / 100;
         
         // Convert coordinates to drawing canvas coordinates
-        const halfSize = this.drawingAreaSize / 2;
-        const drawX = coords.x + halfSize;
-        const drawY = coords.y + halfSize;
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        const halfWidth = canvasWidth / 2;
+        const halfHeight = canvasHeight / 2;
+        const drawX = coords.x + halfWidth;
+        const drawY = coords.y + halfHeight;
         
         // Start path
         layerCtx.beginPath();
@@ -770,11 +897,14 @@ class IbisPaintWorkspace {
         if (!layerCtx) return;
         
         // Convert coordinates to drawing canvas coordinates
-        const halfSize = this.drawingAreaSize / 2;
-        const fromX = from.x + halfSize;
-        const fromY = from.y + halfSize;
-        const toX = to.x + halfSize;
-        const toY = to.y + halfSize;
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        const halfWidth = canvasWidth / 2;
+        const halfHeight = canvasHeight / 2;
+        const fromX = from.x + halfWidth;
+        const fromY = from.y + halfHeight;
+        const toX = to.x + halfWidth;
+        const toY = to.y + halfHeight;
         
         if (this.currentTool === 'brush' && this.selectedBrushId === 'pen') {
             layerCtx.lineTo(toX, toY);
@@ -3632,6 +3762,11 @@ class IbisPaintWorkspace {
         this.currentTool = tool;
         this.updateToolSelectionByTool();
         this.updateBrushSlidersVisibility();
+        
+        // Open canvas settings if canvas tool is selected
+        if (tool === 'canvas') {
+            this.openCanvasSettings();
+        }
     }
 
     updateToolSelection(selectedTile) {
@@ -3656,6 +3791,361 @@ class IbisPaintWorkspace {
             }
         });
         this.updateBrushSlidersVisibility();
+        this.updateToolButtonIcon();
+    }
+    
+    updateToolButtonIcon() {
+        // Update the tool button icon to match the current tool
+        const btnBrush = document.getElementById('btn-brush');
+        if (btnBrush) {
+            // Remove all icon classes
+            const iconClasses = ['icon-brush', 'icon-eraser', 'icon-smudge', 'icon-blur', 'icon-wand', 
+                                'icon-lasso', 'icon-fx', 'icon-move', 'icon-star', 'icon-bucket', 
+                                'icon-vector', 'icon-text', 'icon-frame', 'icon-eyedropper', 'icon-canvas'];
+            iconClasses.forEach(cls => btnBrush.classList.remove(cls));
+            
+            // Map tool names to icon classes (some tools have different icon class names)
+            const toolIconMap = {
+                'brush': 'icon-brush',
+                'eraser': 'icon-eraser',
+                'smudge': 'icon-smudge',
+                'blur': 'icon-blur',
+                'magic': 'icon-wand',
+                'lasso': 'icon-lasso',
+                'fx': 'icon-fx',
+                'transform': 'icon-move',
+                'special': 'icon-star',
+                'bucket': 'icon-bucket',
+                'vector': 'icon-vector',
+                'text': 'icon-text',
+                'frame': 'icon-frame',
+                'eyedropper': 'icon-eyedropper',
+                'canvas': 'icon-canvas'
+            };
+            
+            // Add the current tool's icon class
+            const toolIconClass = toolIconMap[this.currentTool] || `icon-${this.currentTool}`;
+            if (toolIconClass) {
+                btnBrush.classList.add(toolIconClass);
+            }
+            
+            // Update title
+            const toolNames = {
+                'brush': 'Brush',
+                'eraser': 'Eraser',
+                'smudge': 'Smudge',
+                'blur': 'Blur',
+                'magic': 'Magic Wand',
+                'lasso': 'Lasso',
+                'fx': 'Filter',
+                'transform': 'Transform',
+                'special': 'Special',
+                'bucket': 'Bucket',
+                'vector': 'Vector',
+                'text': 'Text',
+                'frame': 'Frame',
+                'eyedropper': 'Eyedropper',
+                'canvas': 'Canvas'
+            };
+            btnBrush.title = toolNames[this.currentTool] || 'Tool Settings';
+        }
+    }
+    
+    openToolSettings() {
+        // Open the appropriate settings panel based on current tool
+        if (this.currentTool === 'brush') {
+            this.toggleBrushPanel();
+        } else if (this.currentTool === 'canvas') {
+            // Toggle canvas settings (don't open if already open from tool selection)
+            const popup = document.getElementById('canvas-settings-popup');
+            if (popup && popup.classList.contains('is-visible')) {
+                this.closeCanvasSettings();
+            } else {
+                this.openCanvasSettings();
+            }
+        } else {
+            // For other tools, show a placeholder or create tool-specific panels
+            // For now, we'll show a simple alert or create a generic tool settings panel
+            this.showToolSettingsPlaceholder();
+        }
+    }
+    
+    openCanvasSettings() {
+        const popup = document.getElementById('canvas-settings-popup');
+        const widthInput = document.getElementById('canvas-width');
+        const heightInput = document.getElementById('canvas-height');
+        
+        if (popup && widthInput && heightInput) {
+            // Set current canvas size in inputs
+            widthInput.value = this.canvasWidth || this.drawingAreaSize;
+            heightInput.value = this.canvasHeight || this.drawingAreaSize;
+            popup.classList.add('is-visible');
+            
+            // Hide all UI elements
+            this.hideUIForCanvasSettings();
+            
+            // Show initial preview
+            this.updateCanvasPreview();
+        }
+    }
+    
+    closeCanvasSettings() {
+        const popup = document.getElementById('canvas-settings-popup');
+        if (popup) {
+            popup.classList.remove('is-visible');
+            
+            // Show all UI elements
+            this.showUIForCanvasSettings();
+            
+            // Hide preview
+            this.hideCanvasPreview();
+        }
+    }
+    
+    hideUIForCanvasSettings() {
+        const rightToolbar = document.querySelector('.right-float-toolbar');
+        const topControls = document.querySelector('.top-right-controls');
+        const bottomBar = document.querySelector('.bottom-toolbar');
+        const brushSliders = document.getElementById('brush-control-sliders');
+        const hideBtn = document.getElementById('btn-hidebar');
+        
+        // Store original display values before hiding
+        if (rightToolbar) {
+            const computedStyle = window.getComputedStyle(rightToolbar);
+            this._rightToolbarWasVisible = computedStyle.display !== 'none';
+            rightToolbar.style.display = 'none';
+        }
+        if (topControls) {
+            const computedStyle = window.getComputedStyle(topControls);
+            this._topControlsWasVisible = computedStyle.display !== 'none';
+            topControls.style.display = 'none';
+        }
+        if (bottomBar) {
+            const computedStyle = window.getComputedStyle(bottomBar);
+            this._bottomBarWasVisible = computedStyle.display !== 'none';
+            bottomBar.style.display = 'none';
+        }
+        if (brushSliders) {
+            this._brushSlidersWasVisible = brushSliders.classList.contains('is-visible');
+            brushSliders.style.display = 'none';
+        }
+        if (hideBtn) {
+            const computedStyle = window.getComputedStyle(hideBtn);
+            this._hideBtnWasVisible = computedStyle.display !== 'none';
+            hideBtn.style.display = 'none';
+        }
+    }
+    
+    showUIForCanvasSettings() {
+        const rightToolbar = document.querySelector('.right-float-toolbar');
+        const topControls = document.querySelector('.top-right-controls');
+        const bottomBar = document.querySelector('.bottom-toolbar');
+        const brushSliders = document.getElementById('brush-control-sliders');
+        const hideBtn = document.getElementById('btn-hidebar');
+        
+        if (rightToolbar && this._rightToolbarWasVisible) {
+            rightToolbar.style.display = 'flex';
+        }
+        if (topControls && this._topControlsWasVisible) {
+            topControls.style.display = 'flex';
+        }
+        if (bottomBar && this._bottomBarWasVisible) {
+            bottomBar.style.display = 'grid';
+        }
+        if (brushSliders && this._brushSlidersWasVisible) {
+            brushSliders.style.display = 'flex';
+        }
+        if (hideBtn && this._hideBtnWasVisible) {
+            hideBtn.style.display = 'block';
+        }
+    }
+    
+    updateCanvasPreview() {
+        const widthInput = document.getElementById('canvas-width');
+        const heightInput = document.getElementById('canvas-height');
+        
+        if (!widthInput || !heightInput) return;
+        
+        const newWidth = parseInt(widthInput.value) || this.canvasWidth || this.drawingAreaSize;
+        const newHeight = parseInt(heightInput.value) || this.canvasHeight || this.drawingAreaSize;
+        const currentWidth = this.canvasWidth || this.drawingAreaSize;
+        const currentHeight = this.canvasHeight || this.drawingAreaSize;
+        
+        // Draw preview on canvas overlay
+        this.drawCanvasPreview(newWidth, newHeight, currentWidth, currentHeight);
+    }
+    
+    drawCanvasPreview(newWidth, newHeight, currentWidth, currentHeight) {
+        // This will be drawn on the main canvas as an overlay
+        // We'll use a separate canvas for the preview overlay
+        let previewCanvas = document.getElementById('canvas-preview-canvas');
+        if (!previewCanvas) {
+            previewCanvas = document.createElement('canvas');
+            previewCanvas.id = 'canvas-preview-canvas';
+            previewCanvas.className = 'canvas-preview-canvas';
+            const canvasContainer = document.getElementById('canvas-container');
+            if (canvasContainer) {
+                canvasContainer.appendChild(previewCanvas);
+            }
+        }
+        
+        const container = this.canvas.parentElement;
+        if (!container) return;
+        
+        const rect = container.getBoundingClientRect();
+        previewCanvas.width = rect.width;
+        previewCanvas.height = rect.height;
+        previewCanvas.style.width = rect.width + 'px';
+        previewCanvas.style.height = rect.height + 'px';
+        previewCanvas.style.position = 'absolute';
+        previewCanvas.style.top = '0';
+        previewCanvas.style.left = '0';
+        previewCanvas.style.pointerEvents = 'none';
+        previewCanvas.style.zIndex = '10001';
+        previewCanvas.style.display = 'block';
+        
+        const ctx = previewCanvas.getContext('2d');
+        ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        
+        // Apply same transformations as main canvas
+        ctx.save();
+        ctx.translate(previewCanvas.width / 2, previewCanvas.height / 2);
+        ctx.translate(this.panX, this.panY);
+        ctx.rotate(this.rotation);
+        ctx.scale(this.zoom, this.zoom);
+        
+        // Draw new canvas size outline
+        const newHalfWidth = newWidth / 2;
+        const newHalfHeight = newHeight / 2;
+        const currentHalfWidth = currentWidth / 2;
+        const currentHalfHeight = currentHeight / 2;
+        
+        // Check if there's any change
+        const hasChange = (newWidth !== currentWidth || newHeight !== currentHeight);
+        
+        // If there's a change, draw the new canvas size outline in red. Otherwise, draw in white
+        if (hasChange) {
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)';
+            ctx.lineWidth = 3 / this.zoom;
+            ctx.setLineDash([5 / this.zoom, 5 / this.zoom]);
+            
+            // Draw only the new canvas size outline in red (full rectangle)
+            ctx.beginPath();
+            ctx.rect(-newHalfWidth, -newHalfHeight, newWidth, newHeight);
+            ctx.stroke();
+        } else {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2 / this.zoom;
+            ctx.strokeRect(-newHalfWidth, -newHalfHeight, newWidth, newHeight);
+            ctx.restore();
+            return; // No change, so no red outline needed
+        }
+        
+        // Both rectangles are already drawn in red above
+        // No need for additional edge/corner drawing
+        
+        ctx.setLineDash([]);
+        
+        ctx.restore();
+    }
+    
+    hideCanvasPreview() {
+        // Hide the preview canvas
+        const previewCanvas = document.getElementById('canvas-preview-canvas');
+        if (previewCanvas) {
+            previewCanvas.style.display = 'none';
+        }
+        // Redraw the canvas without preview
+        this.applyTransformations();
+    }
+    
+    resizeCanvas(newWidth, newHeight) {
+        // Update drawing area size (use max for square display, but store both)
+        this.drawingAreaSize = Math.max(newWidth, newHeight);
+        const oldWidth = this.canvasWidth;
+        const oldHeight = this.canvasHeight;
+        this.canvasWidth = newWidth;
+        this.canvasHeight = newHeight;
+        
+        // Resize all layer canvases - keep content centered
+        this.layers.forEach(layer => {
+            if (layer.type === 'layer' && layer.canvas) {
+                // Create a temporary canvas to preserve existing content
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = oldWidth;
+                tempCanvas.height = oldHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(layer.canvas, 0, 0);
+                
+                // Resize the layer canvas
+                layer.canvas.width = newWidth;
+                layer.canvas.height = newHeight;
+                
+                // Clear the new canvas
+                layer.ctx.clearRect(0, 0, newWidth, newHeight);
+                
+                // Calculate offset to center the old content in the new canvas
+                // When increasing: add space equally around (positive offset)
+                // When decreasing: crop equally from all sides (negative offset, but we'll crop the source)
+                const offsetX = (newWidth - oldWidth) / 2;
+                const offsetY = (newHeight - oldHeight) / 2;
+                
+                if (newWidth >= oldWidth && newHeight >= oldHeight) {
+                    // Canvas is increasing - center the old content
+                    layer.ctx.drawImage(tempCanvas, offsetX, offsetY);
+                } else {
+                    // Canvas is decreasing - crop from the center
+                    // Calculate source rectangle to crop from center
+                    const sourceX = Math.max(0, -offsetX);
+                    const sourceY = Math.max(0, -offsetY);
+                    const sourceWidth = Math.min(oldWidth, newWidth);
+                    const sourceHeight = Math.min(oldHeight, newHeight);
+                    
+                    // Draw the cropped portion at (0, 0) in the new canvas
+                    layer.ctx.drawImage(
+                        tempCanvas,
+                        sourceX, sourceY, sourceWidth, sourceHeight,
+                        0, 0, sourceWidth, sourceHeight
+                    );
+                }
+            }
+        });
+        
+        // Reinitialize any new layers that might be created later
+        this.initializeLayerCanvases();
+        
+        // Fit canvas to viewport so it's fully visible with void space
+        this.fitCanvasToViewport();
+        
+        // Update the display
+        this.applyTransformations();
+        this.renderLayers();
+        
+        // Save state to history
+        this.saveCanvasState();
+    }
+    
+    showToolSettingsPlaceholder() {
+        // Placeholder for tool settings - can be expanded later
+        const toolNames = {
+            'eraser': 'Eraser',
+            'smudge': 'Smudge',
+            'blur': 'Blur',
+            'magic': 'Magic Wand',
+            'lasso': 'Lasso',
+            'fx': 'Filter',
+            'transform': 'Transform',
+            'special': 'Special',
+            'bucket': 'Bucket',
+            'vector': 'Vector',
+            'text': 'Text',
+            'frame': 'Frame',
+            'eyedropper': 'Eyedropper',
+            'canvas': 'Canvas'
+        };
+        const toolName = toolNames[this.currentTool] || this.currentTool;
+        // For now, just show an alert - can be replaced with actual settings panels later
+        console.log(`${toolName} settings panel - to be implemented`);
     }
     
     updateBrushSlidersVisibility() {
