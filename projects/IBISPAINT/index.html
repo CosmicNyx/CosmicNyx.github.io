@@ -3,12 +3,31 @@
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+      <meta http-equiv="Pragma" content="no-cache" />
+      <meta http-equiv="Expires" content="0" />
     <title>Ibis Paint Workspace - Clean UI</title>
     <link rel="stylesheet" href="css/styles.css">
     </head>
   <body>
     <div id="app" class="app-container">
-      <div class="workspace">
+      <!-- Homepage View -->
+      <div id="homepage" class="homepage">
+        <div class="homepage-content">
+          <h1 class="homepage-title">Gallery</h1>
+          <div class="homepage-subtitle">Your creative workspace</div>
+          <div id="canvases-grid" class="canvases-grid">
+            <button id="new-canvas-btn" class="new-canvas-btn canvas-item">
+              <span class="new-canvas-icon">+</span>
+              <span class="new-canvas-text">New Canvas</span>
+            </button>
+            <!-- Canvas items will be dynamically added here -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- Workspace View -->
+      <div id="workspace" class="workspace" style="display: none;">
         <!-- Main stage: overlays + canvas + bottom bar -->
         <main class="stage">
           <!-- Top-right floating controls -->
@@ -388,6 +407,9 @@
           <div class="options-menu" id="options-menu">
             <div class="options-menu-item" id="option-clear-canvas">
               <span>Clear Canvas</span>
+            </div>
+            <div class="options-menu-item" id="option-export-png">
+              <span>Export PNG</span>
             </div>
             <div class="options-menu-item" id="option-thumbnail-mode">
               <span>Thumbnails: Full Canvas</span>

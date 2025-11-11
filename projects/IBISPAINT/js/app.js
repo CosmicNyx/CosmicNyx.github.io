@@ -5,7 +5,7 @@ class IbisPaintWorkspace {
         this.currentTool = 'brush';
         this.brushSize = 20;
         this.brushOpacity = 100;
-        this.currentColor = '#3b82f6';
+        this.currentColor = '#000000';
         this.stabilizer = 25;
         
         // Brush settings per brush ID (size and opacity)
@@ -65,6 +65,9 @@ class IbisPaintWorkspace {
         // Thumbnail display mode: 'full' (show whole canvas) or 'zoomed' (show zoomed strokes)
         this.thumbnailMode = 'full';
         
+        // Project management
+        this.currentProjectId = null;
+        
         // Drawing state (disabled)
         this.isDrawing = false;
         this.lastPoint = null;
@@ -76,6 +79,9 @@ class IbisPaintWorkspace {
     }
     
     init() {
+        // Force cache clear on load
+        this.clearCache();
+        
         this.setupWorkspace();
         this.setupEventListeners();
         this.setupLayers();
@@ -84,6 +90,15 @@ class IbisPaintWorkspace {
         this.setupTopToolbar();
         this.setupBrushPanel();
         this.setupReferenceImages();
+        this.setupHomepage();
+        
+        // Disable persistence: always start with a fresh canvas in workspace
+        this.currentProjectId = null;
+        this.resetWorkspace();
+        this.showWorkspace();
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 150);
         
         // Initialize easy-brush integration
         if (typeof EasyBrushIntegration !== 'undefined') {
@@ -107,6 +122,38 @@ class IbisPaintWorkspace {
         
         // Dev access in console
         window.workspace = this;
+    }
+    
+    // ===== CACHE CLEARING =====
+    clearCache() {
+        // Force reload CSS to bypass cache
+        const links = document.querySelectorAll('link[rel="stylesheet"]');
+        links.forEach(link => {
+            const href = link.href.split('?')[0];
+            const newHref = href + '?t=' + Date.now();
+            
+            // Remove old link
+            const parent = link.parentNode;
+            const newLink = document.createElement('link');
+            newLink.rel = 'stylesheet';
+            newLink.href = newHref;
+            newLink.type = 'text/css';
+            
+            // Replace the old link with new one
+            parent.removeChild(link);
+            parent.appendChild(newLink);
+        });
+        
+        // Clear browser cache if possible
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    caches.delete(name);
+                });
+            });
+        }
+        
+        console.log('Cache cleared - CSS reloaded');
     }
     
     // ===== WORKSPACE SETUP =====
@@ -600,11 +647,12 @@ class IbisPaintWorkspace {
                 this.toggleLayersPanel();
             });
         }
-        // Back button - show "going to homepage" popup
+        // Back button - go to homepage
         if (btnBack) {
             btnBack.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.showHomepagePopup();
+                this.saveCurrentProject();
+                this.showHomepage();
             });
         }
         
@@ -935,6 +983,11 @@ class IbisPaintWorkspace {
     }
     
     startStroke(coords) {
+        // Block edits if the selected layer is hidden
+        if (!this.canEditActiveLayer()) {
+            return;
+        }
+
         const layerCtx = this.getActiveLayerContext();
         if (!layerCtx) return;
         
@@ -1173,7 +1226,7 @@ class IbisPaintWorkspace {
                     this.updateLayerThumbnail(activeLayer.id);
                 }
                 
-                // Save canvas state after stroke is complete
+                // Save canvas state after stroke is complete (undo/redo only)
                 this.saveCanvasState();
             }
     
@@ -4191,10 +4244,233 @@ class IbisPaintWorkspace {
         }
     }
     
-    // Show homepage popup
-    showHomepagePopup() {
-        // Use built-in browser alert for testing
-        alert('Going to Homepage');
+    // ===== HOMEPAGE & PROJECT MANAGEMENT =====
+    setupHomepage() {
+        const newCanvasBtn = document.getElementById('new-canvas-btn');
+        if (newCanvasBtn) {
+            newCanvasBtn.addEventListener('click', () => {
+                this.createNewProject();
+            });
+        }
+    }
+    
+    showHomepage() {
+        const homepage = document.getElementById('homepage');
+        const workspace = document.getElementById('workspace');
+        if (homepage) {
+            homepage.style.display = 'block';
+            homepage.style.background = '#1a1a1a';
+            homepage.style.width = '100%';
+            homepage.style.minHeight = '100vh';
+        }
+        if (workspace) workspace.style.display = 'none';
+        this.renderHomepage();
+        // Update URL
+        window.history.pushState({}, '', window.location.pathname);
+    }
+    
+    showWorkspace() {
+        const homepage = document.getElementById('homepage');
+        const workspace = document.getElementById('workspace');
+        if (homepage) homepage.style.display = 'none';
+        if (workspace) workspace.style.display = 'block';
+        
+        // Recalculate canvas display after workspace becomes visible
+        // Use setTimeout to ensure DOM is updated
+        setTimeout(() => {
+            this.setupCanvasDisplay();
+            this.applyTransformations();
+        }, 50);
+    }
+    
+    renderHomepage() {
+        const canvasesGrid = document.getElementById('canvases-grid');
+        if (!canvasesGrid) return;
+        
+        // Force apply styles directly via inline styles
+        const homepage = document.getElementById('homepage');
+        if (homepage) {
+            homepage.style.cssText = 'width: 100% !important; min-height: 100vh !important; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%) !important; display: flex !important; align-items: flex-start !important; justify-content: center !important; padding: 0 !important; overflow-y: auto !important; position: relative !important; z-index: 1 !important;';
+        }
+        
+        const homepageContent = document.querySelector('.homepage-content');
+        if (homepageContent) {
+            homepageContent.style.cssText = 'width: 100% !important; max-width: 1400px !important; padding: 60px 40px 40px 40px !important;';
+        }
+        
+        // Keep the new canvas button, remove only canvas items
+        const newCanvasBtn = document.getElementById('new-canvas-btn');
+        const existingItems = canvasesGrid.querySelectorAll('.canvas-item:not(#new-canvas-btn)');
+        existingItems.forEach(item => item.remove());
+        
+        const projects = this.getAllProjects();
+        
+        projects.forEach(project => {
+            const canvasItem = document.createElement('div');
+            canvasItem.className = 'canvas-item';
+            canvasItem.dataset.projectId = project.id;
+            
+            const thumbnail = document.createElement('div');
+            thumbnail.className = 'canvas-item-thumbnail';
+            if (project.thumbnail) {
+                const img = document.createElement('img');
+                img.src = project.thumbnail;
+                img.alt = project.name;
+                thumbnail.appendChild(img);
+            } else {
+                thumbnail.style.background = '#1e1e1e';
+                const placeholder = document.createElement('div');
+                placeholder.className = 'canvas-item-placeholder';
+                placeholder.textContent = 'No preview';
+                thumbnail.appendChild(placeholder);
+            }
+            
+            const info = document.createElement('div');
+            info.className = 'canvas-item-info';
+            
+            const name = document.createElement('div');
+            name.className = 'canvas-item-name';
+            name.textContent = project.name || 'Untitled Canvas';
+            
+            const date = document.createElement('div');
+            date.className = 'canvas-item-date';
+            const dateObj = new Date(project.updatedAt || project.createdAt);
+            date.textContent = dateObj.toLocaleDateString();
+            
+            info.appendChild(name);
+            info.appendChild(date);
+            
+            canvasItem.appendChild(thumbnail);
+            canvasItem.appendChild(info);
+            
+            // Add action buttons
+            const actions = document.createElement('div');
+            actions.className = 'canvas-item-actions';
+            
+            const openBtn = document.createElement('button');
+            openBtn.className = 'canvas-action-btn canvas-action-open';
+            openBtn.textContent = 'Open';
+            openBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.loadProject(project.id);
+                this.showWorkspace();
+            });
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'canvas-action-btn canvas-action-delete';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm('Are you sure you want to delete this canvas? This action cannot be undone.')) {
+                    this.deleteProject(project.id);
+                    this.renderHomepage(); // Refresh the homepage
+                }
+            });
+            
+            actions.appendChild(openBtn);
+            actions.appendChild(deleteBtn);
+            canvasItem.appendChild(actions);
+            
+            canvasesGrid.appendChild(canvasItem);
+        });
+    }
+    
+    getAllProjects() {
+        // Persistence disabled; return empty list
+        return [];
+    }
+    
+    getProject(projectId) { return null; }
+    
+    saveProject(projectData) { /* no-op */ }
+    
+    deleteProject(projectId) { /* no-op */ }
+    
+    createNewProject() {
+        const projectId = `project-${Date.now()}`;
+        this.currentProjectId = projectId;
+        
+        // Reset workspace to default state
+        this.resetWorkspace();
+        
+        // Save initial project
+        this.saveCurrentProject();
+        
+        // Show workspace
+        this.showWorkspace();
+        
+        // Update URL
+        window.history.pushState({}, '', `?project=${projectId}`);
+        
+        // Force a resize event to ensure proper canvas sizing
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 150);
+    }
+    
+    resetWorkspace() {
+        // Reset to default state
+        this.layers = [
+            { id: 'layer-1', name: '1', visible: true, opacity: 100, blendMode: 'normal', isActive: true, thumbnail: null, color: '#feca57', type: 'layer', parentId: null, canvas: null, ctx: null },
+        ];
+        this.activeLayerId = 'layer-1';
+        this.selectedLayerIds = new Set(['layer-1']);
+        this.nextLayerId = 2;
+        this.history = [];
+        this.historyStep = -1;
+        this.zoom = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.rotation = 0;
+        
+        // Initialize layer canvases (this creates the canvas elements)
+        this.initializeLayerCanvases();
+        
+        // Save initial canvas state for undo/redo
+        this.saveInitialCanvasState();
+        
+        this.updateLayersPanel();
+        this.applyTransformations();
+    }
+    
+    saveCurrentProject() {
+        // Persistence disabled
+        return;
+    }
+    
+    generateProjectThumbnail() {
+        // Create a thumbnail from the current canvas view
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 200;
+        tempCanvas.height = 200;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Draw white background
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0, 0, 200, 200);
+        
+        // Draw all visible layers
+        const canvasWidth = this.canvasWidth || this.drawingAreaSize;
+        const canvasHeight = this.canvasHeight || this.drawingAreaSize;
+        
+        this.layers.forEach(layer => {
+            if (layer.type === 'layer' && layer.visible && layer.canvas) {
+                tempCtx.globalAlpha = layer.opacity / 100;
+                tempCtx.globalCompositeOperation = layer.blendMode || 'source-over';
+                tempCtx.drawImage(layer.canvas, 0, 0, 200, 200);
+            }
+        });
+        
+        tempCtx.globalAlpha = 1;
+        tempCtx.globalCompositeOperation = 'source-over';
+        
+        return tempCanvas.toDataURL();
+    }
+    
+    async loadProject(projectId) {
+        // Persistence disabled; no-op for loading
+        console.warn('Loading disabled (persistence turned off).');
+        return;
     }
     
     // Top toolbar button handlers
@@ -6176,6 +6452,87 @@ class IbisPaintWorkspace {
         this.rotation += angle;
         this.applyTransformations();
     }
+
+    // Prevent edits on hidden layer
+    canEditActiveLayer() {
+        const activeLayer = this.getActiveLayer();
+        if (!activeLayer) return false;
+        if (activeLayer.visible === false) {
+            alert('Layer is hidden. Unhide the layer to edit.');
+            return false;
+        }
+        return true;
+    }
+
+    // ===== EXPORT =====
+    exportVisibleLayersAsPNG(filenameOverride) {
+        // Create a temporary canvas with drawing area size
+        const width = this.canvasWidth || this.drawingAreaSize;
+        const height = this.canvasHeight || this.drawingAreaSize;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Draw white background (matches workspace background for export)
+        tempCtx.fillStyle = '#ffffff';
+        tempCtx.fillRect(0, 0, width, height);
+        
+        // Composite only visible layers from bottom to top
+        this.layers.forEach(layer => {
+            if (layer.type === 'layer' && layer.visible && layer.canvas) {
+                tempCtx.globalAlpha = (layer.opacity || 100) / 100;
+                tempCtx.globalCompositeOperation = layer.blendMode || 'source-over';
+                tempCtx.drawImage(layer.canvas, 0, 0, width, height);
+            }
+        });
+        
+        // Reset compositing
+        tempCtx.globalAlpha = 1;
+        tempCtx.globalCompositeOperation = 'source-over';
+        
+        const triggerDownload = (blobOrDataUrl) => {
+            const a = document.createElement('a');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            let filename = filenameOverride || `canvas-${timestamp}.png`;
+            if (!/\.png$/i.test(filename)) filename = `${filename}.png`;
+            a.download = filename;
+            if (blobOrDataUrl instanceof Blob) {
+                const url = URL.createObjectURL(blobOrDataUrl);
+                a.href = url;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                a.href = blobOrDataUrl;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        };
+        
+        try {
+            // Prefer toBlob for better memory usage
+            if (tempCanvas.toBlob) {
+                tempCanvas.toBlob((blob) => {
+                    if (blob) {
+                        triggerDownload(blob);
+                    } else {
+                        // Fallback to data URL
+                        const dataUrl = tempCanvas.toDataURL('image/png');
+                        triggerDownload(dataUrl);
+                    }
+                }, 'image/png');
+            } else {
+                const dataUrl = tempCanvas.toDataURL('image/png');
+                triggerDownload(dataUrl);
+            }
+        } catch (err) {
+            console.error('[Export] Failed to export PNG:', err);
+            alert('Export failed. If you used external images, the canvas may be blocked by the browser (cross-origin).');
+        }
+    }
 }
 
 // ===== FUTURE FUNCTIONALITY MODULES =====
@@ -6259,4 +6616,69 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // workspace ready
     }, 100);
+});
+
+// Global screenshot helper
+if (typeof window !== 'undefined') {
+    window.captureScreenshot = function() {
+        try {
+            if (window.workspace && typeof window.workspace.exportVisibleLayersAsPNG === 'function') {
+                window.workspace.exportVisibleLayersAsPNG('screenshot.png');
+                return;
+            }
+        } catch (e) {
+            console.warn('Workspace export failed, falling back to raw canvas capture.', e);
+        }
+        // Fallback: capture first canvas on the page
+        const canvas = document.querySelector('canvas');
+        if (!canvas) return alert('No canvas found to capture.');
+        const save = (href) => {
+            const a = document.createElement('a');
+            a.href = href;
+            a.download = 'screenshot.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+        if (canvas.toBlob) {
+            canvas.toBlob((blob) => {
+                if (!blob) return save(canvas.toDataURL('image/png'));
+                const url = URL.createObjectURL(blob);
+                save(url);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        } else {
+            save(canvas.toDataURL('image/png'));
+        }
+    };
+}
+
+// Export PNG option
+const exportPngOption = document.getElementById('option-export-png');
+if (exportPngOption) {
+    exportPngOption.addEventListener('click', () => {
+        console.log('[Export] Export PNG clicked');
+        const ws = (typeof window !== 'undefined' && window.workspace) ? window.workspace : this;
+        if (ws && typeof ws.exportVisibleLayersAsPNG === 'function') {
+            ws.exportVisibleLayersAsPNG();
+        } else if (typeof this.handleExport === 'function') {
+            this.handleExport();
+        }
+        if (optionsMenu) optionsMenu.classList.remove('is-visible');
+    });
+}
+
+// Global delegation fallback (in case menu is re-rendered or detached)
+document.addEventListener('click', (e) => {
+    const target = e.target.closest('#option-export-png');
+    if (target) {
+        console.log('[Export] Export PNG via global delegation');
+        try { alert('Exporting PNG...'); } catch(_) {}
+        const ws = (typeof window !== 'undefined' && window.workspace) ? window.workspace : this;
+        if (ws && typeof ws.exportVisibleLayersAsPNG === 'function') {
+            ws.exportVisibleLayersAsPNG();
+        } else if (typeof this.handleExport === 'function') {
+            this.handleExport();
+        }
+    }
 });

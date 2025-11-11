@@ -143,7 +143,7 @@ function hexToRgb(hex) {
 // Register p5 easy brush
 if (typeof brushRegistry !== 'undefined') {
     brushRegistry.register('p5EasyBrush', p5EasyBrush, { 
-        name: 'P5 Easy Brush', 
+        name: 'Brush', 
         category: 'basic',
         preview: 'pen'
     });

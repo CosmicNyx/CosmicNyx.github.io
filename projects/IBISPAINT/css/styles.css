@@ -31,6 +31,11 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
+body:has(.homepage) {
+    overflow: auto !important;
+    background-color: #1a1a1a !important;
+}
+
 .app-container {
     height: 100vh;
     display: flex;
@@ -2278,4 +2283,309 @@ body {
         height: 80vh;
         max-height: 500px;
     }
+
+/* Homepage Styles - Modern & Beautiful */
+.homepage {
+    width: 100% !important;
+    min-height: 100vh !important;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%) !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    overflow-y: auto !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.homepage::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.homepage-content {
+    width: 100% !important;
+    max-width: 1400px !important;
+    padding: 60px 40px 40px 40px !important;
+    position: relative;
+    z-index: 1;
+}
+
+.homepage-title {
+    color: #ffffff !important;
+    font-size: 48px !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+    margin-top: 0 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    letter-spacing: -1px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.homepage-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 40px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.new-canvas-btn {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%) !important;
+    border: 2px dashed rgba(139, 92, 246, 0.4) !important;
+    border-radius: 20px !important;
+    padding: 0 !important;
+    width: 100% !important;
+    aspect-ratio: 1 !important;
+    max-width: 220px !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 16px !important;
+    margin-bottom: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+    backdrop-filter: blur(10px);
+}
+
+.new-canvas-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.6s;
+}
+
+.new-canvas-btn:hover::before {
+    left: 100%;
+}
+
+.new-canvas-btn:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%) !important;
+    border-color: rgba(139, 92, 246, 0.6) !important;
+    transform: translateY(-4px) scale(1.02) !important;
+    box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2) !important;
+}
+
+.new-canvas-icon {
+    font-size: 64px;
+    color: #a78bfa;
+    font-weight: 200;
+    line-height: 1;
+    transition: transform 0.3s ease;
+    filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3));
+}
+
+.new-canvas-btn:hover .new-canvas-icon {
+    transform: scale(1.1) rotate(90deg);
+}
+
+.new-canvas-text {
+    color: #c4b5fd;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.canvases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+    width: 100%;
+}
+
+.canvas-item {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(20px) !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    position: relative !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.canvas-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    border-radius: 20px;
+}
+
+.canvas-item:hover::before {
+    opacity: 1;
+}
+
+.canvas-item:hover {
+    transform: translateY(-8px) scale(1.02) !important;
+    border-color: rgba(139, 92, 246, 0.4) !important;
+    box-shadow: 0 20px 60px rgba(139, 92, 246, 0.3) !important;
+}
+
+.canvas-item-thumbnail {
+    width: 100%;
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0f 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.canvas-item-thumbnail::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.2) 100%);
+    pointer-events: none;
+}
+
+.canvas-item-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #ffffff;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.canvas-item:hover .canvas-item-thumbnail img {
+    transform: scale(1.08);
+}
+
+.canvas-item-placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.canvas-item-info {
+    padding: 16px;
+    background: transparent;
+}
+
+.canvas-item-name {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.3px;
+}
+
+.canvas-item-date {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.canvas-item-actions {
+    display: flex;
+    gap: 10px;
+    padding: 0 16px 16px 16px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 2;
+}
+
+.canvas-item:hover .canvas-item-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.canvas-action-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+}
+
+.canvas-action-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+}
+
+.canvas-action-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.canvas-action-btn:active {
+    transform: scale(0.96);
+}
+
+.canvas-action-open {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.canvas-action-open:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(139, 92, 246, 0.4) 100%);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #ddd6fe;
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+}
+
+.canvas-action-delete {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.canvas-action-delete:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.3) 100%);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fecaca;
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
 }
