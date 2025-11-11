@@ -1446,7 +1446,10 @@ class IbisPaintWorkspace {
         
         // Update active layer controls
         this.updateActiveLayerControls();
-    }
++
++        // Ensure thumbnails reflect latest layer canvases even if panel was closed during drawing
++        this.updateAllThumbnails();
+     }
     
     generateLayerThumbnail(layer) {
         if (!layer.canvas) return null;
