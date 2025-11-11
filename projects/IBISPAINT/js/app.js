@@ -53,8 +53,12 @@ class IbisPaintWorkspace {
         this.panY = 0;
         this.rotation = 0; // in radians
         this.isPanning = false;
+        this.isRotating = false;
         this.lastPanX = 0;
         this.lastPanY = 0;
+        this.lastRotateX = 0;
+        this.lastRotateY = 0;
+        this.initialRotation = 0;
         
         // Drawing area (white square)
         this.drawingAreaSize = 500;
@@ -350,6 +354,135 @@ class IbisPaintWorkspace {
         // noop
     }
     
+    // ===== KEYBOARD SHORTCUTS =====
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger shortcuts when typing in input fields
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                return;
+            }
+            
+            // Ctrl+Z or Cmd+Z - Undo
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                this.handleUndo();
+                return;
+            }
+            
+            // Shift+Ctrl+Z or Shift+Cmd+Z - Redo
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+                e.preventDefault();
+                this.handleRedo();
+                return;
+            }
+            
+            // H - Hand tool (pan/drag)
+            if (e.key === 'h' || e.key === 'H') {
+                e.preventDefault();
+                // Toggle hand tool or activate panning
+                if (this.currentTool === 'hand') {
+                    // Switch back to brush if already on hand
+                    this.setCurrentTool('brush');
+                } else {
+                    this.setCurrentTool('hand');
+                }
+                return;
+            }
+            
+            // R - Start rotation mode (hold and drag to rotate)
+            if (e.key === 'r' || e.key === 'R') {
+                if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+                    e.preventDefault();
+                    this.isRotating = true;
+                    this.initialRotation = this.rotation;
+                    this.updateCanvasCursor();
+                    return;
+                }
+            }
+            
+            // Z - Zoom in (only if not Ctrl/Cmd/Alt)
+            if ((e.key === 'z' || e.key === 'Z') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                this.zoomIn();
+                return;
+            }
+            
+            // Alt+Z or Option+Z - Zoom out
+            if (e.altKey && (e.key === 'z' || e.key === 'Z') && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                this.zoomOut();
+                return;
+            }
+            
+            // B - Brush tool
+            if (e.key === 'b' || e.key === 'B') {
+                e.preventDefault();
+                this.setCurrentTool('brush');
+                return;
+            }
+            
+            // E - Eraser tool
+            if (e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+                this.setCurrentTool('eraser');
+                return;
+            }
+            
+            // I - Eyedropper tool
+            if (e.key === 'i' || e.key === 'I') {
+                e.preventDefault();
+                this.setCurrentTool('eyedropper');
+                return;
+            }
+            
+            // L - Layers panel toggle
+            if (e.key === 'l' || e.key === 'L') {
+                e.preventDefault();
+                this.toggleLayersPanel();
+                return;
+            }
+            
+            // Delete or Backspace - Delete selected layer(s)
+            if ((e.key === 'Delete' || e.key === 'Backspace') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (this.selectedLayerIds.size > 0) {
+                    const layersToDelete = Array.from(this.selectedLayerIds);
+                    layersToDelete.forEach(layerId => {
+                        this.deleteLayer(layerId);
+                    });
+                }
+                return;
+            }
+            
+            // Escape - Close panels
+            if (e.key === 'Escape') {
+                const brushPanel = document.getElementById('brush-panel');
+                const layersPanel = document.getElementById('layers-panel');
+                const configPanel = document.getElementById('brush-config-panel');
+                
+                if (configPanel && configPanel.classList.contains('is-visible')) {
+                    this.closeBrushConfigPanel();
+                } else if (brushPanel && brushPanel.classList.contains('is-visible')) {
+                    this.closeBrushPanel();
+                } else if (layersPanel && layersPanel.classList.contains('is-visible')) {
+                    this.toggleLayersPanel();
+                }
+                return;
+            }
+        });
+        
+        // Handle keyup for rotation mode
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                this.isRotating = false;
+                this.lastRotateX = 0;
+                this.lastRotateY = 0;
+                this.updateCanvasCursor();
+            }
+        });
+        
+    }
+    
     setupTouchGestures() {
         let lastTouchDistance = 0;
         let lastTouchAngle = 0;
@@ -536,6 +669,9 @@ class IbisPaintWorkspace {
     setupEventListeners() {
         // Touch gesture controls
         this.setupTouchGestures();
+        
+        // Keyboard shortcuts
+        this.setupKeyboardShortcuts();
         
         // Touch-only controls - no mouse pan
         
@@ -817,25 +953,83 @@ class IbisPaintWorkspace {
         
         // Canvas events (placeholder for future drawing functionality)
         this.setupCanvasEvents();
+        
+        // Initialize cursor
+        this.updateCanvasCursor();
     }
     
     setupCanvasEvents() {
-        // Mouse events for drawing
+        // Mouse events for drawing, rotation, and hand tool
         this.canvas.addEventListener('mousedown', (e) => {
-            if (this.currentTool === 'brush' || this.currentTool === 'eraser') {
+            if (this.isRotating) {
+                // Rotation mode (R key held)
+                e.preventDefault();
+                this.lastRotateX = e.clientX;
+                this.lastRotateY = e.clientY;
+                this.initialRotation = this.rotation;
+            } else if (this.currentTool === 'hand') {
+                // Hand tool panning
+                e.preventDefault();
+                this.isPanning = true;
+                this.lastPanX = e.clientX;
+                this.lastPanY = e.clientY;
+            } else if (this.currentTool === 'brush' || this.currentTool === 'eraser') {
                 this.handleCanvasMouseDown(e);
             }
         });
         
         this.canvas.addEventListener('mousemove', (e) => {
-            if (this.isDrawing && (this.currentTool === 'brush' || this.currentTool === 'eraser')) {
+            if (this.isRotating && (e.buttons === 1 || e.which === 1)) {
+                // Rotation mode - calculate rotation based on mouse movement
+                e.preventDefault();
+                const rect = this.canvas.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                if (this.lastRotateX === 0 && this.lastRotateY === 0) {
+                    this.lastRotateX = e.clientX;
+                    this.lastRotateY = e.clientY;
+                    return;
+                }
+                
+                const angle1 = Math.atan2(this.lastRotateY - centerY, this.lastRotateX - centerX);
+                const angle2 = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+                const deltaAngle = angle2 - angle1;
+                
+                this.rotation = this.initialRotation + deltaAngle;
+                this.rotation = this.snapToAngle(this.rotation);
+                
+                this.lastRotateX = e.clientX;
+                this.lastRotateY = e.clientY;
+                this.applyTransformations();
+            } else if (this.currentTool === 'hand' && this.isPanning) {
+                // Hand tool panning
+                e.preventDefault();
+                const deltaX = e.clientX - this.lastPanX;
+                const deltaY = e.clientY - this.lastPanY;
+                
+                this.panX += deltaX / this.zoom;
+                this.panY += deltaY / this.zoom;
+                
+                this.lastPanX = e.clientX;
+                this.lastPanY = e.clientY;
+                this.applyTransformations();
+            } else if (this.isDrawing && (this.currentTool === 'brush' || this.currentTool === 'eraser')) {
                 this.handleCanvasMouseMove(e);
             }
         });
         
         this.canvas.addEventListener('mouseup', () => {
-            if (this.isDrawing) {
+            if (this.currentTool === 'hand') {
+                this.isPanning = false;
+            } else if (this.isDrawing) {
                 this.handleCanvasMouseUp();
+            }
+        });
+        
+        this.canvas.addEventListener('mouseleave', () => {
+            if (this.currentTool === 'hand') {
+                this.isPanning = false;
             }
         });
         
@@ -5378,13 +5572,34 @@ class IbisPaintWorkspace {
     }
     
     setCurrentTool(tool) {
+        // Check if tool is functional
+        const nonFunctionalTools = ['bucket', 'lasso', 'magic', 'fx', 'smudge', 'blur', 'special', 'vector', 'text', 'eyedropper'];
+        if (nonFunctionalTools.includes(tool)) {
+            const toolName = tool.charAt(0).toUpperCase() + tool.slice(1);
+            alert(`${toolName} tool is not functional yet.`);
+            return;
+        }
+        
         this.currentTool = tool;
         this.updateToolSelectionByTool();
         this.updateBrushSlidersVisibility();
+        this.updateCanvasCursor();
         
         // Open canvas settings if canvas tool is selected
         if (tool === 'canvas') {
             this.openCanvasSettings();
+        }
+    }
+    
+    updateCanvasCursor() {
+        if (this.canvas) {
+            if (this.currentTool === 'hand') {
+                this.canvas.style.cursor = 'grab';
+            } else if (this.isRotating) {
+                this.canvas.style.cursor = 'grab';
+            } else {
+                this.canvas.style.cursor = 'crosshair';
+            }
         }
     }
 
@@ -5439,7 +5654,8 @@ class IbisPaintWorkspace {
                 'text': 'icon-text',
                 'frame': 'icon-frame',
                 'eyedropper': 'icon-eyedropper',
-                'canvas': 'icon-canvas'
+                'canvas': 'icon-canvas',
+                'hand': 'icon-move' // Use move icon for hand tool
             };
             
             // Add the current tool's icon class
@@ -5464,7 +5680,8 @@ class IbisPaintWorkspace {
                 'text': 'Text',
                 'frame': 'Frame',
                 'eyedropper': 'Eyedropper',
-                'canvas': 'Canvas'
+                'canvas': 'Canvas',
+                'hand': 'Hand Tool'
             };
             btnBrush.title = toolNames[this.currentTool] || 'Tool Settings';
         }
@@ -6151,14 +6368,6 @@ class IbisPaintWorkspace {
     
     setZoomLevel(zoom) {
         this.setZoom(zoom);
-    }
-    
-    zoomIn() {
-        this.zoomIn();
-    }
-    
-    zoomOut() {
-        this.zoomOut();
     }
     
     resetZoomAndPan() {

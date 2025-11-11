@@ -7,8 +7,13 @@
 
 html {
     height: 100%;
+    width: 100%;
     background-color: var(--stage-background); /* ensure void color fills behind body */
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
+
 /* Ibis Paint Workspace - Dark Greyscale Theme */
 
 * {
@@ -29,7 +34,10 @@ body {
     user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+    margin: 0;
+    padding: 0;
 }
+
 
 body:has(.homepage) {
     overflow: auto !important;
@@ -251,6 +259,7 @@ body:has(.homepage) {
 }
 
 /* Top-right floating controls */
+
 .top-right-controls {
     position: absolute;
     top: 12px;
@@ -2711,3 +2720,4 @@ body:has(.homepage) {
     color: #fecaca;
     box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
 }
+
