@@ -1,8 +1,10 @@
-node_modules/
-projects/*/node_modules/
+node_modules
+**/node_modules
+**/node_modules/**
+projects/*/node_modules
+projects/*/node_modules/**
 *.log
 .DS_Store
 package-lock.json
 package.json
 server.js
-

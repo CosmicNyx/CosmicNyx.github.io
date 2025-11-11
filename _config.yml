@@ -1,0 +1,13 @@
+# Jekyll configuration for GitHub Pages
+exclude:
+  - node_modules
+  - "**/node_modules"
+  - "**/node_modules/**"
+  - projects/*/node_modules
+  - projects/*/node_modules/**
+  - package-lock.json
+  - package.json
+  - server.js
+  - "*.log"
+  - .DS_Store
+
