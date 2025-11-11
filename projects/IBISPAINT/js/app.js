@@ -62,6 +62,9 @@ class IbisPaintWorkspace {
         this.canvasWidth = 500;
         this.canvasHeight = 500;
         
+        // Thumbnail display mode: 'full' (show whole canvas) or 'zoomed' (show zoomed strokes)
+        this.thumbnailMode = 'full';
+        
         // Drawing state (disabled)
         this.isDrawing = false;
         this.lastPoint = null;
@@ -597,19 +600,11 @@ class IbisPaintWorkspace {
                 this.toggleLayersPanel();
             });
         }
-        // Back button with options menu
-        const optionsMenu = document.getElementById('options-menu');
-        if (btnBack && optionsMenu) {
+        // Back button - show "going to homepage" popup
+        if (btnBack) {
             btnBack.addEventListener('click', (e) => {
                 e.stopPropagation();
-                optionsMenu.classList.toggle('is-visible');
-            });
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (optionsMenu && !optionsMenu.contains(e.target) && !btnBack.contains(e.target)) {
-                    optionsMenu.classList.remove('is-visible');
-                }
+                this.showHomepagePopup();
             });
         }
         
@@ -618,7 +613,25 @@ class IbisPaintWorkspace {
         if (optionClearCanvas) {
             optionClearCanvas.addEventListener('click', () => {
                 this.clearCanvas();
+                const optionsMenu = document.getElementById('options-menu');
                 if (optionsMenu) optionsMenu.classList.remove('is-visible');
+            });
+        }
+        
+        // Thumbnail mode toggle option
+        const optionThumbnailMode = document.getElementById('option-thumbnail-mode');
+        if (optionThumbnailMode) {
+            // Initialize menu text
+            const textSpan = optionThumbnailMode.querySelector('span');
+            if (textSpan) {
+                textSpan.textContent = this.thumbnailMode === 'full' 
+                    ? 'Thumbnails: Full Canvas' 
+                    : 'Thumbnails: Zoomed Strokes';
+            }
+            
+            optionThumbnailMode.addEventListener('click', () => {
+                this.toggleThumbnailMode();
+                // Don't close the menu, just toggle the mode
             });
         }
         
@@ -1154,6 +1167,12 @@ class IbisPaintWorkspace {
                     this.updateNavigationCanvas();
                 }
                 
+                // Update layer thumbnail after stroke
+                const activeLayer = this.getActiveLayer();
+                if (activeLayer) {
+                    this.updateLayerThumbnail(activeLayer.id);
+                }
+                
                 // Save canvas state after stroke is complete
                 this.saveCanvasState();
             }
@@ -1167,7 +1186,10 @@ class IbisPaintWorkspace {
         const canvasHeight = this.canvasHeight || this.drawingAreaSize;
         const imageData = layerCtx.getImageData(0, 0, canvasWidth, canvasHeight);
         
-        this.history = [imageData];
+        this.history = [{
+            type: 'canvas',
+            imageData: imageData
+        }];
         this.historyStep = 0;
         
         // Update button states
@@ -1239,49 +1261,25 @@ class IbisPaintWorkspace {
             const isVisible = panel.classList.contains('is-visible');
             if (isVisible) {
                 panel.classList.remove('is-visible');
-                this.removeClickOutsideListener();
+                // Outside click closing disabled by request
+                this.removeClickOutsideListener(); // ensure any existing listeners are removed
             } else {
                 panel.classList.add('is-visible');
                 this.updateLayersPanel();
-                this.addClickOutsideListener();
+                // Outside click closing disabled by request
+                this.removeClickOutsideListener(); // ensure no outside listeners remain
             }
         }
     }
     
     addClickOutsideListener() {
-        this.clickOutsideHandler = (e) => {
-            const panel = document.getElementById('layers-panel');
-            const layersBtn = document.getElementById('btn-layers');
-            
-            // Check if click is outside panel and not on layers button
-            if (panel && !panel.contains(e.target) && !layersBtn.contains(e.target)) {
-                if (this.isMultiSelectMode) {
-                    // Exit multi-select mode first
-                    this.exitMultiSelectMode();
-                } else {
-                    panel.classList.remove('is-visible');
-                    this.removeClickOutsideListener();
-                }
-            }
-        };
-        
-        // Add escape key handler for multi-select mode
-        this.escapeKeyHandler = (e) => {
-            if (e.key === 'Escape' && this.isMultiSelectMode) {
-                this.exitMultiSelectMode();
-            }
-        };
-        
-        // Add listener with a small delay to prevent immediate closing
-        setTimeout(() => {
-            document.addEventListener('click', this.clickOutsideHandler);
-            document.addEventListener('touchstart', this.clickOutsideHandler, { passive: true });
-            document.addEventListener('keydown', this.escapeKeyHandler);
-        }, 100);
+        // Outside click closing disabled by request
+        return;
     }
     
     removeClickOutsideListener() {
         if (this.clickOutsideHandler) {
+            document.removeEventListener('mousedown', this.clickOutsideHandler);
             document.removeEventListener('click', this.clickOutsideHandler);
             document.removeEventListener('touchstart', this.clickOutsideHandler);
             this.clickOutsideHandler = null;
@@ -1397,6 +1395,164 @@ class IbisPaintWorkspace {
         this.updateActiveLayerControls();
     }
     
+    generateLayerThumbnail(layer) {
+        if (!layer.canvas) return null;
+        
+        // Create a thumbnail canvas (32x32 pixels for the thumbnail)
+        const thumbSize = 32;
+        const thumbCanvas = document.createElement('canvas');
+        thumbCanvas.width = thumbSize;
+        thumbCanvas.height = thumbSize;
+        const thumbCtx = thumbCanvas.getContext('2d');
+        
+        // Draw white background
+        thumbCtx.fillStyle = '#ffffff';
+        thumbCtx.fillRect(0, 0, thumbSize, thumbSize);
+        
+        if (this.thumbnailMode === 'zoomed') {
+            // Zoomed mode: find the bounding box of strokes and zoom in
+            const ctx = layer.ctx || layer.canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+            const data = imageData.data;
+            
+            // Find bounding box of non-transparent pixels
+            let minX = layer.canvas.width;
+            let minY = layer.canvas.height;
+            let maxX = 0;
+            let maxY = 0;
+            let hasContent = false;
+            
+            // Sample pixels to find content bounds (check every 4th pixel for speed)
+            for (let y = 0; y < layer.canvas.height; y += 4) {
+                for (let x = 0; x < layer.canvas.width; x += 4) {
+                    const index = (y * layer.canvas.width + x) * 4;
+                    const a = data[index + 3];
+                    
+                    if (a > 0) {
+                        hasContent = true;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+            
+            if (!hasContent) return null;
+            
+            // Add padding around the content
+            const padding = 10;
+            const contentWidth = maxX - minX + padding * 2;
+            const contentHeight = maxY - minY + padding * 2;
+            
+            // Calculate scale to fit content in thumbnail
+            const scaleX = thumbSize / contentWidth;
+            const scaleY = thumbSize / contentHeight;
+            const scale = Math.min(scaleX, scaleY, 2); // Limit max zoom to 2x
+            
+            // Calculate source dimensions
+            const sourceX = Math.max(0, minX - padding);
+            const sourceY = Math.max(0, minY - padding);
+            const sourceWidth = Math.min(layer.canvas.width - sourceX, contentWidth);
+            const sourceHeight = Math.min(layer.canvas.height - sourceY, contentHeight);
+            
+            // Calculate destination dimensions
+            const destWidth = sourceWidth * scale;
+            const destHeight = sourceHeight * scale;
+            const destX = (thumbSize - destWidth) / 2;
+            const destY = (thumbSize - destHeight) / 2;
+            
+            // Draw the zoomed content
+            thumbCtx.drawImage(
+                layer.canvas,
+                sourceX, sourceY, sourceWidth, sourceHeight,
+                destX, destY, destWidth, destHeight
+            );
+        } else {
+            // Full mode: show whole canvas scaled down
+            thumbCtx.drawImage(layer.canvas, 0, 0, thumbSize, thumbSize);
+        }
+        
+        // Check if thumbnail has any non-white content (quick check by sampling)
+        const thumbImageData = thumbCtx.getImageData(0, 0, thumbSize, thumbSize);
+        const data = thumbImageData.data;
+        let hasContent = false;
+        
+        // Sample every 4th pixel to check for content (much faster)
+        for (let i = 0; i < data.length; i += 16) { // Check every 4th pixel (RGBA = 4 bytes, so 16 = 4 pixels)
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            
+            // If pixel is not white (255,255,255) or has transparency, there's content
+            if (a < 255 || r < 255 || g < 255 || b < 255) {
+                hasContent = true;
+                break;
+            }
+        }
+        
+        if (!hasContent) return null;
+        
+        // Return as data URL
+        return thumbCanvas.toDataURL();
+    }
+    
+    updateLayerThumbnail(layerId) {
+        const layer = this.layers.find(l => l.id === layerId);
+        if (!layer || layer.type !== 'layer') return;
+        
+        // Find the layer element in the DOM
+        const layerElement = document.querySelector(`[data-layer-id="${layerId}"]`);
+        if (!layerElement) return;
+        
+        const thumbnail = layerElement.querySelector('.layer-thumbnail');
+        if (!thumbnail) return;
+        
+        // Clear existing content
+        thumbnail.innerHTML = '';
+        
+        // Generate new thumbnail
+        const thumbnailDataUrl = this.generateLayerThumbnail(layer);
+        if (thumbnailDataUrl) {
+            const img = document.createElement('img');
+            img.src = thumbnailDataUrl;
+            img.alt = layer.name;
+            thumbnail.appendChild(img);
+        } else {
+            // Use the stored color for this layer if no content
+            thumbnail.style.background = layer.color || this.getRandomColor();
+        }
+    }
+    
+    updateAllThumbnails() {
+        // Update all layer thumbnails when mode changes
+        this.layers.forEach(layer => {
+            if (layer.type === 'layer') {
+                this.updateLayerThumbnail(layer.id);
+            }
+        });
+    }
+    
+    toggleThumbnailMode() {
+        // Toggle between 'full' and 'zoomed' modes
+        this.thumbnailMode = this.thumbnailMode === 'full' ? 'zoomed' : 'full';
+        
+        // Update all thumbnails
+        this.updateAllThumbnails();
+        
+        // Update the menu item text
+        const menuItem = document.getElementById('option-thumbnail-mode');
+        if (menuItem) {
+            const textSpan = menuItem.querySelector('span');
+            if (textSpan) {
+                textSpan.textContent = this.thumbnailMode === 'full' 
+                    ? 'Thumbnails: Full Canvas' 
+                    : 'Thumbnails: Zoomed Strokes';
+            }
+        }
+    }
+    
     createLayerElement(layer) {
         const layerDiv = document.createElement('div');
         const isSelected = this.selectedLayerIds.has(layer.id);
@@ -1409,8 +1565,20 @@ class IbisPaintWorkspace {
         const thumbnail = document.createElement('div');
         thumbnail.className = 'layer-thumbnail';
         
-        // Create thumbnail content based on layer type
-        if (layer.thumbnail) {
+        // Generate thumbnail from layer canvas if it exists and has content
+        if (layer.canvas && layer.type === 'layer') {
+            const thumbnailDataUrl = this.generateLayerThumbnail(layer);
+            if (thumbnailDataUrl) {
+                const img = document.createElement('img');
+                img.src = thumbnailDataUrl;
+                img.alt = layer.name;
+                thumbnail.appendChild(img);
+            } else {
+                // Use the stored color for this layer if no content
+                thumbnail.style.background = layer.color || this.getRandomColor();
+            }
+        } else if (layer.thumbnail) {
+            // Use stored thumbnail if available
             const img = document.createElement('img');
             img.src = layer.thumbnail;
             img.alt = layer.name;
@@ -2351,6 +2519,9 @@ class IbisPaintWorkspace {
         // Don't delete all layers
         if (this.layers.filter(l => l.type === 'layer').length <= selectedLayers.length) return;
         
+        // Save layer state before deletion
+        this.saveLayerState();
+        
         // Delete selected folders first
         selectedFolders.forEach(folderId => {
             this.deleteFolder(folderId);
@@ -2374,6 +2545,8 @@ class IbisPaintWorkspace {
         }
         
         this.updateLayersPanel();
+        // Redraw the canvas to reflect the deleted layer
+        this.applyTransformations();
     }
     
     moveLayerUp() {
@@ -3125,6 +3298,8 @@ class IbisPaintWorkspace {
         if (panel) {
             panel.classList.add('is-visible');
             this.renderBrushList();
+            // Outside click closing disabled by request
+            this.removeBrushPanelOutsideListener();
         }
     }
     
@@ -3136,6 +3311,21 @@ class IbisPaintWorkspace {
         }
         if (settings) {
             settings.classList.remove('is-visible');
+        }
+        this.removeBrushPanelOutsideListener();
+    }
+
+    addBrushPanelOutsideListener() {
+        // Outside click closing disabled by request
+        return;
+    }
+    
+    removeBrushPanelOutsideListener() {
+        if (this.brushPanelOutsideHandler) {
+            document.removeEventListener('mousedown', this.brushPanelOutsideHandler);
+            document.removeEventListener('click', this.brushPanelOutsideHandler);
+            document.removeEventListener('touchstart', this.brushPanelOutsideHandler);
+            this.brushPanelOutsideHandler = null;
         }
     }
     
@@ -3192,11 +3382,7 @@ class IbisPaintWorkspace {
 
     // ===== REFERENCE IMAGES (FULLY FUNCTIONAL) =====
     setupReferenceImages() {
-        this.referenceImages = [
-            { id: 'ref-1', name: 'Reference 1', image: null },
-            { id: 'ref-2', name: 'Reference 2', image: null },
-            { id: 'ref-3', name: 'Reference 3', image: null }
-        ];
+        this.referenceImages = [];
         
         this.openRefViewers = new Map(); // Track open viewers
         this.viewerCounter = 0; // For unique positioning
@@ -3382,11 +3568,22 @@ class IbisPaintWorkspace {
         const imageDiv = document.createElement('div');
         imageDiv.className = 'ref-viewer-image';
         
+        if (refImage.image) {
+            // Show actual image
+            const img = document.createElement('img');
+            img.src = refImage.image;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            imageDiv.appendChild(img);
+        } else {
+            // Show placeholder
         const placeholder = document.createElement('div');
         placeholder.className = 'ref-viewer-placeholder';
         placeholder.innerHTML = `<span class="ref-viewer-text">${refImage.name}</span>`;
-        
         imageDiv.appendChild(placeholder);
+        }
+        
         imageContainer.appendChild(imageDiv);
         content.appendChild(imageContainer);
         
@@ -3807,20 +4004,39 @@ class IbisPaintWorkspace {
     }
     
     addNewReferenceImage() {
-        const newImageName = prompt('Enter name for new reference image:');
-        if (newImageName && newImageName.trim()) {
+        // Create a file input element
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const imageDataUrl = event.target.result;
             const newId = `ref-${Date.now()}`;
+                    const fileName = file.name.replace(/\.[^/.]+$/, ''); // Remove extension
+                    
             const newImage = {
                 id: newId,
-                name: newImageName,
-                image: null
+                        name: fileName || 'Reference Image',
+                        image: imageDataUrl
             };
             
             this.referenceImages.push(newImage);
             this.renderReferenceImagesGrid();
-            
-            alert(`New reference image "${newImageName}" added!`);
-        }
+                };
+                reader.readAsDataURL(file);
+            }
+            // Clean up
+            document.body.removeChild(fileInput);
+        });
+        
+        // Add to body and trigger click
+        document.body.appendChild(fileInput);
+        fileInput.click();
     }
     
     renderReferenceImagesGrid() {
@@ -3837,12 +4053,31 @@ class IbisPaintWorkspace {
             item.className = 'ref-image-item';
             item.dataset.imageId = image.id;
             
-            item.innerHTML = `
-                <div class="ref-image-placeholder">
-                    <span class="ref-image-text">Ref ${index + 1}</span>
-                </div>
-                <div class="ref-image-name">${image.name}</div>
-            `;
+            const placeholder = document.createElement('div');
+            placeholder.className = 'ref-image-placeholder';
+            
+            if (image.image) {
+                // Show actual image
+                const img = document.createElement('img');
+                img.src = image.image;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                placeholder.appendChild(img);
+            } else {
+                // Show placeholder text
+                const text = document.createElement('span');
+                text.className = 'ref-image-text';
+                text.textContent = `Ref ${index + 1}`;
+                placeholder.appendChild(text);
+            }
+            
+            item.appendChild(placeholder);
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'ref-image-name';
+            nameDiv.textContent = image.name;
+            item.appendChild(nameDiv);
             
             // Insert before add new button
             const addNewBtn = document.getElementById('add-ref-image');
@@ -3929,11 +4164,20 @@ class IbisPaintWorkspace {
             });
         }
         
-        // Ruler button
+        // Ruler button (now used for options menu)
         const rulerBtn = document.getElementById('ruler');
-        if (rulerBtn) {
-            rulerBtn.addEventListener('click', () => {
-                this.toggleRuler();
+        const optionsMenu = document.getElementById('options-menu');
+        if (rulerBtn && optionsMenu) {
+            rulerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                optionsMenu.classList.toggle('is-visible');
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (optionsMenu && !optionsMenu.contains(e.target) && !rulerBtn.contains(e.target)) {
+                    optionsMenu.classList.remove('is-visible');
+                }
             });
         }
         
@@ -3945,6 +4189,12 @@ class IbisPaintWorkspace {
                 this.toggleReferenceImagesPanel();
             });
         }
+    }
+    
+    // Show homepage popup
+    showHomepagePopup() {
+        // Use built-in browser alert for testing
+        alert('Going to Homepage');
     }
     
     // Top toolbar button handlers
