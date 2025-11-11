@@ -167,9 +167,16 @@
               <button class="brush-delete-btn">Delete</button>
             </div>
             
-            <div class="brush-list-container">
-              <div class="brush-list" id="brush-list">
-                <!-- Brush items will be dynamically added here -->
+            <div class="brush-panel-content">
+              <div class="brush-list-container">
+                <div class="brush-list" id="brush-list">
+                  <!-- Brush items will be dynamically added here -->
+                </div>
+              </div>
+              
+              <!-- Brush Config Panel (attached to right side) -->
+              <div class="brush-config-panel" id="brush-config-panel">
+                <!-- Config content will be dynamically added here -->
               </div>
             </div>
             
@@ -473,8 +480,9 @@
     <!-- Application Scripts -->
     <script src="js/icons.js"></script>
     <script src="js/brushes.js"></script>
+    <script src="js/modules/export.js"></script>
+    <script src="js/modules/brushes/index.js"></script>
     <script src="js/brush-implementations.js"></script>
-    <script src="js/p5-easy-brush.js"></script>
     <script src="js/app.js"></script>
     </body>
   </html>

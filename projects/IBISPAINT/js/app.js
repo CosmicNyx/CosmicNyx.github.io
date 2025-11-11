@@ -13,9 +13,8 @@ class IbisPaintWorkspace {
         
         // Brush configs per brush ID (additional parameters like flow, spacing, etc.)
         this.brushConfigs = {};
-        
-        // easy-brush integration
-        this.easyBrushIntegration = null;
+        this.isBrushConfigOpen = false;
+        this.activeBrushConfigBrushId = null;
         
         // Layer management
         this.layers = [
@@ -99,17 +98,6 @@ class IbisPaintWorkspace {
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
         }, 150);
-        
-        // Initialize easy-brush integration
-        if (typeof EasyBrushIntegration !== 'undefined') {
-            this.easyBrushIntegration = new EasyBrushIntegration(this);
-            this.easyBrushIntegration.initialize();
-            // Reload brush panel to include easy-brush
-            setTimeout(() => {
-                this.loadBrushesFromRegistry();
-                this.renderBrushList();
-            }, 100);
-        }
         
         this.updateUI();
         this.updateToolSelectionByTool(); // Set initial tool selection
@@ -991,27 +979,10 @@ class IbisPaintWorkspace {
         const layerCtx = this.getActiveLayerContext();
         if (!layerCtx) return;
         
-        // Check if easy-brush is selected
-        if (this.selectedBrushId === 'easyBrush' && this.easyBrushIntegration) {
-            // Update easy-brush config with current color, size, and opacity
-            const config = this.easyBrushIntegration.getConfig();
-            config.color = this.currentColor;
-            config.size = this.brushSize;
-            config.opacity = this.brushOpacity / 100;
-            this.easyBrushIntegration.updateConfig(config);
-            this.easyBrushIntegration.startStroke(coords);
-            return;
+        // Reset path-based bristle brush state when starting new stroke
+        if (typeof resetBristleBrush === 'function') {
+            resetBristleBrush();
         }
-        
-                // Reset path-based bristle brush state when starting new stroke
-                if (typeof resetBristleBrush === 'function') {
-                    resetBristleBrush();
-                }
-                
-                // Reset p5 easy brush state when starting new stroke
-                if (typeof resetP5EasyBrush === 'function') {
-                    resetP5EasyBrush();
-                }
         
         // Handle bucket tool (fill on click)
         if (this.currentTool === 'bucket') {
@@ -2769,17 +2740,6 @@ class IbisPaintWorkspace {
         this.customBrushes = [];
         this.specialBrushes = [];
         
-        // Add easy-brush to basic brushes if available
-        if (this.easyBrushIntegration && this.easyBrushIntegration.isInitialized) {
-            this.basicBrushes.push({
-                id: 'easyBrush',
-                name: 'Easy Brush',
-                value: 10.0,
-                isStarred: false,
-                preview: 'pen',
-                type: 'easyBrush'
-            });
-        }
         
         // Load brushes from registry if available
         if (typeof brushRegistry !== 'undefined') {
@@ -2908,14 +2868,8 @@ class IbisPaintWorkspace {
                 const brushItem = e.target.closest('.brush-item');
                 if (brushItem) {
                     const brushId = brushItem.dataset.brushId;
-                        
-                        if (brushId === 'p5EasyBrush') {
-                            this.openP5EasyBrushSettings();
-                        } else if (brushId === 'easyBrush') {
-                            this.openEasyBrushSettings();
-                        } else {
+                    
                         this.openBrushSettings(brushId);
-                        }
                         return;
                     }
                 }
@@ -2932,19 +2886,14 @@ class IbisPaintWorkspace {
                         e.preventDefault();
                         e.stopPropagation();
                         
-                        if (brushId === 'p5EasyBrush') {
-                            this.openP5EasyBrushSettings();
-                        } else if (brushId === 'easyBrush') {
-                            this.openEasyBrushSettings();
-                        } else {
-                            this.openBrushSettings(brushId);
-                        }
+                        this.openBrushSettings(brushId);
                         
                         // Reset double-click tracking
                         lastClickTime = 0;
                         lastClickBrushId = null;
                     } else {
                         // Single click - select brush
+                        e.stopPropagation();
                         this.selectBrush(brushId);
                         lastClickTime = currentTime;
                         lastClickBrushId = brushId;
@@ -3098,6 +3047,11 @@ class IbisPaintWorkspace {
         this.currentBrush = currentBrushSet.find(b => b.id === brushId);
         this.renderBrushList();
         this.updateBrushSettings();
+        
+        // If config panel is open, update it for the new brush
+        if (this.isBrushConfigOpen) {
+            this.createBrushConfigPanel(brushId);
+        }
     }
     
     updateBrushSliders() {
@@ -3158,17 +3112,27 @@ class IbisPaintWorkspace {
     
     // Get default config for a brush type
     getBrushDefaultConfig(brushId) {
-        const configs = {
+        // Universal config options for all brushes
+        const universalConfig = {
+            flow: 0.8,
+            spacing: 0.15,
+            roundness: 1.00,
+            angle: 0.00
+        };
+        
+        // Brush-specific configs
+        const brushSpecificConfigs = {
             'pen': {},
             'marker': { intensity: 0.4 },
             'beads': { intensity: 0.7 },
             'calligraphy': { lineWidth: 1, lerps: 16 },
             'hatching': { lineWidth: 1, lerps: 3 },
             'sprayPaint': { density: 10, minRadius: 0.5 },
-            'realisticSketchingPencil': { bristleCount: 5, gridSize: 4, skipThreshold: 0.3 },
-            'p5EasyBrush': { flow: 0.8, spacing: 0.15, roundness: 1.00, angle: 0.00 }
+            'realisticSketchingPencil': { bristleCount: 5, gridSize: 4, skipThreshold: 0.3 }
         };
-        return configs[brushId] || {};
+        
+        // Merge universal config with brush-specific config
+        return { ...universalConfig, ...(brushSpecificConfigs[brushId] || {}) };
     }
     
     // Get config for a brush (with defaults)
@@ -3187,66 +3151,117 @@ class IbisPaintWorkspace {
         Object.assign(this.brushConfigs[brushId], config);
     }
     
-    // Create config panel for a brush
+    // Create config panel for a brush inside the brush panel
     createBrushConfigPanel(brushId) {
-        // Remove existing config panel if any
-        const existingPanel = document.getElementById('brush-config-panel');
-        if (existingPanel) {
-            existingPanel.remove();
-        }
-        
-        // Get brush info
         const brush = this.getBrushById(brushId);
         if (!brush) {
             console.warn('Brush not found:', brushId);
             return;
         }
         
+        const brushPanel = document.getElementById('brush-panel');
+        const configPanel = document.getElementById('brush-config-panel');
+        if (!brushPanel || !configPanel) return;
+        
+        // Show config panel and expand brush panel
+        brushPanel.classList.add('has-config');
+        configPanel.classList.add('is-visible');
+        
         // Get current config
         const config = this.getBrushConfig(brushId);
-        
-        // Create panel
-        const panel = document.createElement('div');
-        panel.id = 'brush-config-panel';
-        panel.className = 'tool-settings-panel is-visible';
-        
-        // Build config HTML based on brush type
-        let configHTML = '';
         const configFields = this.getBrushConfigFields(brushId);
         
+        // Build config HTML
+        let configHTML = `
+            <div class="brush-config-header">
+                <span class="brush-config-title">${brush.name} Settings</span>
+                <button class="brush-config-close">×</button>
+            </div>
+            <div class="brush-config-content">
+        `;
+        
         if (configFields.length === 0) {
-            configHTML = '<p style="padding: 20px; text-align: center; color: #94a3b8;">No additional settings for this brush.</p>';
+            configHTML += '<p style="padding: 20px; text-align: center; color: #94a3b8;">No additional settings for this brush.</p>';
         } else {
             configFields.forEach(field => {
                 const value = config[field.key] !== undefined ? config[field.key] : field.default;
+                const displayValue = this.formatBrushConfigValue(value, field);
                 configHTML += `
-                    <div class="tool-setting-group">
-                        <label>${field.label}:</label>
-                        <input type="range" id="brush-config-${brushId}-${field.key}" 
-                               min="${field.min}" max="${field.max}" step="${field.step}" value="${value}">
-                        <span id="brush-config-${brushId}-${field.key}-value">${field.key === 'angle' ? value : value.toFixed(2)}</span>
+                    <div class="brush-config-group">
+                        <label class="brush-config-label">${field.label}</label>
+                        <div class="brush-config-slider-row">
+                            <input type="range" class="brush-config-slider" 
+                                   id="brush-config-${brushId}-${field.key}"
+                                   min="${field.min}" max="${field.max}" step="${field.step}" value="${value}">
+                            <span class="brush-config-value" id="brush-config-${brushId}-${field.key}-value">${displayValue}</span>
+                        </div>
                     </div>
                 `;
             });
         }
         
-        panel.innerHTML = `
-            <div class="tool-settings-header">
-                <span class="tool-settings-title">${brush.name} Settings</span>
-                <button class="tool-settings-close">×</button>
-            </div>
-            <div class="tool-settings-content">
-                ${configHTML}
-            </div>
-        `;
+        configHTML += '</div>';
+        configPanel.innerHTML = configHTML;
         
-        document.body.appendChild(panel);
-        this.setupBrushConfigEvents(panel, brushId, configFields);
+        this.isBrushConfigOpen = true;
+        this.activeBrushConfigBrushId = brushId;
+
+        // Setup events
+        this.setupBrushConfigEvents(configPanel, brushId, configFields);
+    }
+    
+    // Setup events for brush config panel
+    setupBrushConfigEvents(panel, brushId, configFields) {
+        const closeBtn = panel.querySelector('.brush-config-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.closeBrushConfigPanel();
+            });
+        }
+        
+        configFields.forEach(field => {
+            const slider = document.getElementById(`brush-config-${brushId}-${field.key}`);
+            const valueSpan = document.getElementById(`brush-config-${brushId}-${field.key}-value`);
+            
+            if (slider && valueSpan) {
+                slider.addEventListener('input', (e) => {
+                    let value = parseFloat(e.target.value);
+                    if (Number.isNaN(value)) {
+                        value = field.default;
+                    }
+                    valueSpan.textContent = this.formatBrushConfigValue(value, field);
+                    this.updateBrushConfig(brushId, { [field.key]: value });
+                });
+            }
+        });
+    }
+    
+    // Close brush config panel
+    closeBrushConfigPanel() {
+        const brushPanel = document.getElementById('brush-panel');
+        const configPanel = document.getElementById('brush-config-panel');
+        this.isBrushConfigOpen = false;
+        this.activeBrushConfigBrushId = null;
+        if (brushPanel) {
+            brushPanel.classList.remove('has-config');
+        }
+        if (configPanel) {
+            configPanel.classList.remove('is-visible');
+        }
     }
     
     // Get config fields for a brush type
     getBrushConfigFields(brushId) {
-        const fields = {
+        // Universal config fields for all brushes
+        const universalFields = [
+            { key: 'flow', label: 'Flow', min: 0, max: 1, step: 0.01, default: 0.8 },
+            { key: 'spacing', label: 'Spacing', min: 0, max: 1, step: 0.01, default: 0.15 },
+            { key: 'roundness', label: 'Roundness', min: 0, max: 1, step: 0.01, default: 1.00 },
+            { key: 'angle', label: 'Angle', min: 0, max: 360, step: 1, default: 0.00 }
+        ];
+        
+        // Brush-specific fields
+        const brushSpecificFields = {
             'pen': [],
             'marker': [
                 { key: 'intensity', label: 'Intensity', min: 0, max: 1, step: 0.01, default: 0.4 }
@@ -3270,47 +3285,29 @@ class IbisPaintWorkspace {
                 { key: 'bristleCount', label: 'Bristle Count', min: 3, max: 20, step: 1, default: 5 },
                 { key: 'gridSize', label: 'Texture Size', min: 2, max: 10, step: 1, default: 4 },
                 { key: 'skipThreshold', label: 'Skip Threshold', min: 0, max: 1, step: 0.01, default: 0.3 }
-            ],
-            'p5EasyBrush': [
-                { key: 'flow', label: 'Flow', min: 0, max: 1, step: 0.01, default: 0.8 },
-                { key: 'spacing', label: 'Spacing', min: 0, max: 1, step: 0.01, default: 0.15 },
-                { key: 'roundness', label: 'Roundness', min: 0, max: 1, step: 0.01, default: 1.00 },
-                { key: 'angle', label: 'Angle', min: 0, max: 360, step: 1, default: 0.00 }
             ]
         };
-        return fields[brushId] || [];
-    }
-    
-    // Setup events for brush config panel
-    setupBrushConfigEvents(panel, brushId, configFields) {
-        const closeBtn = panel.querySelector('.tool-settings-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
-        }
         
-        configFields.forEach(field => {
-            const slider = document.getElementById(`brush-config-${brushId}-${field.key}`);
-            const valueSpan = document.getElementById(`brush-config-${brushId}-${field.key}-value`);
-            
-            if (slider && valueSpan) {
-                slider.addEventListener('input', (e) => {
-                    const value = parseFloat(e.target.value);
-                    valueSpan.textContent = field.key === 'angle' ? value : value.toFixed(2);
-                    this.updateBrushConfig(brushId, { [field.key]: value });
-                });
-            }
-        });
+        // Combine universal fields with brush-specific fields
+        return [...universalFields, ...(brushSpecificFields[brushId] || [])];
+    }
+
+    formatBrushConfigValue(value, field) {
+        if (field.key === 'angle') {
+            return Math.round(value);
+        }
+        if (field.step >= 1) {
+            return Math.round(value);
+        }
+        return parseFloat(value).toFixed(2);
     }
     
     closeBrushSettings() {
         const brushSettings = document.getElementById('brush-settings');
-        const configPanel = document.getElementById('brush-config-panel');
         if (brushSettings) {
             brushSettings.classList.remove('is-visible');
         }
-        if (configPanel) {
-            configPanel.classList.remove('is-visible');
-        }
+        this.closeBrushConfigPanel();
     }
     
     updateBrushSettings() {
@@ -3362,6 +3359,7 @@ class IbisPaintWorkspace {
     closeBrushPanel() {
         const panel = document.getElementById('brush-panel');
         const settings = document.getElementById('brush-settings');
+        this.closeBrushConfigPanel();
         if (panel) {
             panel.classList.remove('is-visible');
         }
@@ -4083,6 +4081,8 @@ class IbisPaintWorkspace {
             
             this.referenceImages.push(newImage);
             this.renderReferenceImagesGrid();
+                    // Keep panel open after selecting image
+                    this.openReferenceImagesPanel();
                 };
                 reader.readAsDataURL(file);
             }
@@ -5745,10 +5745,6 @@ class IbisPaintWorkspace {
         // Reset brush engine to use new canvas dimensions
         this.brushEngine = null;
         
-        // Update easy-brush canvas size
-        if (this.easyBrushIntegration) {
-            this.easyBrushIntegration.updateCanvasSize(newWidth, newHeight);
-        }
         
         // Fit canvas to viewport so it's fully visible with void space
         this.fitCanvasToViewport();
@@ -5800,269 +5796,6 @@ class IbisPaintWorkspace {
             panel = this.createEffectSettingsPanel();
         }
         panel.classList.add('is-visible');
-    }
-    
-    openP5EasyBrushSettings() {
-        // Create or show p5 easy brush settings panel
-        console.log('Opening P5 Easy Brush Settings');
-        let panel = document.getElementById('p5-easy-brush-settings-panel');
-        if (!panel) {
-            console.log('Creating new P5 Easy Brush Settings panel');
-            panel = this.createP5EasyBrushSettingsPanel();
-        }
-        panel.classList.add('is-visible');
-        console.log('Panel visible:', panel.classList.contains('is-visible'));
-    }
-    
-    createP5EasyBrushSettingsPanel() {
-        const panel = document.createElement('div');
-        panel.id = 'p5-easy-brush-settings-panel';
-        panel.className = 'tool-settings-panel';
-        
-        // Get current config
-        const config = typeof getP5EasyBrushConfig === 'function' ? getP5EasyBrushConfig() : {
-            color: "#000000",
-            size: 8,
-            flow: 0.8,
-            opacity: 0.5,
-            spacing: 0.15,
-            roundness: 1.00,
-            angle: 0.00
-        };
-        
-        panel.innerHTML = `
-            <div class="tool-settings-header">
-                <span class="tool-settings-title">P5 Easy Brush Settings</span>
-                <button class="tool-settings-close">×</button>
-            </div>
-            <div class="tool-settings-content">
-                <div class="tool-setting-group">
-                    <label>Flow:</label>
-                    <input type="range" id="p5-easy-brush-flow" min="0" max="1" step="0.01" value="${config.flow}">
-                    <span id="p5-easy-brush-flow-value">${config.flow}</span>
-                </div>
-                <div class="tool-setting-group">
-                    <label>Spacing:</label>
-                    <input type="range" id="p5-easy-brush-spacing" min="0" max="1" step="0.01" value="${config.spacing}">
-                    <span id="p5-easy-brush-spacing-value">${config.spacing}</span>
-                </div>
-                <div class="tool-setting-group">
-                    <label>Roundness:</label>
-                    <input type="range" id="p5-easy-brush-roundness" min="0" max="1" step="0.01" value="${config.roundness}">
-                    <span id="p5-easy-brush-roundness-value">${config.roundness}</span>
-                </div>
-                <div class="tool-setting-group">
-                    <label>Angle:</label>
-                    <input type="range" id="p5-easy-brush-angle" min="0" max="360" step="1" value="${config.angle}">
-                    <span id="p5-easy-brush-angle-value">${config.angle}</span>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(panel);
-        this.setupP5EasyBrushSettingsEvents(panel);
-        return panel;
-    }
-    
-    setupP5EasyBrushSettingsEvents(panel) {
-        const closeBtn = panel.querySelector('.tool-settings-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
-        }
-        
-        // Flow slider
-        const flowSlider = document.getElementById('p5-easy-brush-flow');
-        if (flowSlider) {
-            flowSlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('p5-easy-brush-flow-value').textContent = value.toFixed(2);
-                if (typeof updateP5EasyBrushConfig === 'function') {
-                    updateP5EasyBrushConfig({ flow: value });
-                }
-            });
-        }
-        
-        // Spacing slider
-        const spacingSlider = document.getElementById('p5-easy-brush-spacing');
-        if (spacingSlider) {
-            spacingSlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('p5-easy-brush-spacing-value').textContent = value.toFixed(2);
-                if (typeof updateP5EasyBrushConfig === 'function') {
-                    updateP5EasyBrushConfig({ spacing: value });
-                }
-            });
-        }
-        
-        // Roundness slider
-        const roundnessSlider = document.getElementById('p5-easy-brush-roundness');
-        if (roundnessSlider) {
-            roundnessSlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('p5-easy-brush-roundness-value').textContent = value.toFixed(2);
-                if (typeof updateP5EasyBrushConfig === 'function') {
-                    updateP5EasyBrushConfig({ roundness: value });
-                }
-            });
-        }
-        
-        // Angle slider
-        const angleSlider = document.getElementById('p5-easy-brush-angle');
-        if (angleSlider) {
-            angleSlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('p5-easy-brush-angle-value').textContent = value;
-                if (typeof updateP5EasyBrushConfig === 'function') {
-                    updateP5EasyBrushConfig({ angle: value });
-                }
-            });
-        }
-    }
-    
-    openEasyBrushSettings() {
-        // Create or show easy-brush settings panel
-        let panel = document.getElementById('easy-brush-settings-panel');
-        if (!panel) {
-            panel = this.createEasyBrushSettingsPanel();
-        }
-        panel.classList.add('is-visible');
-    }
-    
-    createEasyBrushSettingsPanel() {
-        const panel = document.createElement('div');
-        panel.id = 'easy-brush-settings-panel';
-        panel.className = 'tool-settings-panel';
-        
-        // Get current config
-        const config = this.easyBrushIntegration ? this.easyBrushIntegration.getConfig() : {
-            color: "#000000",
-            size: 8,
-            flow: 0.8,
-            opacity: 0.5,
-            spacing: 0.15,
-            roundness: 1.00,
-            angle: 0.00
-        };
-        
-        panel.innerHTML = `
-            <div class="tool-settings-header">
-                <span class="tool-settings-title">Easy Brush Settings</span>
-                <button class="tool-settings-close">×</button>
-            </div>
-            <div class="tool-settings-content">
-                <div class="tool-setting-group">
-                    <label>Size:</label>
-                    <input type="range" id="easy-brush-size" min="1" max="100" value="${config.size}">
-                    <span id="easy-brush-size-value">${config.size}</span>
-                </div>
-                <div class="tool-setting-group">
-                    <label>Flow:</label>
-                    <input type="range" id="easy-brush-flow" min="0" max="1" step="0.01" value="${config.flow}">
-                    <span id="easy-brush-flow-value">${config.flow}</span>
-                </div>
-                <div class="tool-setting-group">
-                    <label>Opacity:</label>
-                    <input type="range" id="easy-brush-opacity" min="0" max="1" step="0.01" value="${config.opacity}">
-                    <span id="easy-brush-opacity-value">${config.opacity}</span>
-                </div>
-                <div class="tool-setting-group">
-                    <label>Spacing:</label>
-                    <input type="range" id="easy-brush-spacing" min="0" max="1" step="0.01" value="${config.spacing}">
-                    <span id="easy-brush-spacing-value">${config.spacing}</span>
-                </div>
-                <div class="tool-setting-group">
-                    <label>Roundness:</label>
-                    <input type="range" id="easy-brush-roundness" min="0" max="1" step="0.01" value="${config.roundness}">
-                    <span id="easy-brush-roundness-value">${config.roundness}</span>
-                </div>
-                <div class="tool-setting-group">
-                    <label>Angle:</label>
-                    <input type="range" id="easy-brush-angle" min="0" max="360" step="1" value="${config.angle}">
-                    <span id="easy-brush-angle-value">${config.angle}</span>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(panel);
-        this.setupEasyBrushSettingsEvents(panel);
-        return panel;
-    }
-    
-    setupEasyBrushSettingsEvents(panel) {
-        const closeBtn = panel.querySelector('.tool-settings-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => panel.classList.remove('is-visible'));
-        }
-        
-        // Size slider
-        const sizeSlider = document.getElementById('easy-brush-size');
-        if (sizeSlider) {
-            sizeSlider.addEventListener('input', (e) => {
-                const value = parseInt(e.target.value);
-                document.getElementById('easy-brush-size-value').textContent = value;
-                if (this.easyBrushIntegration) {
-                    this.easyBrushIntegration.updateConfig({ size: value });
-                }
-            });
-        }
-        
-        // Flow slider
-        const flowSlider = document.getElementById('easy-brush-flow');
-        if (flowSlider) {
-            flowSlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('easy-brush-flow-value').textContent = value.toFixed(2);
-                if (this.easyBrushIntegration) {
-                    this.easyBrushIntegration.updateConfig({ flow: value });
-                }
-            });
-        }
-        
-        // Opacity slider
-        const opacitySlider = document.getElementById('easy-brush-opacity');
-        if (opacitySlider) {
-            opacitySlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('easy-brush-opacity-value').textContent = value.toFixed(2);
-                if (this.easyBrushIntegration) {
-                    this.easyBrushIntegration.updateConfig({ opacity: value });
-                }
-            });
-        }
-        
-        // Spacing slider
-        const spacingSlider = document.getElementById('easy-brush-spacing');
-        if (spacingSlider) {
-            spacingSlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('easy-brush-spacing-value').textContent = value.toFixed(2);
-                if (this.easyBrushIntegration) {
-                    this.easyBrushIntegration.updateConfig({ spacing: value });
-                }
-            });
-        }
-        
-        // Roundness slider
-        const roundnessSlider = document.getElementById('easy-brush-roundness');
-        if (roundnessSlider) {
-            roundnessSlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('easy-brush-roundness-value').textContent = value.toFixed(2);
-                if (this.easyBrushIntegration) {
-                    this.easyBrushIntegration.updateConfig({ roundness: value });
-                }
-            });
-        }
-        
-        // Angle slider
-        const angleSlider = document.getElementById('easy-brush-angle');
-        if (angleSlider) {
-            angleSlider.addEventListener('input', (e) => {
-                const value = parseFloat(e.target.value);
-                document.getElementById('easy-brush-angle-value').textContent = value;
-                if (this.easyBrushIntegration) {
-                    this.easyBrushIntegration.updateConfig({ angle: value });
-                }
-            });
-        }
     }
     
     // Create tool settings panels
@@ -6468,73 +6201,14 @@ class IbisPaintWorkspace {
     }
 
     // ===== EXPORT =====
+    // Export moved to IbisExport module; keep legacy wrapper if referenced elsewhere
     exportVisibleLayersAsPNG(filenameOverride) {
-        // Create a temporary canvas with drawing area size
-        const width = this.canvasWidth || this.drawingAreaSize;
-        const height = this.canvasHeight || this.drawingAreaSize;
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        const tempCtx = tempCanvas.getContext('2d');
-        
-        // Draw white background (matches workspace background for export)
-        tempCtx.fillStyle = '#ffffff';
-        tempCtx.fillRect(0, 0, width, height);
-        
-        // Composite only visible layers from bottom to top
-        this.layers.forEach(layer => {
-            if (layer.type === 'layer' && layer.visible && layer.canvas) {
-                tempCtx.globalAlpha = (layer.opacity || 100) / 100;
-                tempCtx.globalCompositeOperation = layer.blendMode || 'source-over';
-                tempCtx.drawImage(layer.canvas, 0, 0, width, height);
-            }
-        });
-        
-        // Reset compositing
-        tempCtx.globalAlpha = 1;
-        tempCtx.globalCompositeOperation = 'source-over';
-        
-        const triggerDownload = (blobOrDataUrl) => {
-            const a = document.createElement('a');
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            let filename = filenameOverride || `canvas-${timestamp}.png`;
-            if (!/\.png$/i.test(filename)) filename = `${filename}.png`;
-            a.download = filename;
-            if (blobOrDataUrl instanceof Blob) {
-                const url = URL.createObjectURL(blobOrDataUrl);
-                a.href = url;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            } else {
-                a.href = blobOrDataUrl;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            }
-        };
-        
-        try {
-            // Prefer toBlob for better memory usage
-            if (tempCanvas.toBlob) {
-                tempCanvas.toBlob((blob) => {
-                    if (blob) {
-                        triggerDownload(blob);
-                    } else {
-                        // Fallback to data URL
-                        const dataUrl = tempCanvas.toDataURL('image/png');
-                        triggerDownload(dataUrl);
-                    }
-                }, 'image/png');
-            } else {
-                const dataUrl = tempCanvas.toDataURL('image/png');
-                triggerDownload(dataUrl);
-            }
-        } catch (err) {
-            console.error('[Export] Failed to export PNG:', err);
-            alert('Export failed. If you used external images, the canvas may be blocked by the browser (cross-origin).');
+        if (window.IbisExport && typeof window.IbisExport.exportVisibleLayersAsPNG === 'function') {
+            window.IbisExport.exportVisibleLayersAsPNG(this, filenameOverride);
+            return;
         }
+        // Fallback
+        if (typeof this.handleExport === 'function') this.handleExport();
     }
 }
 
@@ -6625,8 +6299,8 @@ document.addEventListener('DOMContentLoaded', () => {
 if (typeof window !== 'undefined') {
     window.captureScreenshot = function() {
         try {
-            if (window.workspace && typeof window.workspace.exportVisibleLayersAsPNG === 'function') {
-                window.workspace.exportVisibleLayersAsPNG('screenshot.png');
+            if (window.workspace && window.IbisExport && typeof window.IbisExport.exportVisibleLayersAsPNG === 'function') {
+                window.IbisExport.exportVisibleLayersAsPNG(window.workspace, 'screenshot.png');
                 return;
             }
         } catch (e) {
@@ -6656,32 +6330,32 @@ if (typeof window !== 'undefined') {
     };
 }
 
-// Export PNG option
+        // Export PNG option
 const exportPngOption = document.getElementById('option-export-png');
 if (exportPngOption) {
     exportPngOption.addEventListener('click', () => {
         console.log('[Export] Export PNG clicked');
-        const ws = (typeof window !== 'undefined' && window.workspace) ? window.workspace : this;
-        if (ws && typeof ws.exportVisibleLayersAsPNG === 'function') {
-            ws.exportVisibleLayersAsPNG();
-        } else if (typeof this.handleExport === 'function') {
-            this.handleExport();
-        }
+                const ws = (typeof window !== 'undefined' && window.workspace) ? window.workspace : this;
+                if (window.IbisExport && typeof window.IbisExport.exportVisibleLayersAsPNG === 'function') {
+                    window.IbisExport.exportVisibleLayersAsPNG(ws);
+                } else if (typeof this.handleExport === 'function') {
+                    this.handleExport();
+                }
         if (optionsMenu) optionsMenu.classList.remove('is-visible');
     });
 }
 
 // Global delegation fallback (in case menu is re-rendered or detached)
-document.addEventListener('click', (e) => {
+        document.addEventListener('click', (e) => {
     const target = e.target.closest('#option-export-png');
     if (target) {
         console.log('[Export] Export PNG via global delegation');
         try { alert('Exporting PNG...'); } catch(_) {}
-        const ws = (typeof window !== 'undefined' && window.workspace) ? window.workspace : this;
-        if (ws && typeof ws.exportVisibleLayersAsPNG === 'function') {
-            ws.exportVisibleLayersAsPNG();
-        } else if (typeof this.handleExport === 'function') {
-            this.handleExport();
-        }
+                const ws = (typeof window !== 'undefined' && window.workspace) ? window.workspace : this;
+                if (window.IbisExport && typeof window.IbisExport.exportVisibleLayersAsPNG === 'function') {
+                    window.IbisExport.exportVisibleLayersAsPNG(ws);
+                } else if (typeof this.handleExport === 'function') {
+                    this.handleExport();
+                }
     }
 });

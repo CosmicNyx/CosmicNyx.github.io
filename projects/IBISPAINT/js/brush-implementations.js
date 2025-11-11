@@ -5,10 +5,20 @@
 function penBrush(from, to, color, size, opacity) {
     const fromCoords = this.convertCoords(from);
     const toCoords = this.convertCoords(to);
+    const config = this.currentBrushConfig || {};
+    const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
+    const angleRad = ((config.angle !== undefined ? config.angle : 0) * Math.PI) / 180;
+    const midpointX = (fromCoords.x + toCoords.x) / 2;
+    const midpointY = (fromCoords.y + toCoords.y) / 2;
     
     this.ctx.save();
+    if (angleRad !== 0) {
+        this.ctx.translate(midpointX, midpointY);
+        this.ctx.rotate(angleRad);
+        this.ctx.translate(-midpointX, -midpointY);
+    }
     this.ctx.strokeStyle = color;
-    this.ctx.lineWidth = size;
+    this.ctx.lineWidth = size * roundness;
     this.ctx.globalAlpha = opacity / 100;
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
@@ -23,16 +33,22 @@ function penBrush(from, to, color, size, opacity) {
 // Marker Brush - Filled circle
 function markerBrush(from, to, color, size, opacity) {
     const toCoords = this.convertCoords(to);
-    
-    // Get config from workspace
-    const config = this.workspace ? this.workspace.getBrushConfig('marker') : {};
+    const config = this.currentBrushConfig || {};
     const intensity = config.intensity !== undefined ? config.intensity : 0.4;
+    const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
+    const angleRad = ((config.angle !== undefined ? config.angle : 0) * Math.PI) / 180;
+    const radiusX = Math.max(0.1, (size / 2) * roundness);
+    const radiusY = Math.max(0.1, (size / 2) / roundness);
     
     this.ctx.save();
+    this.ctx.translate(toCoords.x, toCoords.y);
+    if (angleRad !== 0) {
+        this.ctx.rotate(angleRad);
+    }
     this.ctx.fillStyle = color;
-    this.ctx.globalAlpha = opacity / 100 * intensity;
+    this.ctx.globalAlpha = (opacity / 100) * intensity;
     this.ctx.beginPath();
-    this.ctx.arc(toCoords.x, toCoords.y, size / 2, 0, Math.PI * 2);
+    this.ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.restore();
 }
@@ -41,23 +57,27 @@ function markerBrush(from, to, color, size, opacity) {
 function beadsBrush(from, to, color, size, opacity) {
     const fromCoords = this.convertCoords(from);
     const toCoords = this.convertCoords(to);
-    
-    // Get config from workspace
-    const config = this.workspace ? this.workspace.getBrushConfig('beads') : {};
+    const config = this.currentBrushConfig || {};
     const intensity = config.intensity !== undefined ? config.intensity : 0.7;
+    const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
+    const angleRad = ((config.angle !== undefined ? config.angle : 0) * Math.PI) / 180;
     
-    // Find distance between points
     const distance = this.dist(fromCoords.x, fromCoords.y, toCoords.x, toCoords.y);
-    
-    // Find midpoint
     const midX = (fromCoords.x + toCoords.x) / 2;
     const midY = (fromCoords.y + toCoords.y) / 2;
+    const baseRadius = Math.max(distance / 2, size / 4);
+    const radiusX = Math.max(0.1, baseRadius * roundness);
+    const radiusY = Math.max(0.1, baseRadius / roundness);
     
     this.ctx.save();
+    this.ctx.translate(midX, midY);
+    if (angleRad !== 0) {
+        this.ctx.rotate(angleRad);
+    }
     this.ctx.fillStyle = color;
-    this.ctx.globalAlpha = opacity / 100 * intensity;
+    this.ctx.globalAlpha = (opacity / 100) * intensity;
     this.ctx.beginPath();
-    this.ctx.arc(midX, midY, Math.max(distance / 2, size / 4), 0, Math.PI * 2);
+    this.ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.restore();
 }
@@ -66,12 +86,13 @@ function beadsBrush(from, to, color, size, opacity) {
 function calligraphyBrush(from, to, color, size, opacity) {
     const fromCoords = this.convertCoords(from);
     const toCoords = this.convertCoords(to);
-    
-    // Get config from workspace
-    const config = this.workspace ? this.workspace.getBrushConfig('calligraphy') : {};
+    const config = this.currentBrushConfig || {};
     const lerps = config.lerps !== undefined ? config.lerps : 16;
     const lineWidth = config.lineWidth !== undefined ? config.lineWidth : 1;
-    const width = size / 2;
+    const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
+    const angleRad = (Math.PI / 4) + ((config.angle !== undefined ? config.angle : 0) * Math.PI / 180);
+    const offsetX = (size / 2) * roundness * Math.cos(angleRad);
+    const offsetY = (size / 2) * roundness * Math.sin(angleRad);
     
     this.ctx.save();
     this.ctx.strokeStyle = color;
@@ -82,10 +103,9 @@ function calligraphyBrush(from, to, color, size, opacity) {
         const x = this.lerp(fromCoords.x, toCoords.x, i / lerps);
         const y = this.lerp(fromCoords.y, toCoords.y, i / lerps);
         
-        // Draw slanted line
         this.ctx.beginPath();
-        this.ctx.moveTo(x - width, y - width);
-        this.ctx.lineTo(x + width, y + width);
+        this.ctx.moveTo(x - offsetX, y - offsetY);
+        this.ctx.lineTo(x + offsetX, y + offsetY);
         this.ctx.stroke();
     }
     this.ctx.restore();
@@ -95,24 +115,23 @@ function calligraphyBrush(from, to, color, size, opacity) {
 function hatchingBrush(from, to, color, size, opacity) {
     const fromCoords = this.convertCoords(from);
     const toCoords = this.convertCoords(to);
-    
-    // Get config from workspace
-    const config = this.workspace ? this.workspace.getBrushConfig('hatching') : {};
+    const config = this.currentBrushConfig || {};
     const lerps = config.lerps !== undefined ? config.lerps : 3;
     const lineWidth = config.lineWidth !== undefined ? config.lineWidth : 1;
+    const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
+    const angleRad = ((config.angle !== undefined ? config.angle : 0) * Math.PI) / 180;
     
-    // Calculate speed
     const speed = this.getSpeed(fromCoords, toCoords);
-    
-    // Create vector by inverting X and Y values
     const vectorX = toCoords.y - fromCoords.y;
     const vectorY = toCoords.x - fromCoords.x;
-    
-    // Set vector magnitude based on speed
     const magnitude = speed / 2;
     const vectorLength = Math.sqrt(vectorX * vectorX + vectorY * vectorY);
     const normalizedX = vectorLength > 0 ? (vectorX / vectorLength) * magnitude : 0;
     const normalizedY = vectorLength > 0 ? (vectorY / vectorLength) * magnitude : 0;
+    const scaledX = normalizedX * roundness;
+    const scaledY = normalizedY * roundness;
+    const rotatedX = scaledX * Math.cos(angleRad) - scaledY * Math.sin(angleRad);
+    const rotatedY = scaledX * Math.sin(angleRad) + scaledY * Math.cos(angleRad);
     
     this.ctx.save();
     this.ctx.strokeStyle = color;
@@ -123,10 +142,9 @@ function hatchingBrush(from, to, color, size, opacity) {
         const x = this.lerp(fromCoords.x, toCoords.x, i / lerps);
         const y = this.lerp(fromCoords.y, toCoords.y, i / lerps);
         
-        // Draw line
         this.ctx.beginPath();
-        this.ctx.moveTo(x - normalizedX, y - normalizedY);
-        this.ctx.lineTo(x + normalizedX, y + normalizedY);
+        this.ctx.moveTo(x - rotatedX, y - rotatedY);
+        this.ctx.lineTo(x + rotatedX, y + rotatedY);
         this.ctx.stroke();
     }
     this.ctx.restore();
@@ -136,20 +154,16 @@ function hatchingBrush(from, to, color, size, opacity) {
 function sprayPaintBrush(from, to, color, size, opacity) {
     const fromCoords = this.convertCoords(from);
     const toCoords = this.convertCoords(to);
-    
-    // Get config from workspace
-    const config = this.workspace ? this.workspace.getBrushConfig('sprayPaint') : {};
+    const config = this.currentBrushConfig || {};
     const density = config.density !== undefined ? config.density : 10;
     const minRadiusRatio = config.minRadius !== undefined ? config.minRadius : 0.5;
+    const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
+    const angleRad = ((config.angle !== undefined ? config.angle : 0) * Math.PI) / 180;
     
-    // Calculate speed
     const speed = this.getSpeed(fromCoords, toCoords);
-    
-    // Set minimum radius and spray density
     const minRadius = size * minRadiusRatio;
     const sprayDensity = density;
     const r = Math.min(speed + minRadius, size);
-    const rSquared = r * r;
     
     const lerps = 10;
     
@@ -161,14 +175,20 @@ function sprayPaintBrush(from, to, color, size, opacity) {
         const lerpX = this.lerp(fromCoords.x, toCoords.x, i / lerps);
         const lerpY = this.lerp(fromCoords.y, toCoords.y, i / lerps);
         
-        // Draw random points within circle
         for (let j = 0; j < sprayDensity; j++) {
-            // Pick random position within circle
-            const randX = (Math.random() * 2 - 1) * r;
-            const randY = (Math.random() * 2 - 1) * Math.sqrt(rSquared - randX * randX);
+            const theta = Math.random() * Math.PI * 2;
+            const radius = Math.sqrt(Math.random()) * r;
+            let offsetX = Math.cos(theta) * radius * roundness;
+            let offsetY = Math.sin(theta) * radius / roundness;
             
-            // Draw point
-            this.ctx.fillRect(lerpX + randX, lerpY + randY, 1, 1);
+            if (angleRad !== 0) {
+                const rotatedX = offsetX * Math.cos(angleRad) - offsetY * Math.sin(angleRad);
+                const rotatedY = offsetX * Math.sin(angleRad) + offsetY * Math.cos(angleRad);
+                offsetX = rotatedX;
+                offsetY = rotatedY;
+            }
+            
+            this.ctx.fillRect(lerpX + offsetX, lerpY + offsetY, 1, 1);
         }
     }
     this.ctx.restore();
@@ -241,32 +261,27 @@ function noise(x, y, time) {
 function realisticSketchingPencil(from, to, color, size, opacity) {
     const fromCoords = this.convertCoords(from);
     const toCoords = this.convertCoords(to);
-    
-    // Get config from workspace
-    const config = this.workspace ? this.workspace.getBrushConfig('realisticSketchingPencil') : {};
+    const config = this.currentBrushConfig || {};
     const gridSize = config.gridSize !== undefined ? config.gridSize : 4;
     const bristleCount = config.bristleCount !== undefined ? config.bristleCount : 5;
     const skipThreshold = config.skipThreshold !== undefined ? config.skipThreshold : 0.3;
+    const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
+    const angleRad = ((config.angle !== undefined ? config.angle : 0) * Math.PI) / 180;
     
-    // Initialize canvas grid if needed
     initCanvasGrid(this.canvasWidth, this.canvasHeight, gridSize);
     
-    // Add points to path
     bristleBrushState.pathPoints.push({
         x: toCoords.x,
         y: toCoords.y,
         time: bristleBrushState.time
     });
     
-    // Increment time
     bristleBrushState.time += 0.1;
     
-    // Limit path length to prevent memory issues
     if (bristleBrushState.pathPoints.length > 100) {
         bristleBrushState.pathPoints.shift();
     }
     
-    // Create bristle points for this segment
     const distance = this.dist(fromCoords.x, fromCoords.y, toCoords.x, toCoords.y);
     const steps = Math.max(2, Math.floor(distance / 2));
     const actualBristleCount = Math.max(3, Math.floor(size * 0.8 * (bristleCount / 5)));
@@ -275,34 +290,29 @@ function realisticSketchingPencil(from, to, color, size, opacity) {
     this.ctx.fillStyle = color;
     this.ctx.strokeStyle = color;
     
-    // Draw bristles along the path
     for (let i = 0; i <= steps; i++) {
         const t = i / steps;
         const x = this.lerp(fromCoords.x, toCoords.x, t);
         const y = this.lerp(fromCoords.y, toCoords.y, t);
         
-        // Apply nearest point snapping for canvas texture
         const snapped = findNearestGridPoint(x, y, size * 0.2);
         const drawX = snapped ? snapped.x : x;
         const drawY = snapped ? snapped.y : y;
         
-        // Noise mask for skips in strokes
         const noiseValue = noise(drawX, drawY, bristleBrushState.time);
-        if (noiseValue < skipThreshold) continue; // Skip this point based on noise
+        if (noiseValue < skipThreshold) continue;
         
-        // Create bristles at this point
         for (let j = 0; j < actualBristleCount; j++) {
-            // Bristle position within brush radius
-            const angle = (j / actualBristleCount) * Math.PI * 2;
+            const theta = (j / actualBristleCount) * Math.PI * 2 + angleRad;
             const radius = size * 0.3 * (0.3 + Math.random() * 0.7);
-            const bristleX = drawX + Math.cos(angle) * radius;
-            const bristleY = drawY + Math.sin(angle) * radius;
+            const offsetX = Math.cos(theta) * radius * roundness;
+            const offsetY = Math.sin(theta) * radius / roundness;
+            const bristleX = drawX + offsetX;
+            const bristleY = drawY + offsetY;
             
-            // Bristle size and opacity (no fade over time)
             const bristleSize = (0.3 + Math.random() * 0.7) * size * 0.15;
             const bristleOpacity = opacity * (0.4 + Math.random() * 0.4);
             
-            // Add to bristle points for tracking
             bristleBrushState.bristlePoints.push({
                 x: bristleX,
                 y: bristleY,
@@ -312,17 +322,15 @@ function realisticSketchingPencil(from, to, color, size, opacity) {
                 color: color
             });
             
-            // Draw bristle point
             this.ctx.globalAlpha = bristleOpacity / 100;
-            this.ctx.fillRect(bristleX - bristleSize/2, bristleY - bristleSize/2, bristleSize, bristleSize);
+            this.ctx.fillRect(bristleX - bristleSize / 2, bristleY - bristleSize / 2, bristleSize, bristleSize);
         }
     }
     
-    // Clean up old bristle points
     const currentTime = bristleBrushState.time;
     bristleBrushState.bristlePoints = bristleBrushState.bristlePoints.filter(bristle => {
         const age = currentTime - bristle.time;
-        return age < 0.2; // Keep bristles for current stroke only
+        return age < 0.2;
     });
     
     this.ctx.restore();
@@ -343,6 +351,7 @@ if (typeof brushRegistry !== 'undefined') {
     brushRegistry.register('calligraphy', calligraphyBrush, { name: 'Calligraphy', category: 'custom' });
     brushRegistry.register('hatching', hatchingBrush, { name: 'Hatching', category: 'custom' });
     brushRegistry.register('sprayPaint', sprayPaintBrush, { name: 'Spray Paint', category: 'special' });
-    brushRegistry.register('realisticSketchingPencil', realisticSketchingPencil, { name: 'Realistic Sketching Pencil', category: 'custom' });
+    brushRegistry.register('realisticSketchingPencil', realisticSketchingPencil, { name: 'Crayon', category: 'custom' });
+
 }
 
