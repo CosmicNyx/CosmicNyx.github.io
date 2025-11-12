@@ -1,3 +1,8 @@
+/**
+ * Main application controller for the Ibis Paint workspace.
+ * Handles initialization, UI wiring, drawing logic, history, layers,
+ * and the various panels and tool interactions that make up the app experience.
+ */
 // Ibis Paint Workspace - Clean UI with Core Functionality
 class IbisPaintWorkspace {
     constructor() {
@@ -1336,8 +1341,18 @@ class IbisPaintWorkspace {
             const brush = this.getBrushById(this.selectedBrushId);
             const brushType = brush ? brush.type : 'default';
             
+            // Debug: Log brush drawing attempt
+            if (!this.brushEngine) {
+                console.error('BrushEngine not initialized');
+                return;
+            }
+            
             // Draw with selected brush
-            this.brushEngine.draw(from, to, brushType, this.currentColor, this.brushSize, this.brushOpacity);
+            try {
+                this.brushEngine.draw(from, to, brushType, this.currentColor, this.brushSize, this.brushOpacity);
+            } catch (e) {
+                console.error('Error drawing brush:', e, 'brushType:', brushType);
+            }
             
             // Redraw the canvas to show the new stroke
             this.applyTransformations();
@@ -3446,7 +3461,13 @@ class IbisPaintWorkspace {
     
     // Get config fields for a brush type
     getBrushConfigFields(brushId) {
-        // Universal config fields for all brushes
+        // Default brushes (pen, marker) have no config options
+        const defaultBrushes = ['pen', 'marker'];
+        if (defaultBrushes.includes(brushId)) {
+            return [];
+        }
+        
+        // Universal config fields for non-default brushes
         const universalFields = [
             { key: 'flow', label: 'Flow', min: 0, max: 1, step: 0.01, default: 0.8 },
             { key: 'spacing', label: 'Spacing', min: 0, max: 1, step: 0.01, default: 0.15 },
@@ -3456,10 +3477,6 @@ class IbisPaintWorkspace {
         
         // Brush-specific fields
         const brushSpecificFields = {
-            'pen': [],
-            'marker': [
-                { key: 'intensity', label: 'Intensity', min: 0, max: 1, step: 0.01, default: 0.4 }
-            ],
             'beads': [
                 { key: 'intensity', label: 'Intensity', min: 0, max: 1, step: 0.01, default: 0.7 }
             ],

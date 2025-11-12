@@ -1,3 +1,8 @@
+/**
+ * Bootstraps the application by loading required scripts in sequence.
+ * Ensures libraries and modules are available in the correct order
+ * before the workspace logic executes.
+ */
 // Main JavaScript entry point
 // This file loads all JavaScript modules in the correct order
 

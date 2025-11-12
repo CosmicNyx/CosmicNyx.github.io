@@ -1,4 +1,8 @@
-// Brush module: exposes BrushEngine and a shared brushRegistry
+/**
+ * Brush module exposing a configurable BrushEngine and shared registry.
+ * Handles coordinate translation, basic line rendering, and brush
+ * registration hooks for custom stroke implementations.
+ */
 ;(function (global) {
     'use strict';
 
@@ -9,9 +13,9 @@
         this.workspace = workspace || null;
         this.brushes = Object.create(null);
         this.lastDrawPoints = Object.create(null);
-        this.currentBrushConfig = null;
     }
 
+    // Translate logical brush coordinates (centered around origin) to canvas coordinates.
     BrushEngine.prototype.convertCoords = function (coords) {
         var halfWidth = this.canvasWidth / 2;
         var halfHeight = this.canvasHeight / 2;
@@ -37,67 +41,36 @@
         return Math.atan2(to.y - from.y, to.x - from.x);
     };
 
+    // Allow external brush implementations to register themselves by name.
     BrushEngine.prototype.registerBrush = function (name, brushFn) {
         this.brushes[name] = brushFn;
     };
 
+    // Core drawing routine invoked on every pointer move.
+    // It delegates to custom brushes when available, otherwise falls back to a simple line.
     BrushEngine.prototype.draw = function (from, to, brushType, color, size, opacity) {
-        var rawConfig = {};
-        if (this.workspace && typeof this.workspace.getBrushConfig === 'function') {
-            rawConfig = this.workspace.getBrushConfig(brushType) || {};
-        }
-
-        var effectiveConfig = Object.assign({}, rawConfig);
-        var flow = typeof effectiveConfig.flow === 'number' ? effectiveConfig.flow : 1;
-        var spacingRatio = typeof effectiveConfig.spacing === 'number' ? effectiveConfig.spacing : 0;
-        var roundness = typeof effectiveConfig.roundness === 'number' ? effectiveConfig.roundness : 1;
-        var angle = typeof effectiveConfig.angle === 'number' ? effectiveConfig.angle : 0;
-
-        effectiveConfig.flow = flow;
-        effectiveConfig.spacing = spacingRatio;
-        effectiveConfig.roundness = roundness;
-        effectiveConfig.angle = angle;
-
-        var spacingKey = brushType || '_default';
-        if (spacingRatio > 0 && this.lastDrawPoints[spacingKey]) {
-            var last = this.lastDrawPoints[spacingKey];
-            var dist = this.dist(last.x, last.y, to.x, to.y);
-            var threshold = Math.max(0.5, spacingRatio * size);
-            if (dist < threshold) {
-                return;
-            }
-        }
-        this.lastDrawPoints[spacingKey] = { x: to.x, y: to.y };
-
-        var adjustedOpacity = Math.max(0, Math.min(100, opacity * flow));
-
+        // Look up a registered brush implementation by type.
         var brush = this.brushes[brushType];
-        this.currentBrushConfig = effectiveConfig;
-        if (brush) {
+        if (brush && typeof brush === 'function') {
             try {
-                brush.call(this, from, to, color, size, adjustedOpacity);
-            } finally {
-                this.currentBrushConfig = null;
+                // Execute custom brush logic with the engine context as `this`.
+                brush.call(this, from, to, color, size, opacity);
+            } catch (e) {
+                console.error('Brush drawing error:', e, 'brushType:', brushType, 'error stack:', e.stack);
             }
             return;
+        } else if (brushType && !brush) {
+            console.warn('Brush not found:', brushType, 'Available brushes:', Object.keys(this.brushes));
         }
-        this.currentBrushConfig = null;
 
+        // Default fallback rendering: draw a straight stroke between the two points.
         var fromCoords = this.convertCoords(from);
         var toCoords = this.convertCoords(to);
-        var midpointX = (fromCoords.x + toCoords.x) / 2;
-        var midpointY = (fromCoords.y + toCoords.y) / 2;
-        var angleRad = angle * Math.PI / 180;
 
         this.ctx.save();
-        if (angleRad !== 0) {
-            this.ctx.translate(midpointX, midpointY);
-            this.ctx.rotate(angleRad);
-            this.ctx.translate(-midpointX, -midpointY);
-        }
         this.ctx.strokeStyle = color;
-        this.ctx.lineWidth = Math.max(0.1, size * roundness);
-        this.ctx.globalAlpha = adjustedOpacity / 100;
+        this.ctx.lineWidth = size;
+        this.ctx.globalAlpha = opacity / 100;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
         this.ctx.beginPath();
@@ -111,6 +84,7 @@
         this.brushes = Object.create(null);
     }
 
+    // Store brush metadata and implementation so the engine can initialize later.
     BrushRegistry.prototype.register = function (name, brushFn, metadata) {
         this.brushes[name] = {
             function: brushFn,
@@ -126,12 +100,15 @@
         return this.brushes;
     };
 
+    // Push all registered brushes into a specific engine instance.
     BrushRegistry.prototype.initialize = function (engine) {
         var keys = Object.keys(this.brushes);
+        console.log('Initializing', keys.length, 'brushes on engine');
         for (var i = 0; i < keys.length; i++) {
             var name = keys[i];
             engine.registerBrush(name, this.brushes[name].function);
         }
+        console.log('Engine brushes after init:', Object.keys(engine.brushes));
     };
 
     var brushRegistry = new BrushRegistry();

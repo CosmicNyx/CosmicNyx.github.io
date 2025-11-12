@@ -1,3 +1,8 @@
+/**
+ * Export helper module responsible for turning canvas content into PNGs.
+ * Provides utility methods that the workspace can call when the user
+ * downloads their artwork.
+ */
 // Simple export module to keep concerns separated
 // Usage: IbisExport.exportVisibleLayersAsPNG(workspace, filenameOverride)
 ;(function (global) {
@@ -75,5 +80,8 @@
 		exportVisibleLayersAsPNG: exportVisibleLayersAsPNG,
 	};
 })(window);
+
+
+
 
 

@@ -1,32 +1,42 @@
+/**
+ * Collection of canvas brush implementations used by the BrushEngine.
+ * Each function renders a specific stroke style and is invoked with
+ * normalized parameters from the higher-level drawing system.
+ */
 // Brush Implementations - Adapted from p5.js code
 // Color and size are handled by the existing system
 
-// Pen Brush - Simple line
+// Pen Brush - Simple line (p5.js style) with fully solid stroke
 function penBrush(from, to, color, size, opacity) {
+    if (!this.ctx) {
+        console.error('Pen brush: ctx is not available');
+        return;
+    }
+    
     const fromCoords = this.convertCoords(from);
     const toCoords = this.convertCoords(to);
-    const config = this.currentBrushConfig || {};
-    const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
-    const angleRad = ((config.angle !== undefined ? config.angle : 0) * Math.PI) / 180;
-    const midpointX = (fromCoords.x + toCoords.x) / 2;
-    const midpointY = (fromCoords.y + toCoords.y) / 2;
     
+    // Use source-over composite to ensure solid, even opacity
     this.ctx.save();
-    if (angleRad !== 0) {
-        this.ctx.translate(midpointX, midpointY);
-        this.ctx.rotate(angleRad);
-        this.ctx.translate(-midpointX, -midpointY);
-    }
+    this.ctx.globalCompositeOperation = 'source-over';
     this.ctx.strokeStyle = color;
-    this.ctx.lineWidth = size * roundness;
-    this.ctx.globalAlpha = opacity / 100;
+    this.ctx.fillStyle = color;
+    this.ctx.lineWidth = size;
+    this.ctx.globalAlpha = 1.0; // Always use full opacity for solid strokes
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
     
+    // Draw line from previous point to current point (like p5.js line())
     this.ctx.beginPath();
     this.ctx.moveTo(fromCoords.x, fromCoords.y);
     this.ctx.lineTo(toCoords.x, toCoords.y);
     this.ctx.stroke();
+    
+    // Draw filled circle at end point to ensure full coverage
+    this.ctx.beginPath();
+    this.ctx.arc(toCoords.x, toCoords.y, size / 2, 0, Math.PI * 2);
+    this.ctx.fill();
+    
     this.ctx.restore();
 }
 
@@ -37,18 +47,21 @@ function markerBrush(from, to, color, size, opacity) {
     const intensity = config.intensity !== undefined ? config.intensity : 0.4;
     const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
     const angleRad = ((config.angle !== undefined ? config.angle : 0) * Math.PI) / 180;
-    const radiusX = Math.max(0.1, (size / 2) * roundness);
-    const radiusY = Math.max(0.1, (size / 2) / roundness);
+    // Roundness changes shape only - size stays constant
+    // When roundness < 1: radiusX gets smaller (ellipse narrower), radiusY stays at size/2
+    // When roundness > 1: radiusY gets smaller (ellipse taller), radiusX stays at size/2
+    const baseRadius = size / 2;
+    const radiusX = roundness <= 1 ? baseRadius * roundness : baseRadius;
+    const radiusY = roundness <= 1 ? baseRadius : baseRadius / roundness;
     
     this.ctx.save();
     this.ctx.translate(toCoords.x, toCoords.y);
-    if (angleRad !== 0) {
-        this.ctx.rotate(angleRad);
-    }
     this.ctx.fillStyle = color;
     this.ctx.globalAlpha = (opacity / 100) * intensity;
     this.ctx.beginPath();
-    this.ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
+    // ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
+    // Use angleRad as the rotation parameter so the ellipse is visible
+    this.ctx.ellipse(0, 0, radiusX, radiusY, angleRad, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.restore();
 }
@@ -66,18 +79,18 @@ function beadsBrush(from, to, color, size, opacity) {
     const midX = (fromCoords.x + toCoords.x) / 2;
     const midY = (fromCoords.y + toCoords.y) / 2;
     const baseRadius = Math.max(distance / 2, size / 4);
-    const radiusX = Math.max(0.1, baseRadius * roundness);
-    const radiusY = Math.max(0.1, baseRadius / roundness);
+    // Roundness changes shape only - size stays constant
+    const radiusX = roundness <= 1 ? baseRadius * roundness : baseRadius;
+    const radiusY = roundness <= 1 ? baseRadius : baseRadius / roundness;
     
     this.ctx.save();
     this.ctx.translate(midX, midY);
-    if (angleRad !== 0) {
-        this.ctx.rotate(angleRad);
-    }
     this.ctx.fillStyle = color;
     this.ctx.globalAlpha = (opacity / 100) * intensity;
     this.ctx.beginPath();
-    this.ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
+    // ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
+    // Use angleRad as the rotation parameter so the ellipse is visible
+    this.ctx.ellipse(0, 0, radiusX, radiusY, angleRad, 0, Math.PI * 2);
     this.ctx.fill();
     this.ctx.restore();
 }
@@ -91,8 +104,10 @@ function calligraphyBrush(from, to, color, size, opacity) {
     const lineWidth = config.lineWidth !== undefined ? config.lineWidth : 1;
     const roundness = Math.max(0.1, config.roundness !== undefined ? config.roundness : 1);
     const angleRad = (Math.PI / 4) + ((config.angle !== undefined ? config.angle : 0) * Math.PI / 180);
-    const offsetX = (size / 2) * roundness * Math.cos(angleRad);
-    const offsetY = (size / 2) * roundness * Math.sin(angleRad);
+    // Roundness changes shape only - size stays constant
+    const baseOffset = size / 2;
+    const offsetX = (roundness <= 1 ? baseOffset * roundness : baseOffset) * Math.cos(angleRad);
+    const offsetY = (roundness <= 1 ? baseOffset : baseOffset / roundness) * Math.sin(angleRad);
     
     this.ctx.save();
     this.ctx.strokeStyle = color;
@@ -128,8 +143,9 @@ function hatchingBrush(from, to, color, size, opacity) {
     const vectorLength = Math.sqrt(vectorX * vectorX + vectorY * vectorY);
     const normalizedX = vectorLength > 0 ? (vectorX / vectorLength) * magnitude : 0;
     const normalizedY = vectorLength > 0 ? (vectorY / vectorLength) * magnitude : 0;
-    const scaledX = normalizedX * roundness;
-    const scaledY = normalizedY * roundness;
+    // Roundness changes shape only - size stays constant
+    const scaledX = roundness <= 1 ? normalizedX * roundness : normalizedX;
+    const scaledY = roundness <= 1 ? normalizedY : normalizedY / roundness;
     const rotatedX = scaledX * Math.cos(angleRad) - scaledY * Math.sin(angleRad);
     const rotatedY = scaledX * Math.sin(angleRad) + scaledY * Math.cos(angleRad);
     
@@ -177,9 +193,11 @@ function sprayPaintBrush(from, to, color, size, opacity) {
         
         for (let j = 0; j < sprayDensity; j++) {
             const theta = Math.random() * Math.PI * 2;
+            const r = Math.min(speed + minRadius, size);
             const radius = Math.sqrt(Math.random()) * r;
-            let offsetX = Math.cos(theta) * radius * roundness;
-            let offsetY = Math.sin(theta) * radius / roundness;
+            // Roundness changes shape only
+            let offsetX = Math.cos(theta) * radius * (roundness <= 1 ? roundness : 1);
+            let offsetY = Math.sin(theta) * radius * (roundness <= 1 ? 1 : 1 / roundness);
             
             if (angleRad !== 0) {
                 const rotatedX = offsetX * Math.cos(angleRad) - offsetY * Math.sin(angleRad);
@@ -305,8 +323,9 @@ function realisticSketchingPencil(from, to, color, size, opacity) {
         for (let j = 0; j < actualBristleCount; j++) {
             const theta = (j / actualBristleCount) * Math.PI * 2 + angleRad;
             const radius = size * 0.3 * (0.3 + Math.random() * 0.7);
-            const offsetX = Math.cos(theta) * radius * roundness;
-            const offsetY = Math.sin(theta) * radius / roundness;
+            // Roundness changes shape only
+            const offsetX = Math.cos(theta) * radius * (roundness <= 1 ? roundness : 1);
+            const offsetY = Math.sin(theta) * radius * (roundness <= 1 ? 1 : 1 / roundness);
             const bristleX = drawX + offsetX;
             const bristleY = drawY + offsetY;
             
@@ -352,6 +371,8 @@ if (typeof brushRegistry !== 'undefined') {
     brushRegistry.register('hatching', hatchingBrush, { name: 'Hatching', category: 'custom' });
     brushRegistry.register('sprayPaint', sprayPaintBrush, { name: 'Spray Paint', category: 'special' });
     brushRegistry.register('realisticSketchingPencil', realisticSketchingPencil, { name: 'Crayon', category: 'custom' });
-
+    console.log('Brushes registered:', Object.keys(brushRegistry.getAll()));
+} else {
+    console.error('brushRegistry is not defined - brushes will not work!');
 }
 
