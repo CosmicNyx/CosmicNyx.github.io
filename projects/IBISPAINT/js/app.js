@@ -6286,7 +6286,8 @@ class IbisPaintWorkspace {
     updateBrushSlidersVisibility() {
         const brushSliders = document.getElementById('brush-control-sliders');
         if (brushSliders) {
-            if (this.currentTool === 'brush') {
+            // Show sliders for both brush and eraser tools
+            if (this.currentTool === 'brush' || this.currentTool === 'eraser') {
                 brushSliders.classList.add('is-visible');
             } else {
                 brushSliders.classList.remove('is-visible');
