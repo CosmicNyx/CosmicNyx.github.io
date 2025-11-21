@@ -1,14 +1,14 @@
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-      <meta http-equiv="Pragma" content="no-cache" />
-      <meta http-equiv="Expires" content="0" />
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Ibis Paint Workspace - Clean UI</title>
     <link rel="stylesheet" href="css/styles.css">
-    </head>
+  </head>
   <body>
     <div id="app" class="app-container">
       <!-- Homepage View -->
@@ -28,7 +28,6 @@
       
       <!-- Workspace View -->
       <div id="workspace" class="workspace" style="display: none;">
-        <!-- Main stage: overlays + canvas + bottom bar -->
         <main class="stage">
           <!-- Top-right floating controls -->
           <div class="top-right-controls">
@@ -79,8 +78,6 @@
             <div class="nav-resize-handle resize-handle"></div>
           </div>
 
-
-
           <!-- Canvas Area -->
           <div class="canvas-container">
             <div id="canvas-container" class="canvas-frame">
@@ -90,71 +87,71 @@
 
           <!-- Right floating labeled toolbar -->
           <aside class="right-float-toolbar" aria-label="Right tool toolbar">
-            <button class="tool-tile" data-tool="transform">
+            <button class="tool-tile" data-tool="transform" data-tool-name="Transform">
               <div class="tool-icon icon-move"></div>
               <span class="tool-label">Transform</span>
             </button>
-            <button class="tool-tile" data-tool="magic">
+            <button class="tool-tile" data-tool="magic" data-tool-name="Magic Wand">
               <div class="tool-icon icon-wand"></div>
               <span class="tool-label">Magic Wand</span>
             </button>
-            <button class="tool-tile" data-tool="lasso">
+            <button class="tool-tile" data-tool="lasso" data-tool-name="Lasso">
               <div class="tool-icon icon-lasso"></div>
               <span class="tool-label">Lasso</span>
             </button>
-            <button class="tool-tile" data-tool="fx">
+            <button class="tool-tile" data-tool="fx" data-tool-name="Filter">
               <div class="tool-icon icon-fx"></div>
               <span class="tool-label">Filter</span>
             </button>
-            <button class="tool-tile is-active" data-tool="brush">
+            <button class="tool-tile is-active" data-tool="brush" data-tool-name="Brush">
               <div class="tool-icon icon-brush"></div>
               <span class="tool-label">Brush</span>
             </button>
-            <button class="tool-tile" data-tool="eraser">
+            <button class="tool-tile" data-tool="eraser" data-tool-name="Eraser">
               <div class="tool-icon icon-eraser"></div>
               <span class="tool-label">Eraser</span>
             </button>
-            <button class="tool-tile" data-tool="smudge">
+            <button class="tool-tile" data-tool="smudge" data-tool-name="Smudge">
               <div class="tool-icon icon-smudge"></div>
               <span class="tool-label">Smudge</span>
             </button>
-            <button class="tool-tile" data-tool="blur">
+            <button class="tool-tile" data-tool="blur" data-tool-name="Blur">
               <div class="tool-icon icon-blur"></div>
               <span class="tool-label">Blur</span>
             </button>
-            <button class="tool-tile" data-tool="special">
+            <button class="tool-tile" data-tool="special" data-tool-name="Special">
               <div class="tool-icon icon-star"></div>
               <span class="tool-label">Special</span>
             </button>
-            <button class="tool-tile" data-tool="bucket">
+            <button class="tool-tile" data-tool="bucket" data-tool-name="Bucket">
               <div class="tool-icon icon-bucket"></div>
               <span class="tool-label">Bucket</span>
             </button>
-            <button class="tool-tile" data-tool="vector">
+            <button class="tool-tile" data-tool="vector" data-tool-name="Vector">
               <div class="tool-icon icon-vector"></div>
               <span class="tool-label">Vector</span>
             </button>
-            <button class="tool-tile" data-tool="text">
+            <button class="tool-tile" data-tool="text" data-tool-name="Text">
               <div class="tool-icon icon-text"></div>
               <span class="tool-label">Text</span>
             </button>
-            <button class="tool-tile" data-tool="eyedropper">
+            <button class="tool-tile" data-tool="eyedropper" data-tool-name="Eyedropper">
               <div class="tool-icon icon-eyedropper"></div>
               <span class="tool-label">Eyedropper</span>
             </button>
-            <button class="tool-tile" data-tool="canvas">
+            <button class="tool-tile" data-tool="canvas" data-tool-name="Canvas">
               <div class="tool-icon icon-canvas"></div>
               <span class="tool-label">Canvas</span>
             </button>
           </aside>
 
-          <!-- Hide/Show toolbar button (always visible, positioned like it's in the toolbar) -->
+          <!-- Hide/Show toolbar button -->
           <button id="btn-hidebar" class="hide-toolbar-btn icon-chevron-down" title="Hide toolbar"></button>
 
           <!-- Brush Panel -->
           <div id="brush-panel" class="brush-panel">
-              <div class="brush-header">
-                <div class="brush-tabs">
+            <div class="brush-header">
+              <div class="brush-tabs">
                 <button class="brush-tab active" data-tab="basic">Basic</button>
                 <button class="brush-tab" data-tab="custom">Custom</button>
                 <button class="brush-tab" data-tab="special">Special</button>
@@ -170,7 +167,7 @@
                 </div>
               </div>
               
-              <!-- Brush Config Panel (attached to right side) -->
+              <!-- Brush Config Panel -->
               <div class="brush-config-panel" id="brush-config-panel">
                 <!-- Config content will be dynamically added here -->
               </div>
@@ -275,6 +272,10 @@
 
           <!-- Layers Panel -->
           <div id="layers-panel" class="layers-panel">
+            <!-- Multi-select exit button -->
+            <div id="multi-select-exit" class="multi-select-exit" style="display: none;">
+              <button class="multi-select-exit-btn" id="exit-multi-select-btn" title="Exit Multi-Select">Done</button>
+            </div>
             <div class="layers-content">
               <!-- Selection Layer -->
               <div class="layer-item selection-layer">
@@ -346,7 +347,7 @@
             </div>
           </div>
           
-          <!-- Brush control sliders (shown when brush is selected) -->
+          <!-- Brush control sliders -->
           <div class="brush-control-sliders" id="brush-control-sliders" aria-label="Brush controls">
             <div class="brush-slider-container">
               <label for="brush-size-vertical-slider" class="brush-slider-label">Size</label>
@@ -386,23 +387,15 @@
             </div>
           </div>
 
-          <!-- Bottom toolbar (placeholder controls) -->
+          <!-- Bottom toolbar -->
           <div class="bottom-toolbar" aria-label="Bottom toolbar">
-            <!-- 1) Switch Brush↔Eraser -->
             <button id="btn-switch" class="bottom-btn icon-eraser" title="Switch Brush/Eraser"></button>
-            <!-- 2) Brush (opens brush types) -->
             <button id="btn-brush" class="bottom-btn icon-brush" title="Brush"></button>
-            <!-- 3) Color (shows current color) -->
             <button id="btn-color" class="bottom-btn bottom-btn-color" title="Color"></button>
-            <!-- 4) Spacer for hide button -->
             <div class="toolbar-spacer"></div>
-            <!-- 5) Undo -->
             <button id="btn-undo" class="bottom-btn icon-undo" title="Undo"></button>
-            <!-- 6) Redo -->
             <button id="btn-redo" class="bottom-btn icon-redo" title="Redo"></button>
-            <!-- 7) Layers panel -->
             <button id="btn-layers" class="bottom-btn icon-layers" title="Layers"></button>
-            <!-- 8) Back/Menu -->
             <button id="btn-back" class="bottom-btn icon-back" title="Menu / Export"></button>
           </div>
 
@@ -421,12 +414,12 @@
         </main>
       </div>
       
-      <!-- Reference Image Viewers Container (outside stage to avoid overflow hidden) -->
+      <!-- Reference Image Viewers Container -->
       <div id="ref-viewers-container" class="ref-viewers-container">
         <!-- Reference image viewers will be dynamically created here -->
       </div>
       
-      <!-- Saved Reference Images Panel (outside stage to avoid overflow hidden) -->
+      <!-- Saved Reference Images Panel -->
       <div id="saved-ref-images-panel" class="saved-ref-images-panel">
         <div class="ref-images-header">
           <span class="ref-images-title">Saved Reference Images</span>
@@ -445,50 +438,36 @@
 
     <!-- Hidden panels for core functionality -->
     <div class="hidden-panel">
-        <!-- Layer management (hidden but functional) -->
-        <div id="layers-list"></div>
-        
-        <!-- Color picker (hidden but functional) -->
-        <input type="color" id="color-picker" value="#3b82f6">
-        <input type="text" id="hex-input" value="#3b82f6">
-        
-        <!-- Brush controls (hidden but functional) -->
-        <input type="range" id="brush-size-slider" min="1" max="100" value="20">
-        <input type="range" id="brush-opacity-slider" min="1" max="100" value="100">
-        <input type="range" id="stabilizer-slider" min="0" max="100" value="25">
-        
-        <!-- Undo/Redo buttons (hidden but functional) -->
-        <button id="undo-btn">Undo</button>
-        <button id="redo-btn">Redo</button>
-        <button id="bottom-undo-btn">Undo</button>
-        <button id="bottom-redo-btn">Redo</button>
-        
-        <!-- Add layer button (hidden but functional) -->
-        <button id="add-layer-btn">Add Layer</button>
-        
-        <!-- Play button (hidden but functional) -->
-        <button id="play-btn">Play</button>
+      <!-- Color picker -->
+      <input type="color" id="color-picker" value="#3b82f6">
+      <input type="text" id="hex-input" value="#3b82f6">
+      
+      <!-- Brush controls -->
+      <input type="range" id="brush-size-slider" min="1" max="100" value="20">
+      <input type="range" id="brush-opacity-slider" min="1" max="100" value="100">
+      <input type="range" id="stabilizer-slider" min="0" max="100" value="25">
+      
+      <!-- Undo/Redo buttons -->
+      <button id="undo-btn">Undo</button>
+      <button id="redo-btn">Redo</button>
+      <button id="bottom-undo-btn">Undo</button>
+      <button id="bottom-redo-btn">Redo</button>
+      
+      <!-- Add layer button -->
+      <button id="add-layer-btn">Add Layer</button>
+      
+      <!-- Play button -->
+      <button id="play-btn">Play</button>
     </div>
-
-    <!-- welcome message div -->
-     <div class="Welcome", id="info">
-        <div class="welcome-content">
-          <h2>Welcome to Ibis Paint Workspace - Clean UI!</h2>
-          <p>This is a simplified version of the Ibis Paint drawing application, designed for a clean and intuitive user experience.</p>
-          <p>Explore the features, create your artwork, and enjoy a distraction-free environment!</p>
-          <button id="close-welcome-btn" class="close-welcome-btn">Get Started</button>
-        </div>
-     </div>
 
     <!-- Libraries -->
     <script src="js/libs/p5.min.js"></script>
     
     <!-- Application Scripts -->
     <script src="js/icons.js"></script>
-    <script src="js/brushes.js"></script>
     <script src="js/modules/export.js"></script>
     <script src="js/modules/brushes/index.js"></script>
     <script src="js/brush-implementations.js"></script>
     <script src="js/app.js"></script>
-    </body>
-  </html>
+  </body>
+</html>

@@ -109,6 +109,17 @@ body:has(.homepage) {
     visibility: hidden;
 }
 
+/* Make color picker accessible but visually hidden */
+#color-picker {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+    /* Keep it accessible for programmatic clicks */
+    clip: rect(0, 0, 0, 0);
+}
+
 /* Left gutter */
 /* Stage area (center) */
 .stage { grid-column: 1; }
@@ -168,10 +179,64 @@ body:has(.homepage) {
     padding: 1px; /* minimal padding for very tight buttons */
     border-radius: 3px; /* minimal rounded click area */
     transition: background-color 0.2s ease; /* smooth hover effect */
+    position: relative; /* For tooltip positioning */
 }
 
 .tool-tile:hover {
     background: rgba(255,255,255,0.15); /* more visible hover effect */
+}
+
+/* Tooltip for tool tiles */
+.tool-tile::before {
+    content: attr(data-tool-name);
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1000;
+    font-family: 'Inter Tight', 'Helvetica Neue', 'Segoe UI', Roboto, Arial, sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tool-tile::after {
+    content: '';
+    position: absolute;
+    right: calc(100% + 2px);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 6px solid rgba(0, 0, 0, 0.9);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1001;
+}
+
+.tool-tile:hover::before,
+.tool-tile:hover::after {
+    opacity: 1;
+}
+
+/* Prevent tooltip from showing on touch devices (mobile) */
+@media (hover: none) {
+    .tool-tile::before,
+    .tool-tile::after {
+        display: none;
+    }
 }
 
 .tool-icon {
@@ -942,6 +1007,33 @@ body:has(.homepage) {
     display: flex;
 }
 
+.multi-select-exit {
+    padding: 8px 12px;
+    background: rgba(59, 130, 246, 0.1);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.multi-select-exit-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.multi-select-exit-btn:hover {
+    background: #2563eb;
+}
+
+.multi-select-exit-btn:active {
+    background: #1d4ed8;
+}
 
 .layers-content {
     flex: 1;
@@ -962,6 +1054,31 @@ body:has(.homepage) {
     cursor: pointer;
     transition: background-color 0.2s ease;
     position: relative;
+}
+
+.layer-drag-handle {
+    width: 24px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 0 4px;
+    margin-right: 8px;
+    user-select: none;
+    touch-action: none;
+    transition: color 0.2s ease;
+}
+
+.layer-drag-handle:active {
+    cursor: grabbing;
+    color: #3b82f6;
+}
+
+.layer-item:hover .layer-drag-handle {
+    color: #cbd5e1;
 }
 
 .layer-item:hover {

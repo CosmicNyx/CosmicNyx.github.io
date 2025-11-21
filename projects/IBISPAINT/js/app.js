@@ -472,6 +472,46 @@ class IbisPaintWorkspace {
                 } else if (layersPanel && layersPanel.classList.contains('is-visible')) {
                     this.toggleLayersPanel();
                 }
+                // Also exit multi-select mode
+                if (this.isMultiSelectMode) {
+                    this.exitMultiSelectMode();
+                }
+                return;
+            }
+            
+            // Ctrl+A or Cmd+A - Select all layers
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+                e.preventDefault();
+                this.selectAllLayers();
+                return;
+            }
+            
+            // Ctrl+D or Cmd+D - Deselect all layers
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+                e.preventDefault();
+                this.deselectAllLayers();
+                return;
+            }
+            
+            // Arrow Up - Select previous layer
+            if (e.key === 'ArrowUp' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    this.extendSelectionUp();
+                } else {
+                    this.selectPreviousLayer();
+                }
+                return;
+            }
+            
+            // Arrow Down - Select next layer
+            if (e.key === 'ArrowDown' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    this.extendSelectionDown();
+                } else {
+                    this.selectNextLayer();
+                }
                 return;
             }
         });
@@ -498,7 +538,58 @@ class IbisPaintWorkspace {
         let initialPanX = 0;
         let initialPanY = 0;
         
+        // Track tap gestures for undo/redo
+        let twoFingerTapTimer = null;
+        let threeFingerTapTimer = null;
+        let twoFingerStartTime = 0;
+        let threeFingerStartTime = 0;
+        const tapTimeout = 300; // Maximum time for a tap (ms)
+        const maxTapDistance = 10; // Maximum movement for a tap (pixels)
+        let twoFingerStartPos = null;
+        let threeFingerStartPos = null;
+        
         this.canvas.addEventListener('touchstart', (e) => {
+            // Handle two-finger tap for undo
+            if (e.touches.length === 2) {
+                twoFingerStartTime = Date.now();
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                twoFingerStartPos = {
+                    x1: touch1.clientX,
+                    y1: touch1.clientY,
+                    x2: touch2.clientX,
+                    y2: touch2.clientY
+                };
+                
+                // Set timer to detect tap (quick touch and release)
+                twoFingerTapTimer = setTimeout(() => {
+                    // If still touching after timeout, it's not a tap
+                    twoFingerTapTimer = null;
+                }, tapTimeout);
+            }
+            
+            // Handle three-finger tap for redo
+            if (e.touches.length === 3) {
+                e.preventDefault(); // Prevent default for three-finger gestures
+                threeFingerStartTime = Date.now();
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const touch3 = e.touches[2];
+                threeFingerStartPos = {
+                    x1: touch1.clientX,
+                    y1: touch1.clientY,
+                    x2: touch2.clientX,
+                    y2: touch2.clientY,
+                    x3: touch3.clientX,
+                    y3: touch3.clientY
+                };
+                
+                // Set timer to detect tap
+                threeFingerTapTimer = setTimeout(() => {
+                    threeFingerTapTimer = null;
+                }, tapTimeout);
+            }
+            
             if (e.touches.length === 2) {
                 e.preventDefault();
                 // Two finger gesture - pinch to zoom, rotate, and pan
@@ -534,6 +625,18 @@ class IbisPaintWorkspace {
         });
         
         this.canvas.addEventListener('touchmove', (e) => {
+            // Cancel tap detection if fingers move (it's a gesture, not a tap)
+            if (e.touches.length === 2 && twoFingerTapTimer !== null) {
+                clearTimeout(twoFingerTapTimer);
+                twoFingerTapTimer = null;
+                twoFingerStartPos = null;
+            }
+            if (e.touches.length === 3 && threeFingerTapTimer !== null) {
+                clearTimeout(threeFingerTapTimer);
+                threeFingerTapTimer = null;
+                threeFingerStartPos = null;
+            }
+            
             if (e.touches.length === 2) {
                 e.preventDefault();
                 // Two finger gesture
@@ -582,11 +685,76 @@ class IbisPaintWorkspace {
         });
         
         this.canvas.addEventListener('touchend', (e) => {
-            // Reset touch tracking
-            lastTouchDistance = 0;
-            lastTouchAngle = 0;
-            lastCenterX = 0;
-            lastCenterY = 0;
+            // Check for two-finger tap (undo)
+            if (e.changedTouches.length === 2 && twoFingerTapTimer !== null) {
+                const touch1 = e.changedTouches[0];
+                const touch2 = e.changedTouches[1];
+                const timeDiff = Date.now() - twoFingerStartTime;
+                
+                // Check if it was a quick tap and didn't move much
+                if (timeDiff < tapTimeout && twoFingerStartPos) {
+                    const distance1 = Math.sqrt(
+                        Math.pow(touch1.clientX - twoFingerStartPos.x1, 2) +
+                        Math.pow(touch1.clientY - twoFingerStartPos.y1, 2)
+                    );
+                    const distance2 = Math.sqrt(
+                        Math.pow(touch2.clientX - twoFingerStartPos.x2, 2) +
+                        Math.pow(touch2.clientY - twoFingerStartPos.y2, 2)
+                    );
+                    
+                    if (distance1 < maxTapDistance && distance2 < maxTapDistance) {
+                        // Two-finger tap detected - undo
+                        e.preventDefault();
+                        this.handleUndo();
+                    }
+                }
+                
+                clearTimeout(twoFingerTapTimer);
+                twoFingerTapTimer = null;
+                twoFingerStartPos = null;
+            }
+            
+            // Check for three-finger tap (redo)
+            if (e.changedTouches.length === 3 && threeFingerTapTimer !== null) {
+                const touch1 = e.changedTouches[0];
+                const touch2 = e.changedTouches[1];
+                const touch3 = e.changedTouches[2];
+                const timeDiff = Date.now() - threeFingerStartTime;
+                
+                // Check if it was a quick tap and didn't move much
+                if (timeDiff < tapTimeout && threeFingerStartPos) {
+                    const distance1 = Math.sqrt(
+                        Math.pow(touch1.clientX - threeFingerStartPos.x1, 2) +
+                        Math.pow(touch1.clientY - threeFingerStartPos.y1, 2)
+                    );
+                    const distance2 = Math.sqrt(
+                        Math.pow(touch2.clientX - threeFingerStartPos.x2, 2) +
+                        Math.pow(touch2.clientY - threeFingerStartPos.y2, 2)
+                    );
+                    const distance3 = Math.sqrt(
+                        Math.pow(touch3.clientX - threeFingerStartPos.x3, 2) +
+                        Math.pow(touch3.clientY - threeFingerStartPos.y3, 2)
+                    );
+                    
+                    if (distance1 < maxTapDistance && distance2 < maxTapDistance && distance3 < maxTapDistance) {
+                        // Three-finger tap detected - redo
+                        e.preventDefault();
+                        this.handleRedo();
+                    }
+                }
+                
+                clearTimeout(threeFingerTapTimer);
+                threeFingerTapTimer = null;
+                threeFingerStartPos = null;
+            }
+            
+            // Reset touch tracking for gestures (only if no touches remain)
+            if (e.touches.length === 0) {
+                lastTouchDistance = 0;
+                lastTouchAngle = 0;
+                lastCenterX = 0;
+                lastCenterY = 0;
+            }
         });
     }
     
@@ -739,10 +907,51 @@ class IbisPaintWorkspace {
         }
 
         if (btnColor) {
-            btnColor.addEventListener('click', () => {
+            // Add both click and touch handlers for better compatibility
+            const openColorPicker = () => {
                 const cp = document.getElementById('color-picker');
-                if (cp) cp.click();
+                if (cp) {
+                    // Make the input temporarily visible and accessible
+                    cp.style.position = 'fixed';
+                    cp.style.top = '50%';
+                    cp.style.left = '50%';
+                    cp.style.transform = 'translate(-50%, -50%)';
+                    cp.style.width = '1px';
+                    cp.style.height = '1px';
+                    cp.style.opacity = '0';
+                    cp.style.pointerEvents = 'auto';
+                    cp.style.zIndex = '99999';
+                    
+                    // Trigger the click
+                    cp.click();
+                    
+                    // Reset after a short delay
+                    setTimeout(() => {
+                        cp.style.position = '';
+                        cp.style.top = '';
+                        cp.style.left = '';
+                        cp.style.transform = '';
+                        cp.style.width = '';
+                        cp.style.height = '';
+                        cp.style.opacity = '';
+                        cp.style.pointerEvents = '';
+                        cp.style.zIndex = '';
+                    }, 100);
+                }
+            };
+            
+            btnColor.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openColorPicker();
             });
+            
+            // Add touch handler for mobile devices
+            btnColor.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openColorPicker();
+            }, { passive: false });
         }
 
         if (btnHide && bottomBar) {
@@ -1533,6 +1742,12 @@ class IbisPaintWorkspace {
             panel.classList.toggle('multi-select-mode', this.isMultiSelectMode);
         }
         
+        // Show/hide exit button for multi-select mode
+        const exitButton = document.getElementById('multi-select-exit');
+        if (exitButton) {
+            exitButton.style.display = this.isMultiSelectMode ? 'block' : 'none';
+        }
+        
         // Clear existing layers
         layersList.innerHTML = '';
         
@@ -1798,6 +2013,13 @@ class IbisPaintWorkspace {
         layerDiv.dataset.layerId = layer.id;
         layerDiv.draggable = true; // Always enable dragging
         
+        // Add drag handle bar on the left side
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'layer-drag-handle';
+        dragHandle.title = 'Drag to move layer';
+        dragHandle.innerHTML = '⋮⋮'; // Vertical dots icon
+        layerDiv.appendChild(dragHandle);
+        
         const thumbnail = document.createElement('div');
         thumbnail.className = 'layer-thumbnail';
         
@@ -1951,6 +2173,11 @@ class IbisPaintWorkspace {
             // Don't handle clicks during drag operations
             if (this.isDragging) return;
             
+            // Don't handle clicks on the drag handle
+            if (e.target.classList.contains('layer-drag-handle')) {
+                return;
+            }
+            
             if (this.isMultiSelectMode) {
                 this.toggleLayerSelection(layer.id);
             } else if (e.ctrlKey || e.metaKey) {
@@ -2023,12 +2250,156 @@ class IbisPaintWorkspace {
                 } else if (dragData.type === 'single-layer') {
                     this.moveLayerToPosition(dragData.layerIds[0], layer.id);
                 }
+                // Exit multi-select mode after moving layers
+                if (this.isMultiSelectMode) {
+                    this.exitMultiSelectMode();
+                }
             } catch (error) {
                 // Fallback for old format
                 const draggedId = e.dataTransfer.getData('text/plain');
                 this.moveLayerToPosition(draggedId, layer.id);
+                // Exit multi-select mode after moving layers
+                if (this.isMultiSelectMode) {
+                    this.exitMultiSelectMode();
+                }
             }
         });
+        
+        // Add drag handle specific handlers for touch-friendly dragging
+        const dragHandle = layerDiv.querySelector('.layer-drag-handle');
+        if (dragHandle) {
+            // Prevent layer selection when clicking on handle
+            dragHandle.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            
+            // For mouse: use native drag and drop
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                // The native dragstart will be triggered by the layerDiv's draggable attribute
+                // We just need to make sure the handle doesn't interfere
+            });
+            
+            // For touch: use custom touch drag
+            dragHandle.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                this.startTouchDrag(layerDiv, layer, e);
+            });
+        }
+    }
+    
+    startTouchDrag(layerDiv, item, e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Find all selected layers/folders if in multi-select mode
+        const itemsToMove = this.isMultiSelectMode && this.selectedLayerIds.has(item.id)
+            ? Array.from(this.selectedLayerIds).map(id => this.layers.find(l => l.id === id)).filter(Boolean)
+            : [item];
+        
+        // Mark as dragging
+        this.isDragging = true;
+        layerDiv.classList.add('is-dragging');
+        itemsToMove.forEach(itemToMove => {
+            const element = document.querySelector(`[data-layer-id="${itemToMove.id}"], [data-folder-id="${itemToMove.id}"]`);
+            if (element) element.classList.add('is-dragging');
+        });
+        
+        const touch = e.touches[0];
+        const startY = touch.clientY;
+        let lastTargetElement = null;
+        let moveThrottle = 0;
+        
+        const moveHandler = (moveEvent) => {
+            moveEvent.preventDefault();
+            moveEvent.stopPropagation();
+            
+            // Throttle moves to avoid too many updates
+            moveThrottle++;
+            if (moveThrottle % 3 !== 0) return; // Only process every 3rd move
+            
+            const currentTouch = moveEvent.touches[0];
+            if (!currentTouch) return;
+            
+            // Calculate which layer we're over
+            const layersList = document.getElementById('layers-list');
+            if (!layersList) return;
+            
+            const allLayerElements = Array.from(layersList.querySelectorAll('.layer-item, .folder-item'));
+            const targetElement = allLayerElements.find(el => {
+                const rect = el.getBoundingClientRect();
+                return currentTouch.clientY >= rect.top && currentTouch.clientY <= rect.bottom;
+            });
+            
+            // Update drag-over class
+            if (lastTargetElement && lastTargetElement !== targetElement) {
+                lastTargetElement.classList.remove('drag-over');
+            }
+            if (targetElement && targetElement !== layerDiv && !itemsToMove.find(l => l.id === (targetElement.dataset.layerId || targetElement.dataset.folderId))) {
+                targetElement.classList.add('drag-over');
+                lastTargetElement = targetElement;
+            }
+        };
+        
+        const endHandler = (endEvent) => {
+            endEvent.preventDefault();
+            endEvent.stopPropagation();
+            
+            // Remove drag-over class
+            document.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+            
+            // Find target element
+            const touch = endEvent.changedTouches[0];
+            if (touch) {
+                const layersList = document.getElementById('layers-list');
+                if (layersList) {
+                    const allLayerElements = Array.from(layersList.querySelectorAll('.layer-item, .folder-item'));
+                    const targetElement = allLayerElements.find(el => {
+                        const rect = el.getBoundingClientRect();
+                        return touch.clientY >= rect.top && touch.clientY <= rect.bottom;
+                    });
+                    
+                    if (targetElement && targetElement !== layerDiv) {
+                        const targetItemId = targetElement.dataset.layerId || targetElement.dataset.folderId;
+                        if (targetItemId) {
+                            const targetItem = this.layers.find(l => l.id === targetItemId);
+                            if (targetItem && !itemsToMove.find(l => l.id === targetItem.id)) {
+                                // Move all selected items to the target position
+                                if (itemsToMove.length > 1) {
+                                    this.moveMultipleLayersToPosition(itemsToMove.map(l => l.id), targetItem.id);
+                                } else {
+                                    this.moveLayerToPosition(itemsToMove[0].id, targetItem.id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Clean up
+            layerDiv.classList.remove('is-dragging');
+            itemsToMove.forEach(itemToMove => {
+                const element = document.querySelector(`[data-layer-id="${itemToMove.id}"], [data-folder-id="${itemToMove.id}"]`);
+                if (element) element.classList.remove('is-dragging');
+            });
+            
+            this.isDragging = false;
+            
+            document.removeEventListener('touchmove', moveHandler);
+            document.removeEventListener('touchend', endHandler);
+            document.removeEventListener('touchcancel', endHandler);
+            
+            // Exit multi-select mode after moving
+            if (this.isMultiSelectMode) {
+                this.exitMultiSelectMode();
+            }
+        };
+        
+        document.addEventListener('touchmove', moveHandler, { passive: false });
+        document.addEventListener('touchend', endHandler, { passive: false });
+        document.addEventListener('touchcancel', endHandler, { passive: false });
     }
     
     startLongPress(layerDiv, layer, e) {
@@ -2083,6 +2454,13 @@ class IbisPaintWorkspace {
         folderDiv.className = `folder-item ${folder.isExpanded ? 'is-expanded' : ''} ${isSelected ? 'multi-selected' : ''} ${this.isMultiSelectMode ? 'multi-selectable' : ''} ${folder.parentId ? 'folder-child' : ''}`;
         folderDiv.dataset.folderId = folder.id;
         folderDiv.draggable = true; // Always enable dragging
+        
+        // Add drag handle bar on the left side
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'layer-drag-handle';
+        dragHandle.title = 'Drag to move folder';
+        dragHandle.innerHTML = '⋮⋮'; // Vertical dots icon
+        folderDiv.appendChild(dragHandle);
         
         const folderIcon = document.createElement('span');
         folderIcon.className = 'folder-icon';
@@ -2178,6 +2556,11 @@ class IbisPaintWorkspace {
             // Don't handle clicks during drag operations
             if (this.isDragging) return;
             
+            // Don't handle clicks on the drag handle
+            if (e.target.classList.contains('layer-drag-handle')) {
+                return;
+            }
+            
             if (this.isMultiSelectMode) {
                 this.toggleLayerSelection(folder.id);
             } else {
@@ -2236,12 +2619,40 @@ class IbisPaintWorkspace {
                     // Move single layer to this folder
                     this.moveLayerToFolder(dragData.layerIds[0], folder.id);
                 }
+                // Exit multi-select mode after moving
+                if (this.isMultiSelectMode) {
+                    this.exitMultiSelectMode();
+                }
             } catch (error) {
                 // Fallback for old format
                 const draggedId = e.dataTransfer.getData('text/plain');
                 this.moveLayerToFolder(draggedId, folder.id);
+                // Exit multi-select mode after moving
+                if (this.isMultiSelectMode) {
+                    this.exitMultiSelectMode();
+                }
             }
         });
+        
+        // Add drag handle specific handlers for folders
+        const dragHandle = folderDiv.querySelector('.layer-drag-handle');
+        if (dragHandle) {
+            // Prevent folder selection when clicking on handle
+            dragHandle.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            
+            // For mouse: use native drag and drop
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            
+            // For touch: use custom touch drag
+            dragHandle.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                this.startTouchDrag(folderDiv, folder, e);
+            });
+        }
     }
     
     createDropZone() {
@@ -2299,6 +2710,57 @@ class IbisPaintWorkspace {
             this.setActiveLayer(layerId);
         }
         this.updateLayersPanel();
+    }
+    
+    selectAllLayers() {
+        // Select all layers and folders
+        this.selectedLayerIds.clear();
+        this.layers.forEach(layer => {
+            this.selectedLayerIds.add(layer.id);
+        });
+        // Set the first layer as active
+        if (this.layers.length > 0) {
+            this.setActiveLayer(this.layers[0].id);
+        }
+        this.updateLayersPanel();
+    }
+    
+    deselectAllLayers() {
+        this.selectedLayerIds.clear();
+        this.activeLayerId = null;
+        this.updateLayersPanel();
+    }
+    
+    selectPreviousLayer() {
+        const currentIndex = this.layers.findIndex(l => l.id === this.activeLayerId);
+        if (currentIndex > 0) {
+            const previousLayer = this.layers[currentIndex - 1];
+            this.selectLayer(previousLayer.id);
+        }
+    }
+    
+    selectNextLayer() {
+        const currentIndex = this.layers.findIndex(l => l.id === this.activeLayerId);
+        if (currentIndex >= 0 && currentIndex < this.layers.length - 1) {
+            const nextLayer = this.layers[currentIndex + 1];
+            this.selectLayer(nextLayer.id);
+        }
+    }
+    
+    extendSelectionUp() {
+        const currentIndex = this.layers.findIndex(l => l.id === this.activeLayerId);
+        if (currentIndex > 0) {
+            const previousLayer = this.layers[currentIndex - 1];
+            this.toggleLayerSelection(previousLayer.id);
+        }
+    }
+    
+    extendSelectionDown() {
+        const currentIndex = this.layers.findIndex(l => l.id === this.activeLayerId);
+        if (currentIndex >= 0 && currentIndex < this.layers.length - 1) {
+            const nextLayer = this.layers[currentIndex + 1];
+            this.toggleLayerSelection(nextLayer.id);
+        }
     }
     
     // Move layer to folder
@@ -2889,6 +3351,15 @@ class IbisPaintWorkspace {
             });
         }
         
+        // Exit multi-select button
+        const exitMultiSelectBtn = document.getElementById('exit-multi-select-btn');
+        if (exitMultiSelectBtn) {
+            exitMultiSelectBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.exitMultiSelectMode();
+            });
+        }
+        
         // Import layer button (placeholder)
         const importLayerBtn = document.getElementById('import-layer');
         if (importLayerBtn) {
@@ -2910,11 +3381,50 @@ class IbisPaintWorkspace {
         // Layer color picker button
         const layerColorPickerBtn = document.getElementById('layer-color-picker');
         if (layerColorPickerBtn) {
+            const openColorPicker = () => {
+                const colorPicker = document.getElementById('color-picker');
+                if (colorPicker) {
+                    // Make the input temporarily visible and accessible
+                    colorPicker.style.position = 'fixed';
+                    colorPicker.style.top = '50%';
+                    colorPicker.style.left = '50%';
+                    colorPicker.style.transform = 'translate(-50%, -50%)';
+                    colorPicker.style.width = '1px';
+                    colorPicker.style.height = '1px';
+                    colorPicker.style.opacity = '0';
+                    colorPicker.style.pointerEvents = 'auto';
+                    colorPicker.style.zIndex = '99999';
+                    
+                    // Trigger the click
+                    colorPicker.click();
+                    
+                    // Reset after a short delay
+                    setTimeout(() => {
+                        colorPicker.style.position = '';
+                        colorPicker.style.top = '';
+                        colorPicker.style.left = '';
+                        colorPicker.style.transform = '';
+                        colorPicker.style.width = '';
+                        colorPicker.style.height = '';
+                        colorPicker.style.opacity = '';
+                        colorPicker.style.pointerEvents = '';
+                        colorPicker.style.zIndex = '';
+                    }, 100);
+                }
+            };
+            
             layerColorPickerBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const colorPicker = document.getElementById('color-picker');
-                if (colorPicker) colorPicker.click();
+                e.preventDefault();
+                openColorPicker();
             });
+            
+            // Add touch handler for mobile devices
+            layerColorPickerBtn.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                openColorPicker();
+            }, { passive: false });
         }
         
     }
