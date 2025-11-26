@@ -29,11 +29,24 @@
       <!-- Workspace View -->
       <div id="workspace" class="workspace" style="display: none;">
         <main class="stage">
+          <!-- Top-left floating controls -->
+          <div class="top-left-controls">
+            <button class="circle-btn" id="help-button" title="Help / Shortcuts">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.5" fill="none" />
+                <path d="M12 8a2 2 0 0 1 2 2c0 1-0.6 1.5-1.2 1.9-.6.4-.8.7-.8 1.6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                <circle cx="12" cy="16.5" r="0.8" fill="white" />
+              </svg>
+            </button>
+          </div>
+
           <!-- Top-right floating controls -->
           <div class="top-right-controls">
             <button class="circle-btn" id="navigation" title="Navigation">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+                <path d="M3 12 L21 12 M12 3 L12 21" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                <circle cx="12" cy="12" r="2" fill="white"/>
               </svg>
             </button>
             <button class="circle-btn" id="selection-area" title="Selection Area">
@@ -46,7 +59,7 @@
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
               </svg>
             </button>
-            <button class="circle-btn" id="ruler" title="Ruler">
+            <button class="circle-btn" id="ruler" title="Options">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
                 <path d="M2 4h20v2H2V4zm0 4h20v2H2V8zm0 4h20v2H2v-2zm0 4h20v2H2v-2z"/>
               </svg>
@@ -389,7 +402,7 @@
 
           <!-- Bottom toolbar -->
           <div class="bottom-toolbar" aria-label="Bottom toolbar">
-            <button id="btn-switch" class="bottom-btn icon-eraser" title="Switch Brush/Eraser"></button>
+            <button id="btn-switch" class="bottom-btn icon-switch" title="Switch Brush/Eraser"></button>
             <button id="btn-brush" class="bottom-btn icon-brush" title="Brush"></button>
             <button id="btn-color" class="bottom-btn bottom-btn-color" title="Color"></button>
             <div class="toolbar-spacer"></div>
@@ -409,6 +422,62 @@
             </div>
             <div class="options-menu-item" id="option-thumbnail-mode">
               <span>Thumbnails: Full Canvas</span>
+            </div>
+          </div>
+
+          <!-- Help Overlay -->
+          <div class="help-overlay" id="help-overlay">
+            <div class="help-panel" id="help-panel">
+              <div class="help-header">
+                <span class="help-title">Keyboard Shortcuts</span>
+                <button class="help-close" id="help-close-btn" title="Close">×</button>
+              </div>
+              <div class="help-content">
+                <div class="help-section">
+                  <h3>General</h3>
+                  <ul>
+                    <li><strong>Ctrl+Z / Cmd+Z</strong> – Undo</li>
+                    <li><strong>Shift+Ctrl+Z / Shift+Cmd+Z</strong> – Redo</li>
+                    <li><strong>Esc</strong> – Close panels / exit multi-select</li>
+                  </ul>
+                </div>
+                <div class="help-section">
+                  <h3>Tools</h3>
+                  <ul>
+                    <li><strong>B</strong> – Brush tool</li>
+                    <li><strong>E</strong> – Eraser tool</li>
+                    <li><strong>H</strong> – Hand (pan) tool</li>
+                    <li><strong>I</strong> – Eyedropper</li>
+                  </ul>
+                </div>
+                <div class="help-section">
+                  <h3>Layers</h3>
+                  <ul>
+                    <li><strong>L</strong> – Toggle layers panel</li>
+                    <li><strong>Delete / Backspace</strong> – Delete selected layer(s)</li>
+                    <li><strong>Ctrl+A / Cmd+A</strong> – Select all layers</li>
+                    <li><strong>Ctrl+D / Cmd+D</strong> – Deselect all layers</li>
+                    <li><strong>↑ / ↓</strong> – Move selection up/down</li>
+                    <li><strong>Shift+↑ / Shift+↓</strong> – Extend selection</li>
+                  </ul>
+                </div>
+                <div class="help-section">
+                  <h3>Canvas</h3>
+                  <ul>
+                    <li><strong>Z</strong> – Zoom in</li>
+                    <li><strong>Alt+Z / Option+Z</strong> – Zoom out</li>
+                    <li><strong>R (hold + drag)</strong> – Rotate canvas</li>
+                  </ul>
+                </div>
+                <div class="help-section">
+                  <h3>Touch Gestures</h3>
+                  <ul>
+                    <li><strong>Two-finger tap</strong> – Undo</li>
+                    <li><strong>Three-finger tap</strong> – Redo</li>
+                    <li><strong>Two-finger pinch / rotate / drag</strong> – Zoom, rotate, pan</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </main>

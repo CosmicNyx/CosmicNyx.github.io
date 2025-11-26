@@ -464,6 +464,7 @@ class IbisPaintWorkspace {
                 const brushPanel = document.getElementById('brush-panel');
                 const layersPanel = document.getElementById('layers-panel');
                 const configPanel = document.getElementById('brush-config-panel');
+                const helpOverlay = document.getElementById('help-overlay');
                 
                 if (configPanel && configPanel.classList.contains('is-visible')) {
                     this.closeBrushConfigPanel();
@@ -471,6 +472,8 @@ class IbisPaintWorkspace {
                     this.closeBrushPanel();
                 } else if (layersPanel && layersPanel.classList.contains('is-visible')) {
                     this.toggleLayersPanel();
+                } else if (helpOverlay && helpOverlay.classList.contains('is-visible')) {
+                    helpOverlay.classList.remove('is-visible');
                 }
                 // Also exit multi-select mode
                 if (this.isMultiSelectMode) {
@@ -543,15 +546,18 @@ class IbisPaintWorkspace {
         let threeFingerTapTimer = null;
         let twoFingerStartTime = 0;
         let threeFingerStartTime = 0;
-        const tapTimeout = 300; // Maximum time for a tap (ms)
-        const maxTapDistance = 10; // Maximum movement for a tap (pixels)
+        const tapTimeout = 400; // Maximum time for a tap (ms) - increased for easier detection
+        const maxTapDistance = 20; // Maximum movement for a tap (pixels) - increased for easier detection
         let twoFingerStartPos = null;
         let threeFingerStartPos = null;
+        let twoFingerCount = 0; // Track how many fingers we started with
+        let threeFingerCount = 0; // Track how many fingers we started with
         
         this.canvas.addEventListener('touchstart', (e) => {
             // Handle two-finger tap for undo
             if (e.touches.length === 2) {
                 twoFingerStartTime = Date.now();
+                twoFingerCount = 2;
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
                 twoFingerStartPos = {
@@ -563,15 +569,17 @@ class IbisPaintWorkspace {
                 
                 // Set timer to detect tap (quick touch and release)
                 twoFingerTapTimer = setTimeout(() => {
-                    // If still touching after timeout, it's not a tap
+                    // If still touching after timeout, it's not a tap - start gesture
                     twoFingerTapTimer = null;
                 }, tapTimeout);
+                
+                // Don't prevent default yet - wait to see if it's a tap or gesture
             }
             
             // Handle three-finger tap for redo
             if (e.touches.length === 3) {
-                e.preventDefault(); // Prevent default for three-finger gestures
                 threeFingerStartTime = Date.now();
+                threeFingerCount = 3;
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
                 const touch3 = e.touches[2];
@@ -588,11 +596,14 @@ class IbisPaintWorkspace {
                 threeFingerTapTimer = setTimeout(() => {
                     threeFingerTapTimer = null;
                 }, tapTimeout);
+                
+                // Prevent default for three-finger gestures (they're always gestures, not drawing)
+                e.preventDefault();
             }
             
+            // Two finger gesture - always set up gesture tracking, but don't preventDefault yet
+            // (we'll preventDefault in touchmove if movement is detected)
             if (e.touches.length === 2) {
-                e.preventDefault();
-                // Two finger gesture - pinch to zoom, rotate, and pan
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
                 
@@ -625,16 +636,49 @@ class IbisPaintWorkspace {
         });
         
         this.canvas.addEventListener('touchmove', (e) => {
-            // Cancel tap detection if fingers move (it's a gesture, not a tap)
-            if (e.touches.length === 2 && twoFingerTapTimer !== null) {
-                clearTimeout(twoFingerTapTimer);
-                twoFingerTapTimer = null;
-                twoFingerStartPos = null;
+            // Cancel tap detection if fingers move significantly (it's a gesture, not a tap)
+            if (e.touches.length === 2 && twoFingerTapTimer !== null && twoFingerStartPos) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const distance1 = Math.sqrt(
+                    Math.pow(touch1.clientX - twoFingerStartPos.x1, 2) +
+                    Math.pow(touch1.clientY - twoFingerStartPos.y1, 2)
+                );
+                const distance2 = Math.sqrt(
+                    Math.pow(touch2.clientX - twoFingerStartPos.x2, 2) +
+                    Math.pow(touch2.clientY - twoFingerStartPos.y2, 2)
+                );
+                
+                // Cancel tap detection if movement is significant
+                if (distance1 > maxTapDistance || distance2 > maxTapDistance) {
+                    clearTimeout(twoFingerTapTimer);
+                    twoFingerTapTimer = null;
+                    twoFingerStartPos = null;
+                }
             }
-            if (e.touches.length === 3 && threeFingerTapTimer !== null) {
-                clearTimeout(threeFingerTapTimer);
-                threeFingerTapTimer = null;
-                threeFingerStartPos = null;
+            if (e.touches.length === 3 && threeFingerTapTimer !== null && threeFingerStartPos) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const touch3 = e.touches[2];
+                const distance1 = Math.sqrt(
+                    Math.pow(touch1.clientX - threeFingerStartPos.x1, 2) +
+                    Math.pow(touch1.clientY - threeFingerStartPos.y1, 2)
+                );
+                const distance2 = Math.sqrt(
+                    Math.pow(touch2.clientX - threeFingerStartPos.x2, 2) +
+                    Math.pow(touch2.clientY - threeFingerStartPos.y2, 2)
+                );
+                const distance3 = Math.sqrt(
+                    Math.pow(touch3.clientX - threeFingerStartPos.x3, 2) +
+                    Math.pow(touch3.clientY - threeFingerStartPos.y3, 2)
+                );
+                
+                // Cancel tap detection if movement is significant
+                if (distance1 > maxTapDistance || distance2 > maxTapDistance || distance3 > maxTapDistance) {
+                    clearTimeout(threeFingerTapTimer);
+                    threeFingerTapTimer = null;
+                    threeFingerStartPos = null;
+                }
             }
             
             if (e.touches.length === 2) {
@@ -685,26 +729,36 @@ class IbisPaintWorkspace {
         });
         
         this.canvas.addEventListener('touchend', (e) => {
-            // Check for two-finger tap (undo)
-            if (e.changedTouches.length === 2 && twoFingerTapTimer !== null) {
-                const touch1 = e.changedTouches[0];
-                const touch2 = e.changedTouches[1];
+            // Check for two-finger tap (undo) - all fingers must be lifted
+            if (e.touches.length === 0 && twoFingerTapTimer !== null && twoFingerStartPos && twoFingerCount === 2) {
                 const timeDiff = Date.now() - twoFingerStartTime;
                 
-                // Check if it was a quick tap and didn't move much
-                if (timeDiff < tapTimeout && twoFingerStartPos) {
-                    const distance1 = Math.sqrt(
-                        Math.pow(touch1.clientX - twoFingerStartPos.x1, 2) +
-                        Math.pow(touch1.clientY - twoFingerStartPos.y1, 2)
-                    );
-                    const distance2 = Math.sqrt(
-                        Math.pow(touch2.clientX - twoFingerStartPos.x2, 2) +
-                        Math.pow(touch2.clientY - twoFingerStartPos.y2, 2)
-                    );
+                // Check if it was a quick tap
+                if (timeDiff < tapTimeout) {
+                    // Check if we have at least 2 touches that ended
+                    // We'll be lenient - if at least 2 fingers were lifted, check their positions
+                    let validTouches = 0;
+                    let maxDistance = 0;
                     
-                    if (distance1 < maxTapDistance && distance2 < maxTapDistance) {
+                    for (let i = 0; i < e.changedTouches.length && i < 2; i++) {
+                        const touch = e.changedTouches[i];
+                        const startPos = i === 0 ? { x: twoFingerStartPos.x1, y: twoFingerStartPos.y1 } : { x: twoFingerStartPos.x2, y: twoFingerStartPos.y2 };
+                        const distance = Math.sqrt(
+                            Math.pow(touch.clientX - startPos.x, 2) +
+                            Math.pow(touch.clientY - startPos.y, 2)
+                        );
+                        maxDistance = Math.max(maxDistance, distance);
+                        if (distance < maxTapDistance) {
+                            validTouches++;
+                        }
+                    }
+                    
+                    // If at least one touch moved less than threshold, consider it a tap
+                    // (we're lenient because touch positions can vary slightly)
+                    if (maxDistance < maxTapDistance * 1.5) {
                         // Two-finger tap detected - undo
                         e.preventDefault();
+                        e.stopPropagation();
                         this.handleUndo();
                     }
                 }
@@ -712,33 +766,37 @@ class IbisPaintWorkspace {
                 clearTimeout(twoFingerTapTimer);
                 twoFingerTapTimer = null;
                 twoFingerStartPos = null;
+                twoFingerCount = 0;
             }
             
-            // Check for three-finger tap (redo)
-            if (e.changedTouches.length === 3 && threeFingerTapTimer !== null) {
-                const touch1 = e.changedTouches[0];
-                const touch2 = e.changedTouches[1];
-                const touch3 = e.changedTouches[2];
+            // Check for three-finger tap (redo) - all fingers must be lifted
+            if (e.touches.length === 0 && threeFingerTapTimer !== null && threeFingerStartPos && threeFingerCount === 3) {
                 const timeDiff = Date.now() - threeFingerStartTime;
                 
-                // Check if it was a quick tap and didn't move much
-                if (timeDiff < tapTimeout && threeFingerStartPos) {
-                    const distance1 = Math.sqrt(
-                        Math.pow(touch1.clientX - threeFingerStartPos.x1, 2) +
-                        Math.pow(touch1.clientY - threeFingerStartPos.y1, 2)
-                    );
-                    const distance2 = Math.sqrt(
-                        Math.pow(touch2.clientX - threeFingerStartPos.x2, 2) +
-                        Math.pow(touch2.clientY - threeFingerStartPos.y2, 2)
-                    );
-                    const distance3 = Math.sqrt(
-                        Math.pow(touch3.clientX - threeFingerStartPos.x3, 2) +
-                        Math.pow(touch3.clientY - threeFingerStartPos.y3, 2)
-                    );
+                // Check if it was a quick tap
+                if (timeDiff < tapTimeout) {
+                    // Check movement for all three touches
+                    let maxDistance = 0;
                     
-                    if (distance1 < maxTapDistance && distance2 < maxTapDistance && distance3 < maxTapDistance) {
+                    for (let i = 0; i < e.changedTouches.length && i < 3; i++) {
+                        const touch = e.changedTouches[i];
+                        let startPos;
+                        if (i === 0) startPos = { x: threeFingerStartPos.x1, y: threeFingerStartPos.y1 };
+                        else if (i === 1) startPos = { x: threeFingerStartPos.x2, y: threeFingerStartPos.y2 };
+                        else startPos = { x: threeFingerStartPos.x3, y: threeFingerStartPos.y3 };
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(touch.clientX - startPos.x, 2) +
+                            Math.pow(touch.clientY - startPos.y, 2)
+                        );
+                        maxDistance = Math.max(maxDistance, distance);
+                    }
+                    
+                    // If max movement is within threshold, consider it a tap
+                    if (maxDistance < maxTapDistance * 1.5) {
                         // Three-finger tap detected - redo
                         e.preventDefault();
+                        e.stopPropagation();
                         this.handleRedo();
                     }
                 }
@@ -746,6 +804,23 @@ class IbisPaintWorkspace {
                 clearTimeout(threeFingerTapTimer);
                 threeFingerTapTimer = null;
                 threeFingerStartPos = null;
+                threeFingerCount = 0;
+            }
+            
+            // Clean up if timer expired but no tap detected
+            if (e.touches.length === 0) {
+                if (twoFingerTapTimer !== null) {
+                    clearTimeout(twoFingerTapTimer);
+                    twoFingerTapTimer = null;
+                    twoFingerStartPos = null;
+                    twoFingerCount = 0;
+                }
+                if (threeFingerTapTimer !== null) {
+                    clearTimeout(threeFingerTapTimer);
+                    threeFingerTapTimer = null;
+                    threeFingerStartPos = null;
+                    threeFingerCount = 0;
+                }
             }
             
             // Reset touch tracking for gestures (only if no touches remain)
@@ -889,12 +964,8 @@ class IbisPaintWorkspace {
             btnSwitch.addEventListener('click', () => {
                 if (this.currentTool === 'brush') {
                     this.setCurrentTool('eraser');
-                    btnSwitch.classList.remove('icon-eraser');
-                    btnSwitch.classList.add('icon-brush');
                 } else {
                     this.setCurrentTool('brush');
-                    btnSwitch.classList.remove('icon-brush');
-                    btnSwitch.classList.add('icon-eraser');
                 }
                 this.updateUI();
             });
@@ -4964,6 +5035,52 @@ class IbisPaintWorkspace {
             savedRefImagesBtn.addEventListener('click', () => {
                 console.log('Saved ref images button clicked');
                 this.toggleReferenceImagesPanel();
+            });
+        }
+
+        // Help button (keyboard shortcuts)
+        const helpButton = document.getElementById('help-button');
+        const helpOverlay = document.getElementById('help-overlay');
+        const helpCloseBtn = document.getElementById('help-close-btn');
+
+        const openHelp = () => {
+            if (helpOverlay) {
+                helpOverlay.classList.add('is-visible');
+            }
+        };
+
+        const closeHelp = () => {
+            if (helpOverlay) {
+                helpOverlay.classList.remove('is-visible');
+            }
+        };
+
+        if (helpButton && helpOverlay) {
+            helpButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openHelp();
+            });
+            // Touch support for mobile/tablet
+            helpButton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openHelp();
+            }, { passive: false });
+        }
+
+        if (helpCloseBtn) {
+            helpCloseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeHelp();
+            });
+        }
+
+        if (helpOverlay) {
+            // Close when clicking on the dimmed background (but not the panel)
+            helpOverlay.addEventListener('click', (e) => {
+                if (e.target === helpOverlay) {
+                    closeHelp();
+                }
             });
         }
     }
