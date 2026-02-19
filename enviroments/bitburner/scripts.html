@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scripts Content</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="iframe-page">
+    <div id="hero">
+        <h1>Script Notes</h1>
+        <p>This page documents the automation scripts I actively use in Bitburner and how they work together.</p>
+    </div>
+
+
+    <section id="scripts">
+        <h2>My Scripts</h2>
+        <div class="card-grid">
+            <div class="card">
+                <h3>begin.js</h3>
+                <p>Main orchestrator script that initializes the entire automation system. Runs connect.js to scan network, starts allAutoHack.js for hacking, hackNEt.js for passive income, and autoNuke.js for auto-nuking as you level up.</p>
+            </div>
+            <div class="card">
+                <h3>connect.js</h3>
+                <p>Scans the entire network, gains root access to all possible servers using available port-opening tools, and backdoors servers automatically. Creates accessServers.txt and noAccessServers.txt files.</p>
+            </div>
+            <div class="card">
+                <h3>autoHack.js</h3>
+                <p>Individual server hacking script that weakens, grows, and hacks a target server. Maintains optimal security and money levels, continuously loops to maximize profit from a single target.</p>
+            </div>
+            <div class="card">
+                <h3>allAutoHack.js</h3>
+                <p>Reads accessServers.txt and runs autoHack.js on all accessible servers simultaneously. Distributes RAM evenly across all targets and skips servers already being hacked.</p>
+            </div>
+            <div class="card">
+                <h3>hackNEt.js</h3>
+                <p>Automated hacknet node management. Spends 15% of available money evenly across all nodes, upgrading levels, RAM, and cores. Runs continuously in the background for passive income.</p>
+            </div>
+            <div class="card">
+                <h3>autoNuke.js</h3>
+                <p>Background monitor that automatically nukes and backdoors servers as your hacking level increases. Checks every 30 seconds and runs begin.js when new servers are nuked to update access files.</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Script Overview</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Script</th>
+                    <th>Purpose</th>
+                    <th>Runs once or loop</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>begin.js</td>
+                    <td>Main orchestrator</td>
+                    <td>Once</td>
+                    <td>Run this first - it starts all other scripts automatically</td>
+                </tr>
+                <tr>
+                    <td>connect.js</td>
+                    <td>Network scanning & root access</td>
+                    <td>Once</td>
+                    <td>Scans network, nukes servers, backdoors them, creates accessServers.txt</td>
+                </tr>
+                <tr>
+                    <td>autoHack.js</td>
+                    <td>Individual server hacking</td>
+                    <td>Loop</td>
+                    <td>Weakens, grows, and hacks a single target server continuously</td>
+                </tr>
+                <tr>
+                    <td>allAutoHack.js</td>
+                    <td>Multi-server hacking</td>
+                    <td>Once</td>
+                    <td>Runs autoHack.js on all servers from accessServers.txt</td>
+                </tr>
+                <tr>
+                    <td>hackNEt.js</td>
+                    <td>Hacknet automation</td>
+                    <td>Loop</td>
+                    <td>Manages hacknet nodes, spends 15% money on upgrades (background)</td>
+                </tr>
+                <tr>
+                    <td>autoNuke.js</td>
+                    <td>Auto-nuking monitor</td>
+                    <td>Loop</td>
+                    <td>Monitors and nukes new servers as you level up (background)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+</body>
+</html>

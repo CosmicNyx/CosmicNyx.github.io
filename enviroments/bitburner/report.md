@@ -1,0 +1,27 @@
+# Returning to Bitburner: My Script Notes Project Report
+
+## Context
+
+After taking a break from Bitburner, I returned and found that while my automation scripts still worked, I had completely forgotten my workflow, priorities, and what each script actually did. Bitburner is a programming-based hacking simulation where you write JavaScript to automate your progression through a network of servers. The game involves scanning servers, gaining root access, deploying hack scripts, managing hacknet nodes, and joining factions for augmentations. This site documents my six scripts (`begin.js`, `connect.js`, `autoHack.js`, `allAutoHack.js`, `hackNEt.js`, `autoNuke.js`), explains the game systems they interact with, and provides a checklist for getting back on track after a reset. The site is designed to look and feel like the actual Bitburner UI. It uses the Dark+ in-game theme colors, a left sidebar that mirrors the game navigation, and a floating collapsible stats panel showing character stats with colored progress bars. The architecture uses an iframe so the sidebar and stats panel are defined once in `home.html` while content pages load dynamically inside the frame. The site also includes an ASCII map of the Sector-12 city network accessible from the sidebar. A separate loading page with a clickable image on a black background serves as the entry point. The entire site runs with zero JavaScript.
+
+## Three Challenges and How I Overcame Them
+
+### 1. Mimicking the Bitburner UI with Pure CSS
+
+I wanted the site to feel like the actual game interface, not just a generic dark page. The game has a persistent left sidebar with grouped navigation links, a main content area, and a floating overview window showing your stats. I recreated this using CSS Grid on a `.game-shell` container with `grid-template-columns: 260px 1fr` to split the sidebar and main content. The stats panel uses `position: fixed` to float in the top-right corner, and I used a native HTML `<details>`/`<summary>` element to make it collapsible without any JavaScript. The full Dark+ color palette is stored in `:root` CSS custom properties, so every element on the site pulls colors from the same theme. I also added responsive media queries that hide the stats panel below 1100px and collapse the sidebar into a stacked layout below 780px to keep things usable on smaller screens.
+
+### 2. Iframe Architecture Without JavaScript
+
+The biggest structural challenge was avoiding duplicate code. The sidebar and stats panel appear on every page, and without a framework or JavaScript, the obvious approach would be to copy them into every HTML file. Instead, I used an iframe inside `home.html`. The sidebar links use `target="contentframe"` to point at the named iframe, so clicking a link swaps the iframe content without reloading the shell page. The content pages (`overview.html`, `scripts.html`, `checklist.html`, `city.html`) are standalone HTML files with their own stylesheets and internal navigation links. Since they load inside the iframe, those links navigate within the frame. I hid the iframe scrollbar using `scrollbar-width: none` for Firefox and the `::-webkit-scrollbar` pseudo-element for Chrome and Edge, keeping the interface clean and matching the game feel.
+
+### 3. Flexbox Card Layout and ASCII Map Presentation
+
+The scripts page displays six cards, one for each script, and they needed to stay readable and organized at different screen sizes. I used `display: flex` with `flex-wrap` and `gap` on `.card-grid`, giving each card `flex: 1` with a `min-width` of 200px so they fill available space and wrap to new rows naturally. Each card uses `padding`, `border`, `border-radius`, and `box-shadow` for box model depth. The dark theme maintains contrast by using `--background-secondary` for cards against the `--background-primary` page background. Tables use zebra striping with `nth-child(even)` and hover row highlights. The city page presents an ASCII network map inside a `<pre>` block with key markers highlighted using `<b>` tags styled white and slightly larger for readability. All three required CSS selector types are present: element selectors (`body`, `h1`, `table`, `a`, `b`), class selectors (`.card`, `.card-grid`, `.bb-sidebar`, `.bb-link`, `.ascii-block`), and ID selectors (`#hero`, `#scripts`).
+
+## GenAI Usage
+
+I used ChatGPT throughout the project for the following:
+
+- **Brainstorming and page structure:** I used it to decide on the topic, plan which pages to create, and figure out what content goes where. It helped me break the site into an overview page, a scripts page with cards and a table, a checklist page, and a city map page, making sure I hit all the assignment requirements (element/class/ID selectors, flexbox, box model).
+- **CSS color palette from screenshot:** I sent it a screenshot of the Bitburner Dark+ color palette and asked it to extract the hex values and write the `:root` CSS custom properties. It generated all the variable names and colors that the entire site theme is built on.
+- **Iframe architecture:** I had issues setting up the iframe because the sidebar links were reloading the whole page instead of swapping content inside the frame, and the scrollbar kept showing. I used AI to troubleshoot and it helped me set up a named iframe with `target="contentframe"` on the sidebar links so the shell page stays loaded while content pages swap inside the frame, and showed me how to hide the scrollbar cross-browser.
