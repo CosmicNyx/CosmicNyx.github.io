@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<title>Ember of Self</title>
+<style>
+/* ===== BASE RESET & BODY ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow-x: hidden; }
+
+body {
+    font: 1.5em/1.5 Georgia, serif;
+    background-color: #0a0e1a;
+    color: #cde;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    transition: background-color 4s ease, color 2s ease;
+}
+
+/* ===== LAYOUT: fixed text area + fixed choices area ===== */
+#passage-container {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+#text-area {
+    width: 100%;
+    max-width: 650px;
+    text-align: center;
+    padding: 0 8%;
+    flex: 0 0 auto;
+    pointer-events: auto;
+    min-height: 3em;
+}
+
+#choices-area {
+    position: fixed;
+    bottom: 180px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    pointer-events: auto;
+    min-height: 2em;
+}
+
+/* ===== TEXT ANIMATIONS (Equivocal-style dissolve) ===== */
+@keyframes dissolve-in {
+    0% { opacity: 0; transform: translateY(0.2em); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in-out {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+@keyframes pulse-glow {
+    0%, 100% { text-shadow: 0 0 8px rgba(255,160,50,0.4); }
+    50% { text-shadow: 0 0 20px rgba(255,160,50,0.9), 0 0 40px rgba(255,100,20,0.5); }
+}
+@keyframes ember-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+}
+@keyframes flicker {
+    0%, 29%, 31%, 63%, 65%, 77%, 79%, 86%, 88%, 91%, 93% { opacity: 0; }
+    30% { opacity: .2; }
+    64% { opacity: .4; }
+    78% { opacity: .6; }
+    87% { opacity: .8; }
+    92%, 100% { opacity: 1; }
+}
+@keyframes heat-shimmer {
+    0% { filter: blur(0px); }
+    25% { filter: blur(1px); }
+    50% { filter: blur(2px); }
+    75% { filter: blur(1px); }
+    100% { filter: blur(0px); }
+}
+
+.dissolve {
+    animation: dissolve-in 0.8s ease forwards;
+    opacity: 0;
+}
+@keyframes dissolve-out {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-0.2em); }
+}
+.dissolve-out {
+    animation: dissolve-out 0.35s ease forwards;
+}
+.flicker-in {
+    animation: flicker 0.8s forwards;
+}
+
+/* ===== LINKS / CHOICES ===== */
+.choice-link {
+    cursor: pointer;
+    color: #4a8fbf;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+    display: block;
+    margin: 0.6em 0;
+    font-size: 0.95em;
+}
+.choice-link:hover {
+    color: #7ec8e3;
+    text-shadow: 0 0 12px rgba(126, 200, 227, 0.5);
+}
+.choice-link:active {
+    color: #dd4b39;
+}
+
+/* ===== EMBER / FLAME CANVAS ===== */
+#ember-container {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 100;
+    pointer-events: none;
+}
+#flame-canvas {
+    display: block;
+}
+#ember-label {
+    font-size: 0.5em;
+    color: #887;
+    margin-top: -10px;
+    transition: color 1s;
+}
+
+/* ===== FLAME BAR ===== */
+#flame-bar-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 8px;
+    height: 120px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    overflow: hidden;
+    z-index: 100;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+#flame-bar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 0%;
+    background: linear-gradient(to top, #ff8800, #ff4400, #ff0000);
+    border-radius: 4px;
+    transition: height 0.5s ease;
+}
+#flame-bar.danger {
+    background: linear-gradient(to top, #ffcc00, #ff4400, #ff0000);
+    box-shadow: 0 0 10px rgba(255,68,0,0.5);
+}
+
+/* ===== JOURNAL / STATS ===== */
+#journal-container {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    pointer-events: none;
+}
+.journal-pip {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #aac;
+    margin: 4px 0;
+    transition: background 1s, opacity 1s;
+    box-shadow: 0 0 4px rgba(170,170,204,0.3);
+}
+.journal-pip.lost {
+    background: #333;
+    opacity: 0.3;
+    box-shadow: none;
+}
+
+/* ===== HEAT SHIMMER OVERLAY ===== */
+#heat-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    background: radial-gradient(ellipse at center, rgba(255,100,0,0.15), transparent 70%);
+    animation: heat-shimmer 0.8s ease-in-out infinite;
+    transition: opacity 2s;
+}
+#heat-overlay.active {
+    opacity: 1;
+}
+
+/* ===== BREATHING PROMPT ===== */
+.breathing-prompt {
+    font-size: 0.7em;
+    color: #667;
+    animation: fade-in-out 3s ease-in-out infinite;
+}
+
+/* ===== ICE TO GOLD THEME TRANSITIONS ===== */
+body.ice-theme {
+    background-color: #0a0e1a;
+    color: #b0c8d8;
+}
+body.threshold-theme {
+    background: linear-gradient(to bottom, #0a0e1a, #1a1520);
+    color: #c0c0d0;
+}
+body.forest-theme {
+    background: linear-gradient(to bottom, #0c1015, #101820);
+    color: #99aabb;
+}
+body.gold-shift-theme {
+    background: linear-gradient(to bottom, #1a1510, #201a0a);
+    color: #d4c49a;
+}
+body.thaw-theme {
+    background: linear-gradient(to bottom, #201a0a, #2a2010);
+    color: #ffd700;
+}
+
+/* ===== SCREEN FADE ===== */
+#screen-fade {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #000;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+}
+#screen-fade.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* ===== IDLE PULSE REMINDER ===== */
+@keyframes ember-pulse-reminder {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.15); }
+}
+#ember-container.pulsing {
+    animation: ember-pulse-reminder 1.5s ease-in-out infinite;
+}
+</style>
+</head>
+<body class="ice-theme">
+
+<!-- Screen Fade Overlay -->
+<div id="screen-fade"></div>
+
+<!-- Heat Shimmer Overlay -->
+<div id="heat-overlay"></div>
+
+<!-- Ember / Flame Indicator -->
+<div id="ember-container">
+    <canvas id="flame-canvas" width="120" height="160"></canvas>
+    <div id="ember-label"></div>
+</div>
+
+<!-- Flame Intensity Bar -->
+<div id="flame-bar-container" style="display:none;">
+    <div id="flame-bar"></div>
+</div>
+
+<!-- Journal Pips (Identity Stats) -->
+<div id="journal-container"></div>
+
+<!-- Main Passage Area -->
+<div id="passage-container">
+    <div id="text-area"></div>
+</div>
+<!-- Choices always fixed at bottom -->
+<div id="choices-area"></div>
+
+<script>
+// ==========================================================
+//  EMBER OF TRUTH — Twine-style engine (Equivocal coding style)
+// ==========================================================
+
+// ===== GAME STATE =====
+const state = {
+    maxIdentityStats: 5,
+    currentStats: 5,
+    thermalThreshold: 0,       // 0-100, increases when lingering
+    worldThaw: 0,              // 0-1, shifts environment from ice to gold
+    flameAlive: true,
+    flameIntensity: 50,        // 0-100
+    maxFlameIntensity: 100,    // reduces after sacrifice
+    hasBreathed: false,
+    hasSacrificed: false,
+    optionsShownTime: null,    // timestamp when options appeared
+    rushCount: 0,
+    currentPassage: null,
+    timers: [],
+    idleTimer: null,
+    thermalTimer: null,
+    fragmentsUnlocked: [],
+    playerMoved: false,
+    lastPassageBeforeDeath: null,
+};
+
+// ===== DOM REFS =====
+const passageEl = document.getElementById('passage-container');
+const textArea = document.getElementById('text-area');
+const choicesArea = document.getElementById('choices-area');
+const flameCanvas = document.getElementById('flame-canvas');
+const flameCtx = flameCanvas.getContext('2d');
+const emberLabel = document.getElementById('ember-label');
+const emberContainer = document.getElementById('ember-container');
+const flameBarContainer = document.getElementById('flame-bar-container');
+const flameBar = document.getElementById('flame-bar');
+const heatOverlay = document.getElementById('heat-overlay');
+const screenFade = document.getElementById('screen-fade');
+const journalContainer = document.getElementById('journal-container');
+
+// ==========================================================
+//  PARTICLE FLAME SYSTEM
+// ==========================================================
+const FLAME_W = 120, FLAME_H = 160;
+const FLAME_CX = FLAME_W / 2, FLAME_BASE_Y = FLAME_H - 20;
+let particles = [];
+let sparks = [];
+let flameAnimId = null;
+
+class FlameParticle {
+    constructor(intensity, maxIntensity) {
+        const ratio = Math.max(0.05, intensity / maxIntensity);
+        const spread = 6 + ratio * 14;
+        this.x = FLAME_CX + (Math.random() - 0.5) * spread;
+        this.y = FLAME_BASE_Y;
+        this.vx = (Math.random() - 0.5) * 0.6;
+        this.vy = -(0.8 + Math.random() * 1.5) * (0.5 + ratio * 0.8);
+        this.life = 1.0;
+        this.decay = 0.015 + Math.random() * 0.025;
+        this.size = (2 + Math.random() * 4) * (0.4 + ratio * 0.8);
+        // How far from center this particle spawned (0 = dead center, 1 = edge)
+        this.edgeFactor = Math.abs(this.x - FLAME_CX) / Math.max(1, spread * 0.5);
+    }
+    update() {
+        this.x += this.vx + (Math.random() - 0.5) * 0.3;
+        this.y += this.vy;
+        this.vy *= 0.99;
+        this.vx *= 0.98;
+        this.life -= this.decay;
+        this.size *= 0.995;
+    }
+    draw(ctx) {
+        if (this.life <= 0) return;
+        const alpha = this.life * 0.85;
+        // Realistic flame color based on life (height) and distance from center:
+        //   life ~1.0 + center → blue-white (hottest, base)
+        //   life ~0.6 + center → yellow (mid flame)
+        //   life ~0.3 / edges  → orange-red (tips & outer)
+        const t = this.life;            // 1 = base, 0 = tip
+        const e = Math.min(1, this.edgeFactor); // 0 = center, 1 = edge
+        // Shift toward cooler (orange/red) for edge particles
+        const effective = Math.max(0, t - e * 0.35);
+        let r, g, b;
+        if (effective > 0.75) {
+            // HOT ZONE: blue-white core at base center
+            const f = (effective - 0.75) / 0.25;           // 0-1 within this band
+            r = Math.floor(180 + f * 75);                   // 180→255
+            g = Math.floor(200 + f * 55);                   // 200→255
+            b = Math.floor(220 + f * 35);                   // 220→255 (blue-white)
+        } else if (effective > 0.45) {
+            // MID ZONE: bright yellow
+            const f = (effective - 0.45) / 0.3;
+            r = 255;
+            g = Math.floor(180 + f * 20);                   // 180→200
+            b = Math.floor(20 + f * 200);                   // 20→220 (blends up to white)
+        } else if (effective > 0.2) {
+            // OUTER ZONE: orange
+            const f = (effective - 0.2) / 0.25;
+            r = 255;
+            g = Math.floor(80 + f * 100);                   // 80→180
+            b = Math.floor(5 + f * 15);                     // 5→20
+        } else {
+            // TIP: deep red-orange, fading
+            const f = effective / 0.2;
+            r = Math.floor(150 + f * 105);                  // 150→255
+            g = Math.floor(20 + f * 60);                    // 20→80
+            b = Math.floor(f * 5);                           // 0→5
+        }
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.fill();
+    }
+}
+
+class Spark {
+    constructor(intensity, maxIntensity) {
+        const ratio = Math.max(0.05, intensity / maxIntensity);
+        this.x = FLAME_CX + (Math.random() - 0.5) * (4 + ratio * 10);
+        this.y = FLAME_BASE_Y - Math.random() * 10;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = -(1.5 + Math.random() * 3) * (0.4 + ratio * 0.6);
+        this.life = 1.0;
+        this.decay = 0.03 + Math.random() * 0.04;
+        this.size = 0.8 + Math.random() * 1.5;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.02; // slight gravity
+        this.life -= this.decay;
+    }
+    draw(ctx) {
+        if (this.life <= 0) return;
+        const alpha = this.life * 0.9;
+        // Sparks: hot white-yellow when fresh, orange as they die
+        const r = 255;
+        const g = Math.floor(120 + this.life * 135);  // 120→255
+        const b = Math.floor(this.life * 180);         // 0→180 (white-ish when fresh)
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.fill();
+    }
+}
+
+// Ash particles for when flame is dead
+class AshParticle {
+    constructor() {
+        this.x = FLAME_CX + (Math.random() - 0.5) * 12;
+        this.y = FLAME_BASE_Y;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = -(0.1 + Math.random() * 0.4);
+        this.life = 1.0;
+        this.decay = 0.008 + Math.random() * 0.01;
+        this.size = 1 + Math.random() * 2;
+    }
+    update() {
+        this.x += this.vx + (Math.random() - 0.5) * 0.2;
+        this.y += this.vy;
+        this.life -= this.decay;
+        this.size *= 0.998;
+    }
+    draw(ctx) {
+        if (this.life <= 0) return;
+        const alpha = this.life * 0.3;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(120, 100, 80, ${alpha})`;
+        ctx.fill();
+    }
+}
+
+let ashParticles = [];
+
+// ==========================================================
+//  MOUSE SPEED TRACKING → affects flame behavior
+//  Slow mouse / still = flame burns brighter (but overheat risk)
+//  Fast mouse = flame flickers out (blown out risk)
+//  BOTH extremes build stress. Neither resets — only decays.
+// ==========================================================
+let mouseX = 0, mouseY = 0, prevMouseX = 0, prevMouseY = 0;
+let mouseSpeed = 0;          // smoothed speed (pixels/frame)
+let mouseSpeedRaw = 0;       // raw instant speed
+const MOUSE_SMOOTH = 0.12;   // smoothing factor (lower = smoother)
+
+// --- STRESS METERS (0–100) ---
+// windStress:  builds ONLY when mouse is moving VERY fast. 100 = blown out.
+// stillStress: builds when mouse is PERFECTLY still for too long. 100 = overheated.
+// Neither ever resets — they only decay gradually.
+let windStress = 0;
+let stillStress = 0;
+const WIND_BUILD_RATE   = 0.25;   // how fast windStress grows per frame when moving crazy fast
+const WIND_DECAY_RATE   = 0.12;   // how fast windStress drains when not thrashing
+const STILL_BUILD_RATE  = 0.06;   // how slowly stillStress creeps up (takes a while)
+const STILL_DECAY_RATE  = 0.15;   // how fast stillStress drains once you move even a little
+const STRESS_KILL_THRESHOLD = 100; // flame dies at this level
+
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+// Also track touch movement for mobile
+document.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) {
+        mouseX = e.touches[0].clientX;
+        mouseY = e.touches[0].clientY;
+    }
+});
+
+function updateMouseSpeed() {
+    const dx = mouseX - prevMouseX;
+    const dy = mouseY - prevMouseY;
+    mouseSpeedRaw = Math.sqrt(dx * dx + dy * dy);
+    // Exponential smoothing so it doesn't jitter
+    mouseSpeed = mouseSpeed + (mouseSpeedRaw - mouseSpeed) * MOUSE_SMOOTH;
+    prevMouseX = mouseX;
+    prevMouseY = mouseY;
+}
+
+// Normalize mouse speed to a 0-1 range for flame effects
+// 0 = still, 1 = very fast
+function getMouseInfluence() {
+    return Math.min(1, mouseSpeed / 40);
+}
+
+// Update stress meters each frame — called inside flameLoop
+function updateStressMeters() {
+    if (!state.flameAlive) return; // no stress when flame is dead
+
+    const mi = getMouseInfluence(); // 0 = still, 1 = fast
+
+    // Wind stress: ONLY builds when mouse is moving VERY fast (mi > 0.65)
+    // Normal/gentle movement doesn't count — you have to thrash
+    if (mi > 0.65) {
+        const excess = (mi - 0.65) / 0.35; // 0-1 within the danger zone
+        windStress = Math.min(STRESS_KILL_THRESHOLD, windStress + WIND_BUILD_RATE * excess);
+    } else {
+        windStress = Math.max(0, windStress - WIND_DECAY_RATE);
+    }
+
+    // Still stress: ONLY builds when mouse is PERFECTLY still (mi < 0.02)
+    // Even tiny movement stops the build
+    if (mi < 0.02) {
+        stillStress = Math.min(STRESS_KILL_THRESHOLD, stillStress + STILL_BUILD_RATE);
+        // Stillness slowly brightens the flame (the longer still = brighter, gradually)
+        if (state.flameIntensity < state.maxFlameIntensity) {
+            state.flameIntensity = Math.min(state.maxFlameIntensity, state.flameIntensity + 0.02);
+        }
+    } else {
+        stillStress = Math.max(0, stillStress - STILL_DECAY_RATE * Math.max(0.1, mi));
+    }
+
+    // --- FLAME DEATH ---
+    if (windStress >= STRESS_KILL_THRESHOLD) {
+        windStress = 0;
+        stillStress = 0;
+        state.lastPassageBeforeDeath = state.currentPassage;
+        killFlame();
+        goToPassage('wind_killed');
+    } else if (stillStress >= STRESS_KILL_THRESHOLD) {
+        windStress = 0;
+        stillStress = 0;
+        state.lastPassageBeforeDeath = state.currentPassage;
+        killFlame();
+        goToPassage('overheat_killed');
+    }
+}
+
+function flameLoop() {
+    updateMouseSpeed();
+    updateStressMeters();
+    flameCtx.clearRect(0, 0, FLAME_W, FLAME_H);
+
+    if (state.flameAlive) {
+        const intensity = state.flameIntensity;
+        const maxI = state.maxFlameIntensity;
+        const ratio = Math.max(0.05, intensity / maxI);
+        const mi = getMouseInfluence(); // 0 = still, 1 = fast mouse
+
+        // --- MOUSE INFLUENCE ON FLAME ---
+        // STILL  → flame burns BRIGHTER (but overheat danger if too long)
+        // FAST   → flame flickers OUT  (blown out danger if too long)
+        const calm = 1 - mi;                       // 1 when still, 0 when fast
+
+        // Stress factor: as either stress approaches 100, the flame visually deteriorates
+        const maxStress = Math.max(windStress, stillStress);
+        const stressFade = 1 - (maxStress / STRESS_KILL_THRESHOLD) * 0.7; // 1 = healthy, 0.3 = near death
+
+        // Visual intensity: stillness amplifies, movement suppresses, stress dims everything
+        const visFactor = calm * calm;
+        const effRatio = ratio * (0.08 + visFactor * 0.92) * stressFade;
+
+        // Jitter — frantic from speed OR from stress approaching death
+        const stressJitter = maxStress > 60 ? (maxStress - 60) / 40 : 0; // 0-1 in danger zone
+        const flickerJitterX = (mi * mi + stressJitter * 0.5) * (Math.random() - 0.5) * 16;
+        const flickerJitterY = (mi * mi + stressJitter * 0.3) * (Math.random() - 0.5) * 6;
+
+        // Spawn fewer particles the faster the mouse — AND as stress builds
+        const spawnCount = Math.max(0, Math.floor((1 + effRatio * 6) * (0.1 + calm * 0.9) * stressFade));
+        for (let i = 0; i < spawnCount; i++) {
+            const p = new FlameParticle(intensity, maxI);
+            // Stillness → tight column that rises high
+            // Speed → wide scatter, short-lived
+            p.x += flickerJitterX + (Math.random() - 0.5) * mi * 18;
+            p.y += flickerJitterY;
+            p.vx += (Math.random() - 0.5) * mi * 3;     // wild sideways scatter
+            p.vy *= (0.3 + calm * 1.0);                   // tall rise when still, barely rises when fast
+            p.size *= (0.3 + calm * 1.0);                 // bigger when still
+            p.decay += mi * 0.04;                          // die faster when fast
+            // When fast: particles start with lower life → skip the blue/white zone, look dimmer
+            if (mi > 0.3) p.life = Math.max(0.15, 1.0 - mi * 0.6);
+            particles.push(p);
+        }
+
+        // Sparks: occasional desperate sparks when fast (dying flame sputters)
+        // Steady warm sparks when still
+        if (calm > 0.6 && Math.random() < 0.1 + effRatio * 0.15) {
+            // Still: gentle upward sparks
+            const s = new Spark(intensity, maxI);
+            s.vx *= 0.4;
+            sparks.push(s);
+        }
+        if (mi > 0.5 && Math.random() < mi * 0.3) {
+            // Fast: desperate sideways sputter sparks
+            const s = new Spark(intensity, maxI);
+            s.vx = (Math.random() - 0.5) * 5;
+            s.vy *= 0.4;      // barely rises — sideways sputter
+            s.decay += 0.03;   // dies fast
+            sparks.push(s);
+        }
+
+        // Glow — blue-white center fading to warm orange, big when still
+        const glowRadius = (10 + effRatio * 30) * (0.3 + calm * 0.7);
+        const glowAlpha = (0.05 + effRatio * 0.25) * (0.1 + calm * 0.9);
+        const glowCX = FLAME_CX + flickerJitterX * 0.3;
+        const glow = flameCtx.createRadialGradient(glowCX, FLAME_BASE_Y, 0, glowCX, FLAME_BASE_Y, Math.max(1, glowRadius));
+        glow.addColorStop(0, `rgba(200, 220, 255, ${Math.max(0, glowAlpha * 0.9)})`);   // blue-white center
+        glow.addColorStop(0.25, `rgba(255, 240, 180, ${Math.max(0, glowAlpha * 0.6)})`); // yellow ring
+        glow.addColorStop(0.6, `rgba(255, 120, 20, ${Math.max(0, glowAlpha * 0.3)})`);   // orange
+        glow.addColorStop(1, 'rgba(150, 30, 0, 0)');                                      // fades to nothing
+        flameCtx.fillStyle = glow;
+        flameCtx.fillRect(0, 0, FLAME_W, FLAME_H);
+
+        // Ember core — blue-white hot center when still, dim smudge when fast
+        const coreSize = Math.max(0.5, (3 + effRatio * 6) * (0.15 + calm * 0.85));
+        const coreCX = FLAME_CX + flickerJitterX * 0.15;
+        const coreCY = FLAME_BASE_Y + flickerJitterY * 0.15;
+        const coreGlow = flameCtx.createRadialGradient(coreCX, coreCY, 0, coreCX, coreCY, coreSize);
+        if (calm > 0.7) {
+            // Still: blue-white → yellow → orange gradient
+            coreGlow.addColorStop(0, `rgba(210, 230, 255, ${0.9 * calm})`);     // blue-white
+            coreGlow.addColorStop(0.3, `rgba(255, 250, 200, ${0.7 * calm})`);   // warm yellow
+            coreGlow.addColorStop(0.7, `rgba(255, 150, 40, ${0.4 * calm})`);    // orange
+            coreGlow.addColorStop(1, 'rgba(200, 60, 0, 0)');
+        } else if (calm > 0.3) {
+            // Mid: yellow-orange dimming
+            coreGlow.addColorStop(0, `rgba(255, 220, 120, ${0.5 * calm})`);
+            coreGlow.addColorStop(0.5, `rgba(255, 120, 30, ${0.3 * calm})`);
+            coreGlow.addColorStop(1, 'rgba(180, 40, 0, 0)');
+        } else {
+            // Fast: dim red-orange smudge
+            coreGlow.addColorStop(0, `rgba(180, 60, 15, ${0.2 + calm * 0.3})`);
+            coreGlow.addColorStop(1, 'rgba(100, 20, 0, 0)');
+        }
+        flameCtx.beginPath();
+        flameCtx.arc(coreCX, coreCY, coreSize, 0, Math.PI * 2);
+        flameCtx.fillStyle = coreGlow;
+        flameCtx.fill();
+
+        // When moving very fast OR under high stress, spawn ash
+        if ((mi > 0.7 && Math.random() < mi * 0.25) || (maxStress > 70 && Math.random() < 0.2)) {
+            ashParticles.push(new AshParticle());
+        }
+
+        // Show heat overlay when still-stress is dangerously high
+        if (stillStress > 65) {
+            heatOverlay.classList.add('active');
+        } else if (windStress < 50 && stillStress < 50) {
+            heatOverlay.classList.remove('active');
+        }
+
+        // Clear ash only when healthy
+        if (maxStress < 20 && calm > 0.5) ashParticles = [];
+    } else {
+        // Dead flame — emit ash / smoke
+        if (Math.random() < 0.15) {
+            ashParticles.push(new AshParticle());
+        }
+        // Draw dead ember
+        const deadGlow = flameCtx.createRadialGradient(FLAME_CX, FLAME_BASE_Y, 0, FLAME_CX, FLAME_BASE_Y, 6);
+        deadGlow.addColorStop(0, 'rgba(80, 60, 40, 0.4)');
+        deadGlow.addColorStop(1, 'rgba(40, 30, 20, 0)');
+        flameCtx.beginPath();
+        flameCtx.arc(FLAME_CX, FLAME_BASE_Y, 6, 0, Math.PI * 2);
+        flameCtx.fillStyle = deadGlow;
+        flameCtx.fill();
+    }
+
+    // Update & draw flame particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw(flameCtx);
+        if (particles[i].life <= 0) particles.splice(i, 1);
+    }
+
+    // Update & draw sparks
+    for (let i = sparks.length - 1; i >= 0; i--) {
+        sparks[i].update();
+        sparks[i].draw(flameCtx);
+        if (sparks[i].life <= 0) sparks.splice(i, 1);
+    }
+
+    // Update & draw ash
+    for (let i = ashParticles.length - 1; i >= 0; i--) {
+        ashParticles[i].update();
+        ashParticles[i].draw(flameCtx);
+        if (ashParticles[i].life <= 0) ashParticles.splice(i, 1);
+    }
+
+    flameAnimId = requestAnimationFrame(flameLoop);
+}
+
+function startFlameAnimation() {
+    if (!flameAnimId) flameLoop();
+}
+function stopFlameAnimation() {
+    if (flameAnimId) { cancelAnimationFrame(flameAnimId); flameAnimId = null; }
+}
+
+// Start the flame animation loop immediately
+startFlameAnimation();
+
+// ===== UTILITY FUNCTIONS =====
+function clearAllTimers() {
+    state.timers.forEach(t => clearTimeout(t));
+    state.timers = [];
+    if (state.idleTimer) { clearInterval(state.idleTimer); state.idleTimer = null; }
+    if (state.thermalTimer) { clearInterval(state.thermalTimer); state.thermalTimer = null; }
+}
+
+function delay(ms) {
+    return new Promise(resolve => {
+        const t = setTimeout(resolve, ms);
+        state.timers.push(t);
+    });
+}
+
+// Auto-calculate reading time from text content
+// Strips HTML tags, counts words, returns ms
+// ~120ms per word + 800ms base (for dissolve anim), clamped between 1000ms and 4000ms
+function readingDelay(html) {
+    const plain = html.replace(/<[^>]*>/g, '').trim();
+    const words = plain.split(/\s+/).filter(w => w.length > 0).length;
+    return Math.max(1000, Math.min(4000, 800 + words * 120));
+}
+
+// Fade out the current text, then fade in new text — always in the same spot
+// The second param is ignored (kept for compat) — always renders to #text-area
+async function showText(text, _container) {
+    // Fade out existing content
+    const existing = textArea.querySelector('.active-text');
+    if (existing) {
+        existing.classList.remove('dissolve');
+        existing.classList.add('dissolve-out');
+        await delay(350); // wait for fade-out
+        existing.remove();
+    }
+    // Fade in new text
+    const span = document.createElement('span');
+    span.className = 'dissolve active-text';
+    // Strip leading <br> tags since we're replacing not stacking
+    span.innerHTML = text.replace(/^(<br\s*\/?>)+/g, '');
+    textArea.appendChild(span);
+    await delay(readingDelay(text));
+    return span;
+}
+
+// Immediate dissolve (no auto-wait, no fade-out of old) — for special cases
+function dissolveText(text, _container) {
+    const existing = textArea.querySelector('.active-text');
+    if (existing) existing.remove();
+    const span = document.createElement('span');
+    span.className = 'dissolve active-text';
+    span.innerHTML = text.replace(/^(<br\s*\/?>)+/g, '');
+    textArea.appendChild(span);
+    return span;
+}
+
+// No-op now — layout is fixed, no line breaks needed
+function addLineBreak(_container) {
+    // intentionally empty — fixed layout handles spacing
+}
+
+function addChoiceLink(text, targetPassage, _container, opts = {}) {
+    const link = document.createElement('span');
+    link.className = 'choice-link dissolve';
+    link.textContent = text;
+    link.addEventListener('click', () => {
+        const now = Date.now();
+        const responseTime = state.optionsShownTime ? (now - state.optionsShownTime) / 1000 : 999;
+
+        // RUSHING DETECTION: clicked too fast (under 1.5 seconds)
+        if (opts.canRush && responseTime < 1.5) {
+            state.rushCount++;
+            goToPassage('rushed');
+            return;
+        }
+
+        // Record timing for thermal tracking
+        if (opts.onSelect) opts.onSelect(responseTime);
+
+        goToPassage(targetPassage);
+    });
+    // Choices always go to the fixed choices area
+    choicesArea.appendChild(link);
+}
+
+// ===== EMBER VISUALS =====
+function updateEmberVisual() {
+    // Particle system reads state directly each frame — nothing else needed here
+    // But we keep this function so all existing calls still work
+}
+
+function killFlame() {
+    state.flameAlive = false;
+    state.flameIntensity = 0;
+    // Clear active flame particles quickly
+    particles = [];
+    sparks = [];
+}
+
+function reviveFlame(intensity) {
+    state.flameAlive = true;
+    state.flameIntensity = intensity || 40;
+    ashParticles = [];
+}
+
+// ===== FLAME BAR =====
+function updateFlameBar() {
+    flameBar.style.height = state.thermalThreshold + '%';
+    if (state.thermalThreshold > 75) {
+        flameBar.className = 'danger';
+    } else {
+        flameBar.className = '';
+    }
+}
+
+// ===== JOURNAL PIPS =====
+function renderJournal() {
+    journalContainer.innerHTML = '';
+    for (let i = 0; i < state.maxIdentityStats; i++) {
+        const pip = document.createElement('div');
+        pip.className = 'journal-pip' + (i >= state.currentStats ? ' lost' : '');
+        journalContainer.appendChild(pip);
+    }
+}
+
+// ===== THERMAL SYSTEM (lingering detection) =====
+function startThermalTimer() {
+    flameBarContainer.style.display = 'block';
+    state.thermalThreshold = 0;
+    updateFlameBar();
+
+    state.thermalTimer = setInterval(() => {
+        if (!state.flameAlive) return;
+        state.thermalThreshold += 2;
+        state.flameIntensity = Math.min(state.maxFlameIntensity, state.flameIntensity + 1);
+        updateEmberVisual();
+        updateFlameBar();
+
+        // Heat shimmer at 60%
+        if (state.thermalThreshold >= 60) {
+            heatOverlay.classList.add('active');
+        }
+
+        // FLAME BURNS OUT at 100% — too slow!
+        if (state.thermalThreshold >= 100) {
+            clearInterval(state.thermalTimer);
+            state.thermalTimer = null;
+            heatOverlay.classList.remove('active');
+            goToPassage('lingered_too_long');
+        }
+    }, 500);
+}
+
+function stopThermalTimer() {
+    if (state.thermalTimer) {
+        clearInterval(state.thermalTimer);
+        state.thermalTimer = null;
+    }
+    heatOverlay.classList.remove('active');
+    flameBarContainer.style.display = 'none';
+}
+
+// ===== IDLE REMINDER (ember pulses after 10s idle) =====
+function startIdleReminder() {
+    if (state.idleTimer) clearTimeout(state.idleTimer);
+    emberContainer.classList.remove('pulsing');
+    state.idleTimer = setTimeout(() => {
+        emberContainer.classList.add('pulsing');
+    }, 10000);
+}
+
+function stopIdleReminder() {
+    if (state.idleTimer) clearTimeout(state.idleTimer);
+    emberContainer.classList.remove('pulsing');
+}
+
+// ===== BODY THEME =====
+function setTheme(theme) {
+    document.body.className = theme;
+}
+
+// ===== SCREEN FADE =====
+function fadeToBlack() {
+    return new Promise(resolve => {
+        screenFade.classList.add('active');
+        const t = setTimeout(resolve, 800);
+        state.timers.push(t);
+    });
+}
+function fadeFromBlack() {
+    return new Promise(resolve => {
+        screenFade.classList.remove('active');
+        const t = setTimeout(resolve, 800);
+        state.timers.push(t);
+    });
+}
+
+// ==========================================================
+//  PASSAGES — Equivocal-style: dissolving text, timed reveals
+// ==========================================================
+
+const passages = {};
+
+// ---------- TITLE ----------
+passages['title'] = async function() {
+    setTheme('ice-theme');
+    emberContainer.style.display = 'none';
+    flameBarContainer.style.display = 'none';
+    journalContainer.style.display = 'none';
+
+    await delay(500);
+    await showText('<div style="font-size:0.6em; color:#556;">A flame carried in silence</div>', passageEl);
+    await showText('<div style="font-size:2em; font-weight:bold; margin: 0.5em 0; color:#c8dde8;">Ember of Self</div>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    addChoiceLink('Begin', 'awakening', passageEl);
+};
+
+// ---------- NODE 1: THE AWAKENING ----------
+passages['awakening'] = async function() {
+    setTheme('ice-theme');
+    emberContainer.style.display = 'block';
+    journalContainer.style.display = 'block';
+    state.flameAlive = true;
+    state.flameIntensity = 20;
+    state.currentStats = state.maxIdentityStats;
+    updateEmberVisual();
+    renderJournal();
+
+    await delay(400);
+    await showText('You wake in a cold, ice-blue void.', passageEl);
+    await showText('<br><br>A tiny, dim ember hovers near your chest.', passageEl);
+    await showText('<br><br>Your robe is dark blue — intricate patterns trace the hem.', passageEl);
+    await showText('<br><br>Silence.', passageEl);
+    await showText('<br><br><span class="breathing-prompt">Breathe to stabilize the spark...</span>', passageEl);
+
+    // Start idle reminder — ember pulses if you don't act
+    startIdleReminder();
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Breathe', 'breathing_ritual', passageEl);
+};
+
+passages['breathing_ritual'] = async function() {
+    stopIdleReminder();
+    state.hasBreathed = true;
+    state.flameIntensity = 45;
+    state.playerMoved = true;
+    updateEmberVisual();
+
+    await showText('You breathe.', passageEl);
+    await showText('<br><br>Slowly.', passageEl);
+    await showText('<br><br>The ember steadies — a faint warmth against the cold.', passageEl);
+    await showText('<br><br>It floats closer, as if it knows you.', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Look around the cave', 'cave_look', passageEl);
+};
+
+passages['cave_look'] = async function() {
+    await showText('You scan the dim cavern.', passageEl);
+    await showText('<br><br>Vines creep along the walls.', passageEl);
+    await showText('<br><br>Something is half-hidden among them — a <em>clay pot</em>, ancient and cracked.', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Examine the clay pot', 'examine_pot', passageEl);
+    addChoiceLink('Move toward the light', 'cave_threshold', passageEl);
+};
+
+passages['examine_pot'] = async function() {
+    await showText('You kneel beside the pot.', passageEl);
+    await showText('<br><br>The ember drifts down, illuminating its surface.', passageEl);
+    await showText('<br><br>The patterns on the pot...', passageEl);
+    await showText('<br><br>They match the embroidery on your sleeves.', passageEl);
+    await showText('<br><br><em style="color:#6688aa;">You have been here before.</em>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Move toward the light at the cave exit', 'cave_threshold', passageEl);
+};
+
+// ---------- NODE 2: THE HIGH COST OF RUSHING ----------
+passages['cave_threshold'] = async function() {
+    setTheme('threshold-theme');
+
+    await showText('A bright light shines from the cave exit.', passageEl);
+    await showText('<br><br>Instinct pulls you forward. This is the way out.', passageEl);
+    await showText('<br><br>The light is warm. Inviting.', passageEl);
+    await showText('<br><br><span style="color:#667;">The ember flickers — it senses your eagerness.</span>', passageEl);
+
+    // RUSHING TRAP: if you click the next option too fast, flame snuffs
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Sprint toward the exit', 'cave_exit_approach', passageEl, { canRush: true });
+    addChoiceLink('Walk steadily toward the light', 'cave_exit_approach', passageEl, { canRush: false });
+};
+
+passages['cave_exit_approach'] = async function() {
+    await showText('You walk toward the light.', passageEl);
+    await showText('<br><br>Each step is measured. The ember hums softly.', passageEl);
+    await showText('<br><br>The cold begins to loosen its grip.', passageEl);
+    await showText('<br><br>You step through.', passageEl);
+
+    goToPassage('forest_edge');
+};
+
+// RUSHED — flame snuffs out
+passages['rushed'] = async function() {
+    await fadeToBlack();
+    killFlame();
+
+    await delay(1000);
+    await fadeFromBlack();
+    setTheme('ice-theme');
+
+    await showText('The flame wavers—', passageEl);
+    await showText('<br><br>and snuffs out.', passageEl);
+    await showText('<br><br>Darkness. Complete.', passageEl);
+    await showText('<br><br>You cannot proceed without light.', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    await showText('<em style="color:#aa7744;">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Sacrifice', 'sacrifice_accept', passageEl);
+    addChoiceLink('Refuse', 'sacrifice_decline', passageEl);
+};
+
+passages['sacrifice_accept'] = async function() {
+    state.hasSacrificed = true;
+    state.currentStats = Math.max(1, state.currentStats - 1);
+    state.maxFlameIntensity = Math.max(30, state.maxFlameIntensity - 15);
+    renderJournal();
+
+    reviveFlame(35);
+
+    await showText('You feel something leave you.', passageEl);
+    await showText('<br><br>A page in your journal fades to nothing.', passageEl);
+    await showText('<br><br>The ember returns — but dimmer than before.', passageEl);
+    await showText('<br><br><span style="color:#776655; font-size:0.7em;">Maximum light intensity permanently reduced.</span>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Continue toward the exit', 'cave_exit_approach', passageEl);
+};
+
+passages['sacrifice_decline'] = async function() {
+    await showText('You refuse.', passageEl);
+    await showText('<br><br>The darkness presses in.', passageEl);
+    await showText('<br><br>Without light, there is no path.', passageEl);
+    await showText('<br><br>...', passageEl);
+    await showText('<br><br>The silence grows heavier.', passageEl);
+    await showText('<br><br><em style="color:#556;">"The ember does not beg. But it waits."</em>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('...Sacrifice', 'sacrifice_accept', passageEl);
+};
+
+// ---------- WIND KILLED — mouse moved too much, flame blown out ----------
+passages['wind_killed'] = async function() {
+    await fadeToBlack();
+    await delay(800);
+    await fadeFromBlack();
+    setTheme('ice-theme');
+
+    await showText('The wind—', passageEl);
+    await showText('Your movement stirred the air too violently.', passageEl);
+    await showText('The flame guttered, sputtered—', passageEl);
+    await showText('—and went out.', passageEl);
+    await showText('<span style="color:#556; font-size:0.75em;">Stillness keeps the ember alive. Chaos smothers it.</span>', passageEl);
+
+    await showText('<em style="color:#aa7744;">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
+
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Sacrifice', 'sacrifice_accept_return', passageEl);
+    addChoiceLink('Refuse', 'sacrifice_decline', passageEl);
+};
+
+// ---------- OVERHEAT KILLED — mouse still too long, flame burned too hot ----------
+passages['overheat_killed'] = async function() {
+    heatOverlay.classList.add('active');
+    await delay(600);
+    heatOverlay.classList.remove('active');
+    await fadeToBlack();
+    await delay(800);
+    await fadeFromBlack();
+
+    await showText('The flame, unfed by motion, turned inward.', passageEl);
+    await showText('It burned too bright — too hot — consuming itself.', passageEl);
+    await showText('A flash of white heat—', passageEl);
+    await showText('—then nothing.', passageEl);
+    await showText('<span style="color:#556; font-size:0.75em;">A flame needs breath. Perfect stillness is suffocation.</span>', passageEl);
+
+    await showText('<em style="color:#aa7744;">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
+
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Sacrifice', 'sacrifice_accept_return', passageEl);
+    addChoiceLink('Refuse', 'sacrifice_decline', passageEl);
+};
+
+// Sacrifice that returns you to where you were (not cave_exit_approach)
+passages['sacrifice_accept_return'] = async function() {
+    state.hasSacrificed = true;
+    state.currentStats = Math.max(1, state.currentStats - 1);
+    state.maxFlameIntensity = Math.max(30, state.maxFlameIntensity - 15);
+    renderJournal();
+
+    reviveFlame(35);
+
+    await showText('You feel something leave you.', passageEl);
+    await showText('A page in your journal fades to nothing.', passageEl);
+    await showText('The ember returns — but dimmer than before.', passageEl);
+    await showText('<span style="color:#776655; font-size:0.7em;">Maximum light intensity permanently reduced.</span>', passageEl);
+    await showText('<span style="color:#667; font-size:0.7em;">Be mindful of the balance between stillness and motion.</span>', passageEl);
+
+    state.optionsShownTime = Date.now();
+    const returnTo = state.lastPassageBeforeDeath || 'awakening';
+    addChoiceLink('Continue', returnTo, passageEl);
+};
+
+// ---------- NODE 3: THE FOREST EDGE ----------
+passages['forest_edge'] = async function() {
+    setTheme('forest-theme');
+    state.thermalThreshold = 0;
+    state.flameIntensity = Math.min(state.flameIntensity, 50);
+    updateEmberVisual();
+
+    await delay(300);
+    await showText('You emerge into a rocky, frozen forest.', passageEl);
+    await showText('<br><br>The trees are skeletal, coated in frost.', passageEl);
+    await showText('<br><br>Scattered among the rocks — <em>unlit fire pits</em>. Dozens of them.', passageEl);
+    await showText('<br><br>A culture was here once. They kept fires burning.', passageEl);
+    await showText('<br><br>Now everything is cold.', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Investigate the stone ruin ahead', 'mural_discovery', passageEl);
+    addChoiceLink('Search for remnants among the fire pits', 'find_bowl', passageEl);
+};
+
+passages['mural_discovery'] = async function() {
+    await showText('You approach a crumbling stone wall.', passageEl);
+    await showText('<br><br>A weathered mural stretches across its face.', passageEl);
+    await showText('<br><br>Figures — standing in a circle around a great bonfire.', passageEl);
+    await showText('<br><br>Their hands are raised. Not in worship. In warmth.', passageEl);
+    await showText('<br><br><em style="color:#7799aa;">The goal is not the flame. It is the circle.</em>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Search the fire pits', 'find_bowl', passageEl);
+    addChoiceLink('Press onward through the forest', 'silent_encounter', passageEl);
+};
+
+// FIND BOWL — with thermal/lingering mechanic
+passages['find_bowl'] = async function() {
+    // Start the thermal timer — lingering too long = flame burns too hot
+    startThermalTimer();
+
+    await showText('Among the ash and stone, something catches the light.', passageEl);
+    await showText('<br><br>A <em>chipped porcelain bowl</em>. Painted with fine brushwork.', passageEl);
+    await showText('<br><br>You pick it up carefully. The ember leans toward it, curious.', passageEl);
+    await showText('<br><br><span style="color:#667; font-size:0.75em;">The flame grows warmer the longer you hold still...</span>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Set it down and keep moving', 'after_bowl_safe', passageEl, {
+        onSelect: () => { stopThermalTimer(); }
+    });
+    addChoiceLink('Study it closely', 'study_bowl', passageEl, {
+        onSelect: () => { /* thermal keeps running */ }
+    });
+};
+
+passages['study_bowl'] = async function() {
+    // Thermal timer still running!
+    await showText('You turn the bowl in your hands.', passageEl);
+    await showText('<br><br>Delicate flowers, painted by someone who knew patience.', passageEl);
+    await showText('<br><br>The ember pulses brighter... too bright.', passageEl);
+    await showText('<br><br><span style="color:#aa7744; font-size:0.8em;">The warmth is becoming uncomfortable.</span>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Put it down — now', 'after_bowl_safe', passageEl, {
+        onSelect: () => { stopThermalTimer(); }
+    });
+    addChoiceLink('Just a moment longer...', 'linger_more', passageEl, {
+        onSelect: () => { /* thermal keeps running, probably about to hit 100% */ }
+    });
+};
+
+passages['linger_more'] = async function() {
+    // Thermal timer likely close to 100% now
+    await showText('Just a moment...', passageEl);
+    await showText('<br><br>The heat swells.', passageEl);
+
+    // If we haven't already hit 100%, force it soon
+    state.thermalThreshold = Math.max(state.thermalThreshold, 85);
+    updateFlameBar();
+
+    await showText('<br><br><span style="color:#cc5500;">The ember is burning too hot—</span>', passageEl);
+
+    // The thermal timer will likely trigger 'lingered_too_long' on its own
+    // But if it doesn't fire in time, force it
+    await delay(2000);
+    if (state.currentPassage === 'linger_more') {
+        stopThermalTimer();
+        goToPassage('lingered_too_long');
+    }
+};
+
+// LINGERED TOO LONG — ember dropped
+passages['lingered_too_long'] = async function() {
+    stopThermalTimer();
+    heatOverlay.classList.add('active');
+
+    await showText('A heat shimmer fills your vision.', passageEl);
+    await showText('<br><br>You recoil—', passageEl);
+
+    dissolveText('<br><br>The ember falls from your grasp.', passageEl);
+    killFlame();
+    heatOverlay.classList.remove('active');
+    await delay(readingDelay('The ember falls from your grasp.'));
+
+    await showText('<br><br>It dies on the frozen ground.', passageEl);
+    await showText('<br><br>Ash.', passageEl);
+    await showText('<br><br><span class="breathing-prompt">Breathe... slowly... deeply...</span>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Breathe', 'breathing_revival', passageEl);
+};
+
+passages['breathing_revival'] = async function() {
+    await showText('You kneel in the cold.', passageEl);
+    await showText('<br><br>Breathe.', passageEl);
+    await showText('<br><br>Breathe.', passageEl);
+    await showText('<br><br>Breathe.', passageEl);
+    await showText('<br><br>From the ashes — a tiny new spark.', passageEl);
+
+    reviveFlame(25); // Smaller than before
+
+    await showText('<br><br>Smaller. Fragile. But alive.', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Rise and continue', 'after_bowl_safe', passageEl);
+};
+
+passages['after_bowl_safe'] = async function() {
+    stopThermalTimer();
+    await showText('You leave the remnants behind and press forward.', passageEl);
+    await showText('<br><br>The forest thins. The frost loosens.', passageEl);
+    await showText('<br><br>Something ahead feels... different.', passageEl);
+
+    goToPassage('silent_encounter');
+};
+
+// ---------- NODE 4: THE SILENT ENCOUNTER ----------
+passages['silent_encounter'] = async function() {
+    setTheme('gold-shift-theme');
+    state.worldThaw = 0.3;
+
+    await delay(300);
+    await showText('The light shifts.', passageEl);
+    await showText('<br><br>Where everything was ice-blue, a pale <span style="color:#ddc070;">gold</span> now bleeds into the edges.', passageEl);
+    await showText('<br><br>And then you see it—', passageEl);
+    await showText('<br><br>A <em>silhouette</em>. Distant. Another traveler.', passageEl);
+    await showText('<br><br>They pause — then disappear behind a frost-covered ridge.', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Follow', 'follow_silhouette', passageEl);
+};
+
+passages['follow_silhouette'] = async function() {
+    state.worldThaw = 0.6;
+
+    await showText('You follow.', passageEl);
+    await showText('<br><br>The wind, which has been your only companion, shifts.', passageEl);
+    await showText('<br><br>Layered into its howl — a single note. A <em>flute</em>.', passageEl);
+    await showText('<br><br>Or perhaps a <em>tabla</em>, somewhere far below the wind.', passageEl);
+    await showText('<br><br>You are not alone.', passageEl);
+    await showText('<br><br>Ahead — a small, dormant <em>brazier</em> sits in a clearing.', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Light the brazier', 'light_brazier', passageEl);
+};
+
+passages['light_brazier'] = async function() {
+    state.worldThaw = 1.0;
+    setTheme('thaw-theme');
+
+    await showText('You hold the ember to the brazier.', passageEl);
+    await showText('<br><br>For a moment — nothing.', passageEl);
+    await showText('<br><br>Then—', passageEl);
+
+    state.flameIntensity = Math.min(state.maxFlameIntensity, 70);
+    updateEmberVisual();
+
+    await showText('<br><br><span style="color:#ffd700; font-size:1.2em;">Light.</span>', passageEl);
+    await showText('<br><br>The frost around the brazier retreats.', passageEl);
+    await showText('<br><br>Grey stone turns to <span style="color:#daa520;">warm gold</span>.', passageEl);
+    await showText('<br><br>The cold releases its grip on this small circle of earth.', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Sit and meditate', 'meditation', passageEl);
+};
+
+passages['meditation'] = async function() {
+    state.fragmentsUnlocked.push('Fragment of Self: The Circle');
+
+    await showText('You sit beside the brazier.', passageEl);
+    await showText('<br><br>The ember rests.', passageEl);
+    await showText('<br><br>For the first time, the silence is not empty.', passageEl);
+    await showText('<br><br>It is warm.', passageEl);
+
+    if (state.hasSacrificed) {
+        await showText('<br><br><span style="color:#887766; font-size:0.75em;">The light is dimmer than it should be. You remember what you gave up.</span>', passageEl);
+    }
+
+    await showText('<br><br><em style="color:#daa520;">Fragment of Self unlocked.</em>', passageEl);
+
+    addLineBreak(passageEl);
+
+    // Show final stats
+    const statsLost = state.maxIdentityStats - state.currentStats;
+    if (statsLost > 0) {
+        await showText('<br><span style="color:#776655; font-size:0.65em;">Fragments sacrificed: ' + statsLost + '</span>', passageEl);
+    }
+
+    await showText('<br><span style="color:#776655; font-size:0.65em;">Maximum flame intensity: ' + state.maxFlameIntensity + '%</span>', passageEl);
+
+    // Fade out
+    await fadeToBlack();
+
+    await delay(1000);
+    textArea.innerHTML = '';
+    choicesArea.innerHTML = '';
+    await showText('<div style="font-size:0.9em; color:#daa520;">End of Vertical Slice</div>', passageEl);
+    await showText('<span style="font-size:0.6em; color:#887766;">The fire remembers what the mind forgets.</span>', passageEl);
+    addChoiceLink('Begin again', 'title', passageEl);
+
+    await fadeFromBlack();
+};
+
+// ==========================================================
+//  PASSAGE NAVIGATION
+// ==========================================================
+function goToPassage(name) {
+    clearAllTimers();
+    stopIdleReminder();
+    state.currentPassage = name;
+    textArea.innerHTML = '';
+    choicesArea.innerHTML = '';
+
+    if (passages[name]) {
+        passages[name]();
+    } else {
+        dissolveText('<em>Passage "' + name + '" not found.</em>', passageEl);
+    }
+}
+
+// ==========================================================
+//  START
+// ==========================================================
+goToPassage('title');
+</script>
+</body>
+</html>

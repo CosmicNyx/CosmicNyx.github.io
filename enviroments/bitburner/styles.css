@@ -208,6 +208,8 @@ a:hover {
 .stat-row.hack .mini-track span { background: var(--hack); }
 .stat-row.cha .mini-track span { background: var(--cha); }
 
+
+
 /* Class selector */
 .card {
     background-color: var(--background-secondary);
@@ -220,6 +222,8 @@ a:hover {
 }
 
 .card p { margin-top: 10px; }
+
+
 
 /* ID selectors */
 #hero {

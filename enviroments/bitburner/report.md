@@ -20,7 +20,7 @@ The scripts page displays six cards, one for each script, and they needed to sta
 
 ## GenAI Usage
 
-I used ChatGPT throughout the project for the following:
+I used Opus 4.6 throughout the project for the following:
 
 - **Brainstorming and page structure:** I used it to decide on the topic, plan which pages to create, and figure out what content goes where. It helped me break the site into an overview page, a scripts page with cards and a table, a checklist page, and a city map page, making sure I hit all the assignment requirements (element/class/ID selectors, flexbox, box model).
 - **CSS color palette from screenshot:** I sent it a screenshot of the Bitburner Dark+ color palette and asked it to extract the hex values and write the `:root` CSS custom properties. It generated all the variable names and colors that the entire site theme is built on.
