@@ -151,6 +151,10 @@ body {
 }
 #flame-canvas {
     display: block;
+    transition: opacity 1.2s ease;
+}
+#flame-canvas.dead {
+    opacity: 0;
 }
 #ember-label {
     font-size: 0.5em;
@@ -189,30 +193,61 @@ body {
 /* ===== JOURNAL / STATS ===== */
 #journal-container {
     position: fixed;
-    top: 20px;
-    left: 20px;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 100;
     pointer-events: none;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
 }
+
+@keyframes pip-enter {
+    0%   { opacity: 0; transform: scale(0.4); background: #ffe033;
+           box-shadow: 0 0 14px rgba(255,220,0,0.95), 0 0 30px rgba(255,180,0,0.6); }
+    40%  { opacity: 1; transform: scale(1.25); background: #ffe033;
+           box-shadow: 0 0 14px rgba(255,220,0,0.95), 0 0 30px rgba(255,180,0,0.6); }
+    100% { opacity: 1; transform: scale(1); background: #aac;
+           box-shadow: 0 0 4px rgba(170,170,204,0.3); }
+}
+@keyframes pip-die {
+    0%   { transform: scale(1);    background: #ffe033;
+           box-shadow: 0 0 18px rgba(255,220,0,1), 0 0 36px rgba(255,140,0,0.7); opacity: 1; }
+    40%  { transform: scale(1.6);  background: #ffaa00;
+           box-shadow: 0 0 28px rgba(255,180,0,1), 0 0 55px rgba(255,100,0,0.8); opacity: 1; }
+    100% { transform: scale(1);    background: #2a2a3a;
+           box-shadow: none; opacity: 0.35; }
+}
+
 .journal-pip {
-    width: 10px;
-    height: 10px;
+    width: 11px;
+    height: 11px;
     border-radius: 50%;
     background: #aac;
-    margin: 4px 0;
     transition: background 0.4s, opacity 0.5s, box-shadow 0.4s;
     box-shadow: 0 0 4px rgba(170,170,204,0.3);
+    flex-shrink: 0;
+}
+.journal-pip.entering {
+    animation: pip-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .journal-pip.flash {
     background: #ffe033;
     box-shadow: 0 0 8px rgba(255,220,0,0.95), 0 0 18px rgba(255,180,0,0.5);
     transition: background 0.2s, box-shadow 0.2s;
 }
+.journal-pip.dying {
+    animation: pip-die 0.75s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+    pointer-events: none;
+}
 .journal-pip.lost {
-    background: #1e1e1e;
-    opacity: 0.2;
+    background: #2a2a3a;
+    opacity: 0.35;
     box-shadow: none;
-    transition: background 0.5s, opacity 0.6s, box-shadow 0s;
+    transition: background 0.4s, opacity 0.5s, box-shadow 0s;
 }
 
 /* ===== HEAT SHIMMER OVERLAY ===== */
@@ -286,6 +321,79 @@ body.ember-end-theme {
 #ember-container.pulsing {
     animation: ember-pulse-reminder 1.5s ease-in-out infinite;
 }
+/* ===== HISTORY BUTTON ===== */
+#history-btn {
+    position: fixed;
+    top: 14px;
+    right: 18px;
+    z-index: 110;
+    color: rgba(180, 200, 220, 0.22);
+    font-size: 0.55em;
+    letter-spacing: 3px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.3s, background 0.3s;
+    user-select: none;
+    font-family: Georgia, serif;
+}
+#history-btn:hover {
+    color: rgba(180, 200, 220, 0.6);
+    background: rgba(255,255,255,0.04);
+}
+#history-btn.paused {
+    color: rgba(210, 180, 120, 0.55);
+}
+
+/* ===== HISTORY DRAWER ===== */
+#history-drawer {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    max-height: 65vh;
+    background: rgba(8, 12, 22, 0.96);
+    border-bottom: 1px solid rgba(100, 140, 180, 0.1);
+    z-index: 105;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(-100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(8px);
+}
+#history-drawer.open {
+    transform: translateY(0);
+}
+#history-close {
+    text-align: right;
+    padding: 12px 20px 8px;
+    font-size: 0.42em;
+    color: rgba(150, 180, 200, 0.35);
+    cursor: pointer;
+    letter-spacing: 0.12em;
+    font-family: Georgia, serif;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+#history-close:hover {
+    color: rgba(150, 180, 200, 0.7);
+}
+#history-log {
+    overflow-y: auto;
+    padding: 8px 10% 24px;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100,140,180,0.15) transparent;
+}
+#history-log::-webkit-scrollbar { width: 4px; }
+#history-log::-webkit-scrollbar-thumb { background: rgba(100,140,180,0.15); border-radius: 2px; }
+.history-entry {
+    font-size: 0.5em;
+    line-height: 1.7;
+    color: rgba(160, 185, 205, 0.45);
+    text-align: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.history-entry:last-child { border-bottom: none; }
 </style>
 </head>
 <body class="ice-theme">
@@ -309,6 +417,15 @@ body.ember-end-theme {
 
 <!-- Journal Pips (Identity Stats) -->
 <div id="journal-container"></div>
+
+<!-- History / Pause Button -->
+<div id="history-btn" style="display:none;" title="Pause & review">&#8226; &#8226; &#8226;</div>
+
+<!-- History Drawer -->
+<div id="history-drawer">
+    <div id="history-close">&#x2715; resume</div>
+    <div id="history-log"></div>
+</div>
 
 <!-- Main Passage Area -->
 <div id="passage-container">
@@ -343,6 +460,7 @@ const state = {
     playerMoved: false,
     lastPassageBeforeDeath: null,
     hasSeenFlameHelp: false,
+    stressEnabled: false,   // disabled on title; enabled once game begins
 };
 
 // ===== DOM REFS =====
@@ -358,6 +476,50 @@ const flameBar = document.getElementById('flame-bar');
 const heatOverlay = document.getElementById('heat-overlay');
 const screenFade = document.getElementById('screen-fade');
 const journalContainer = document.getElementById('journal-container');
+const historyBtn = document.getElementById('history-btn');
+const historyDrawer = document.getElementById('history-drawer');
+const historyClose = document.getElementById('history-close');
+const historyLog = document.getElementById('history-log');
+
+// ===== HISTORY LOG =====
+const textHistory = [];   // plain-text entries of all shown lines
+let isPaused = false;
+
+function addToHistory(html) {
+    const plain = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    if (plain.length > 1) textHistory.push(plain);
+}
+
+function openHistory() {
+    isPaused = true;
+    // Pause stress while reading
+    state._stressWas = state.stressEnabled;
+    state.stressEnabled = false;
+    historyDrawer.classList.add('open');
+    historyBtn.classList.add('paused');
+    // Rebuild log
+    historyLog.innerHTML = '';
+    textHistory.forEach(entry => {
+        const d = document.createElement('div');
+        d.className = 'history-entry';
+        d.textContent = entry;
+        historyLog.appendChild(d);
+    });
+    // Scroll to bottom (most recent)
+    historyLog.scrollTop = historyLog.scrollHeight;
+}
+
+function closeHistory() {
+    isPaused = false;
+    state.stressEnabled = state._stressWas !== undefined ? state._stressWas : state.stressEnabled;
+    historyDrawer.classList.remove('open');
+    historyBtn.classList.remove('paused');
+}
+
+historyBtn.addEventListener('click', () => {
+    if (isPaused) closeHistory(); else openHistory();
+});
+historyClose.addEventListener('click', closeHistory);
 
 // ==========================================================
 //  PARTICLE FLAME SYSTEM
@@ -519,11 +681,15 @@ function getMouseInfluence() {
     return Math.min(1, mouseSpeed / 40);
 }
 
+let flameOpacity = 1;   // 0-1, drives canvas CSS opacity for wind-kill fade
+
 function updateStressMeters() {
+    if (!state.stressEnabled) return;
     if (!state.flameAlive) return;
 
     const mi = getMouseInfluence();
 
+    // WIND: fast mouse builds stress
     if (mi > 0.65) {
         const excess = (mi - 0.65) / 0.35;
         windStress = Math.min(STRESS_KILL_THRESHOLD, windStress + WIND_BUILD_RATE * excess);
@@ -531,27 +697,41 @@ function updateStressMeters() {
         windStress = Math.max(0, windStress - WIND_DECAY_RATE);
     }
 
+    // STILL: perfectly still builds stress; any movement drains it fast
     if (mi < 0.02) {
         stillStress = Math.min(STRESS_KILL_THRESHOLD, stillStress + STILL_BUILD_RATE);
-        if (state.flameIntensity < state.maxFlameIntensity) {
-            state.flameIntensity = Math.min(state.maxFlameIntensity, state.flameIntensity + 0.02);
-        }
+        // stillness = flame grows toward max
+        state.flameIntensity = Math.min(state.maxFlameIntensity, state.flameIntensity + 0.04);
     } else {
         stillStress = Math.max(0, stillStress - STILL_DECAY_RATE * Math.max(0.1, mi));
     }
 
+    // OVERHEAT (too still): IMMEDIATE snuff — no warning
+    if (stillStress >= STRESS_KILL_THRESHOLD) {
+        windStress = 0;
+        stillStress = 0;
+        state.lastPassageBeforeDeath = state.currentPassage;
+        // Instant visual kill — canvas goes opaque-dead immediately
+        flameOpacity = 1;
+        flameCanvas.classList.remove('dead');
+        killFlame();
+        // Small delay so the "empty canvas" registers, then navigate
+        setTimeout(() => {
+            flameCanvas.classList.add('dead');
+            goToPassage('overheat_killed');
+        }, 80);
+    }
+
+    // WIND (too fast): flame fades out, then navigate
     if (windStress >= STRESS_KILL_THRESHOLD) {
         windStress = 0;
         stillStress = 0;
         state.lastPassageBeforeDeath = state.currentPassage;
         killFlame();
-        goToPassage('wind_killed');
-    } else if (stillStress >= STRESS_KILL_THRESHOLD) {
-        windStress = 0;
-        stillStress = 0;
-        state.lastPassageBeforeDeath = state.currentPassage;
-        killFlame();
-        goToPassage('overheat_killed');
+        flameCanvas.classList.add('dead'); // CSS fade over 1.2s
+        setTimeout(() => {
+            goToPassage('wind_killed');
+        }, 900);
     }
 }
 
@@ -560,95 +740,102 @@ function flameLoop() {
     updateStressMeters();
     flameCtx.clearRect(0, 0, FLAME_W, FLAME_H);
 
+    // Always render flame particles while flameAlive
+    // (when dead, canvas fades via CSS opacity — we just stop spawning)
     if (state.flameAlive) {
         const intensity = state.flameIntensity;
         const maxI = state.maxFlameIntensity;
         const ratio = Math.max(0.05, intensity / maxI);
-        const mi = getMouseInfluence();
-        const calm = 1 - mi;
-        const maxStress = Math.max(windStress, stillStress);
-        const stressFade = 1 - (maxStress / STRESS_KILL_THRESHOLD) * 0.7;
-        const visFactor = calm * calm;
-        const effRatio = ratio * (0.08 + visFactor * 0.92) * stressFade;
-        const stressJitter = maxStress > 60 ? (maxStress - 60) / 40 : 0;
-        const flickerJitterX = (mi * mi + stressJitter * 0.5) * (Math.random() - 0.5) * 16;
-        const flickerJitterY = (mi * mi + stressJitter * 0.3) * (Math.random() - 0.5) * 6;
-        const spawnCount = Math.max(0, Math.floor((1 + effRatio * 6) * (0.1 + calm * 0.9) * stressFade));
+        const mi = getMouseInfluence();   // 0=still, 1=fast
+        const calm = 1 - mi;             // 1=still, 0=fast
+
+        // Flame flickers laterally when mouse moves — gets bigger+taller when still
+        const flickerX = mi * mi * (Math.random() - 0.5) * 20;
+        const flickerY = mi * (Math.random() - 0.5) * 8;
+
+        // Visual ratio: mouse movement suppresses, stillness amplifies
+        const visBrightness = calm * calm;
+        const effRatio = ratio * (0.12 + visBrightness * 0.88);
+
+        // Spawn particles — more when still (tall column), fewer+shorter when fast (flicker)
+        const spawnCount = Math.max(0, Math.floor((1 + effRatio * 7) * (0.05 + calm * 0.95)));
         for (let i = 0; i < spawnCount; i++) {
             const p = new FlameParticle(intensity, maxI);
-            p.x += flickerJitterX + (Math.random() - 0.5) * mi * 18;
-            p.y += flickerJitterY;
-            p.vx += (Math.random() - 0.5) * mi * 3;
-            p.vy *= (0.3 + calm * 1.0);
-            p.size *= (0.3 + calm * 1.0);
-            p.decay += mi * 0.04;
-            if (mi > 0.3) p.life = Math.max(0.15, 1.0 - mi * 0.6);
+            p.x += flickerX * 0.5 + (Math.random() - 0.5) * mi * 20;
+            p.y += flickerY * 0.4;
+            p.vx += (Math.random() - 0.5) * mi * 3.5;
+            // Still = tall rise; fast = barely rises (gets blown sideways)
+            p.vy *= (0.25 + calm * 1.1);
+            p.size *= (0.25 + calm * 1.05);
+            p.decay += mi * 0.05;
+            // Fast: particles start dim (skip hot blue-white base zone)
+            if (mi > 0.25) p.life = Math.max(0.12, 1.0 - mi * 0.7);
             particles.push(p);
         }
-        if (calm > 0.6 && Math.random() < 0.1 + effRatio * 0.15) {
+
+        // Still: steady upward sparks. Fast: desperate sideways sputters
+        if (calm > 0.55 && Math.random() < 0.08 + effRatio * 0.12) {
             const s = new Spark(intensity, maxI);
-            s.vx *= 0.4;
+            s.vx *= 0.3;
             sparks.push(s);
         }
-        if (mi > 0.5 && Math.random() < mi * 0.3) {
+        if (mi > 0.45 && Math.random() < mi * 0.28) {
             const s = new Spark(intensity, maxI);
-            s.vx = (Math.random() - 0.5) * 5;
-            s.vy *= 0.4;
-            s.decay += 0.03;
+            s.vx = (Math.random() - 0.5) * 6;
+            s.vy *= 0.3;
+            s.decay += 0.04;
             sparks.push(s);
         }
-        const glowRadius = (10 + effRatio * 30) * (0.3 + calm * 0.7);
-        const glowAlpha = (0.05 + effRatio * 0.25) * (0.1 + calm * 0.9);
-        const glowCX = FLAME_CX + flickerJitterX * 0.3;
+
+        // Glow halo — large + warm when still, tiny + dim when fast
+        const glowRadius = (8 + effRatio * 35) * (0.2 + calm * 0.8);
+        const glowAlpha  = (0.04 + effRatio * 0.28) * (0.08 + calm * 0.92);
+        const glowCX = FLAME_CX + flickerX * 0.25;
         const glow = flameCtx.createRadialGradient(glowCX, FLAME_BASE_Y, 0, glowCX, FLAME_BASE_Y, Math.max(1, glowRadius));
-        glow.addColorStop(0, `rgba(200, 220, 255, ${Math.max(0, glowAlpha * 0.9)})`);
+        glow.addColorStop(0,    `rgba(210, 230, 255, ${Math.max(0, glowAlpha * 0.85)})`);
         glow.addColorStop(0.25, `rgba(255, 240, 180, ${Math.max(0, glowAlpha * 0.6)})`);
-        glow.addColorStop(0.6, `rgba(255, 120, 20, ${Math.max(0, glowAlpha * 0.3)})`);
-        glow.addColorStop(1, 'rgba(150, 30, 0, 0)');
+        glow.addColorStop(0.6,  `rgba(255, 120, 20,  ${Math.max(0, glowAlpha * 0.3)})`);
+        glow.addColorStop(1,    'rgba(150, 30, 0, 0)');
         flameCtx.fillStyle = glow;
         flameCtx.fillRect(0, 0, FLAME_W, FLAME_H);
-        const coreSize = Math.max(0.5, (3 + effRatio * 6) * (0.15 + calm * 0.85));
-        const coreCX = FLAME_CX + flickerJitterX * 0.15;
-        const coreCY = FLAME_BASE_Y + flickerJitterY * 0.15;
+
+        // Hot core — blue-white when calm, dim orange smudge when fast
+        const coreSize = Math.max(0.5, (2 + effRatio * 7) * (0.1 + calm * 0.9));
+        const coreCX = FLAME_CX + flickerX * 0.12;
+        const coreCY = FLAME_BASE_Y + flickerY * 0.12;
         const coreGlow = flameCtx.createRadialGradient(coreCX, coreCY, 0, coreCX, coreCY, coreSize);
-        if (calm > 0.7) {
-            coreGlow.addColorStop(0, `rgba(210, 230, 255, ${0.9 * calm})`);
-            coreGlow.addColorStop(0.3, `rgba(255, 250, 200, ${0.7 * calm})`);
-            coreGlow.addColorStop(0.7, `rgba(255, 150, 40, ${0.4 * calm})`);
-            coreGlow.addColorStop(1, 'rgba(200, 60, 0, 0)');
-        } else if (calm > 0.3) {
-            coreGlow.addColorStop(0, `rgba(255, 220, 120, ${0.5 * calm})`);
-            coreGlow.addColorStop(0.5, `rgba(255, 120, 30, ${0.3 * calm})`);
-            coreGlow.addColorStop(1, 'rgba(180, 40, 0, 0)');
+        if (calm > 0.65) {
+            coreGlow.addColorStop(0,   `rgba(215, 235, 255, ${0.92 * calm})`);
+            coreGlow.addColorStop(0.3, `rgba(255, 252, 200, ${0.7  * calm})`);
+            coreGlow.addColorStop(0.7, `rgba(255, 150, 40,  ${0.4  * calm})`);
+            coreGlow.addColorStop(1,   'rgba(200, 60, 0, 0)');
+        } else if (calm > 0.25) {
+            coreGlow.addColorStop(0,   `rgba(255, 220, 120, ${0.45 * calm})`);
+            coreGlow.addColorStop(0.5, `rgba(255, 120, 30,  ${0.28 * calm})`);
+            coreGlow.addColorStop(1,   'rgba(180, 40, 0, 0)');
         } else {
-            coreGlow.addColorStop(0, `rgba(180, 60, 15, ${0.2 + calm * 0.3})`);
-            coreGlow.addColorStop(1, 'rgba(100, 20, 0, 0)');
+            coreGlow.addColorStop(0,   `rgba(170, 55, 10, ${0.18 + calm * 0.25})`);
+            coreGlow.addColorStop(1,   'rgba(90, 15, 0, 0)');
         }
         flameCtx.beginPath();
         flameCtx.arc(coreCX, coreCY, coreSize, 0, Math.PI * 2);
         flameCtx.fillStyle = coreGlow;
         flameCtx.fill();
-        if ((mi > 0.7 && Math.random() < mi * 0.25) || (maxStress > 70 && Math.random() < 0.2)) {
-            ashParticles.push(new AshParticle());
-        }
+
+        // Ash when moving very fast or near still-overheat
+        if (mi > 0.65 && Math.random() < mi * 0.2) ashParticles.push(new AshParticle());
+        if (stillStress > 70 && Math.random() < 0.15) ashParticles.push(new AshParticle());
+
+        // Heat overlay when approaching still-death
         if (stillStress > 65) {
             heatOverlay.classList.add('active');
-        } else if (windStress < 50 && stillStress < 50) {
+        } else if (stillStress < 45 && windStress < 45) {
             heatOverlay.classList.remove('active');
         }
-        if (maxStress < 20 && calm > 0.5) ashParticles = [];
-    } else {
-        if (Math.random() < 0.15) {
-            ashParticles.push(new AshParticle());
-        }
-        const deadGlow = flameCtx.createRadialGradient(FLAME_CX, FLAME_BASE_Y, 0, FLAME_CX, FLAME_BASE_Y, 6);
-        deadGlow.addColorStop(0, 'rgba(80, 60, 40, 0.4)');
-        deadGlow.addColorStop(1, 'rgba(40, 30, 20, 0)');
-        flameCtx.beginPath();
-        flameCtx.arc(FLAME_CX, FLAME_BASE_Y, 6, 0, Math.PI * 2);
-        flameCtx.fillStyle = deadGlow;
-        flameCtx.fill();
+
+        if (mi > 0.1) ashParticles = ashParticles.filter(a => a.life > 0.5); // clear ash when moving again
     }
+    // (dead: canvas fades via CSS, we just stop adding particles)
 
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
@@ -711,6 +898,7 @@ async function showText(text, _container) {
     span.className = 'dissolve active-text';
     span.innerHTML = text.replace(/^(<br\s*\/?>)+/g, '');
     textArea.appendChild(span);
+    addToHistory(text);   // record to history
     await delay(readingDelay(text));
     return span;
 }
@@ -781,12 +969,17 @@ function killFlame() {
     state.flameIntensity = 0;
     particles = [];
     sparks = [];
+    // canvas fade is handled by callers via flameCanvas.classList
 }
 
 function reviveFlame(intensity) {
     state.flameAlive = true;
     state.flameIntensity = intensity || 40;
     ashParticles = [];
+    flameCanvas.classList.remove('dead');
+    windStress = 0;
+    stillStress = 0;
+    heatOverlay.classList.remove('active');
 }
 
 // ===== FLAME BAR =====
@@ -800,37 +993,42 @@ function updateFlameBar() {
 }
 
 // ===== JOURNAL PIPS =====
-function renderJournal() {
+// Renders pips horizontally; if animate=true, each pip shines gold then settles
+function renderJournal(animate) {
     journalContainer.innerHTML = '';
     for (let i = 0; i < state.maxIdentityStats; i++) {
         const pip = document.createElement('div');
-        pip.className = 'journal-pip' + (i >= state.currentStats ? ' lost' : '');
+        const isLost = i >= state.currentStats;
+        pip.className = 'journal-pip' + (isLost ? ' lost' : '');
+        if (animate && !isLost) {
+            pip.classList.add('entering');
+            pip.style.animationDelay = (i * 110) + 'ms';
+        }
         journalContainer.appendChild(pip);
     }
 }
 
 async function flashPipsOnDeath() {
-    const pips = [...journalContainer.querySelectorAll('.journal-pip:not(.lost)')];
-    if (pips.length === 0) return;
-    pips.forEach(p => p.classList.add('flash'));
-    await delay(750);
-    pips.forEach(p => p.classList.remove('flash'));
-    await delay(300);
+    // intentionally empty — only the dying pip animates, not all of them
 }
 
+// Only the pip being lost lights up gold, then collapses to a grey dead dot
 async function animatePipLoss() {
     const pips = [...journalContainer.querySelectorAll('.journal-pip')];
-    const dyingPip = pips[state.currentStats];
+    const dyingPip = pips[state.currentStats]; // index = new value = pip just lost
     if (!dyingPip || dyingPip.classList.contains('lost')) {
-        renderJournal();
+        renderJournal(false);
         return;
     }
+    // Gold flash on just this pip
     dyingPip.classList.add('flash');
-    await delay(450);
-    dyingPip.classList.remove('flash');
-    await delay(80);
-    dyingPip.classList.add('lost');
     await delay(350);
+    dyingPip.classList.remove('flash');
+    // Die burst — swells then collapses to grey
+    dyingPip.classList.add('dying');
+    await delay(750);
+    dyingPip.classList.remove('dying');
+    dyingPip.classList.add('lost');
 }
 
 // ===== THERMAL SYSTEM =====
@@ -912,35 +1110,64 @@ const passages = {};
 // ---------- TITLE ----------
 passages['title'] = async function() {
     setTheme('ice-theme');
-    emberContainer.style.display = 'none';
+    state.stressEnabled = false;
+    windStress = 0;
+    stillStress = 0;
+    heatOverlay.classList.remove('active');
+
+    // Flame always visible — restore it to alive state for title
+    state.flameAlive = true;
+    state.flameIntensity = 50;
+    state.maxFlameIntensity = 100;
+    flameCanvas.classList.remove('dead'); // restore from any prior death
+
     flameBarContainer.style.display = 'none';
     journalContainer.style.display = 'none';
 
-    await delay(500);
-    await showText('<div style="font-size:0.6em; color:#556;">A flame carried in silence</div>', passageEl);
-    await showText('<div style="font-size:2em; font-weight:bold; margin: 0.5em 0; color:#c8dde8;">Ember of Self</div>', passageEl);
+    await delay(600);
+    await showText('<div style="font-size:0.55em; color:#445566; letter-spacing:0.12em; text-transform:uppercase;">A flame carried in silence</div>', passageEl);
+    await showText('<div style="font-size:2em; font-weight:bold; margin: 0.4em 0; color:#c8dde8; letter-spacing:0.04em;">Ember of Self</div>', passageEl);
+    await showText('<div style="font-size:0.62em; color:#556677; font-style:italic; margin-top:0.8em; line-height:1.7;">A flame carried within.</div>', passageEl);
 
     addLineBreak(passageEl);
     addLineBreak(passageEl);
-    addChoiceLink('Begin', 'awakening', passageEl);
+
+    // "Enter" — clicking enables stress and starts the game
+    const link = document.createElement('span');
+    link.className = 'choice-link dissolve';
+    link.textContent = 'Enter';
+    link.style.cssText = 'letter-spacing:0.14em; font-size:0.85em; color:#4a7a9f;';
+    link.addEventListener('click', () => {
+        textHistory.length = 0;  // clear history on new game
+        state.stressEnabled = true;
+        windStress = 0;
+        stillStress = 0;
+        goToPassage('awakening');
+    });
+    choicesArea.appendChild(link);
 };
 
 // ---------- NODE 1: THE AWAKENING ----------
 passages['awakening'] = async function() {
     setTheme('ice-theme');
-    emberContainer.style.display = 'block';
-    journalContainer.style.display = 'block';
+    state.stressEnabled = false;   // stress starts AFTER "Breathe" is chosen
+    journalContainer.style.display = 'flex';
     state.flameAlive = true;
-    state.flameIntensity = 20;
+    state.flameIntensity = 30;
+    state.maxFlameIntensity = 100;
+    flameCanvas.classList.remove('dead');
+    windStress = 0;
+    stillStress = 0;
     state.currentStats = state.maxIdentityStats;
     updateEmberVisual();
-    renderJournal();
+    // Pips not shown yet — appear after "Breathe"
 
     await delay(400);
     await showText('You wake in a cold, ice-blue void.', passageEl);
     await showText('<br><br>A tiny, dim ember hovers near your chest.', passageEl);
     await showText('<br><br>Your robe is dark blue - intricate patterns trace the hem.', passageEl);
     await showText('<br><br>Silence.', passageEl);
+    await showText('<br><br><em style="color:#7a6040; font-size:0.85em;">Do not let the flame die.</em><br><span style="font-size:0.65em; color:#445566; display:block; margin-top:0.5em; line-height:1.6;">Move your mouse gently and keep moving forward to keep it alive.</span>', passageEl);
     await showText('<br><br><span class="breathing-prompt">Breathe to stabilize the spark...</span>', passageEl);
 
     startIdleReminder();
@@ -956,7 +1183,13 @@ passages['breathing_ritual'] = async function() {
     state.hasBreathed = true;
     state.flameIntensity = 45;
     state.playerMoved = true;
+    state.stressEnabled = true;   // timer starts NOW
+    windStress = 0;
+    stillStress = 0;
     updateEmberVisual();
+
+    // Pips appear here with the gold-shine entrance
+    renderJournal(true);
 
     await showText('You breathe.', passageEl);
     await showText('<br><br>Slowly.', passageEl);
@@ -1078,15 +1311,15 @@ passages['sacrifice_decline'] = async function() {
 
 passages['wind_killed'] = async function() {
     await flashPipsOnDeath();
-    await fadeToBlack();
-    await delay(800);
-    await fadeFromBlack();
+    // Canvas already fading via CSS (added 'dead' class in updateStressMeters)
+    // Just wait for it to finish, then tell the story
+    await delay(700);
     setTheme('ice-theme');
 
     await showText('The wind...', passageEl);
     await showText('Your movement stirred the air too violently.', passageEl);
     await showText('The flame guttered, sputtered...', passageEl);
-    await showText(' And went out.', passageEl);
+    await showText('And went out.', passageEl);
     await showText('<span style="color:#556; font-size:0.75em;">Stillness keeps the ember alive. Chaos smothers it.</span>', passageEl);
 
     if (!state.hasSeenFlameHelp) {
@@ -1102,17 +1335,16 @@ passages['wind_killed'] = async function() {
 
 passages['overheat_killed'] = async function() {
     await flashPipsOnDeath();
+    // Canvas snuffed instantly — brief white flash to sell the 'too hot' moment
     heatOverlay.classList.add('active');
-    await delay(600);
+    await delay(300);
     heatOverlay.classList.remove('active');
-    await fadeToBlack();
-    await delay(800);
-    await fadeFromBlack();
+    await delay(400);
 
     await showText('The flame, unfed by motion, turned inward.', passageEl);
-    await showText('It burned too bright - too hot - consuming itself.', passageEl);
+    await showText('It burned too bright — consuming itself.', passageEl);
     await showText('A flash of white heat...', passageEl);
-    await showText(' Then nothing.', passageEl);
+    await showText('Then nothing.', passageEl);
     await showText('<span style="color:#556; font-size:0.75em;">A flame needs breath. Perfect stillness is suffocation.</span>', passageEl);
 
     if (!state.hasSeenFlameHelp) {
@@ -1447,9 +1679,18 @@ passages['survey_outro'] = async function() {
 function goToPassage(name) {
     clearAllTimers();
     stopIdleReminder();
+    // Close history drawer on any navigation
+    if (isPaused) closeHistory();
     state.currentPassage = name;
     textArea.innerHTML = '';
     choicesArea.innerHTML = '';
+
+    // Show history button once in actual game (not on title)
+    if (name !== 'title') {
+        historyBtn.style.display = 'block';
+    } else {
+        historyBtn.style.display = 'none';
+    }
 
     if (passages[name]) {
         passages[name]();
