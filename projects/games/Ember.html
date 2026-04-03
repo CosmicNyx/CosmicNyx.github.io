@@ -1208,8 +1208,14 @@ function stopIdleReminder() {
 }
 
 // ===== BODY THEME =====
+let _lastLivingTheme = 'ice-theme';
 function setTheme(theme) {
+    if (theme !== 'death-theme') _lastLivingTheme = theme;
     document.body.className = theme;
+}
+
+function restoreTheme() {
+    document.body.className = _lastLivingTheme;
 }
 
 // ===== SCREEN FADE =====
@@ -1401,6 +1407,7 @@ passages['sacrifice_accept'] = async function() {
     await animatePipLoss();
 
     reviveFlame(35);
+    restoreTheme();
 
     await showText('You feel something leave you.', passageEl);
     await showText('<br><br>A page in your journal fades to nothing.', passageEl);
@@ -1480,6 +1487,7 @@ passages['sacrifice_accept_return'] = async function() {
     await animatePipLoss();
 
     reviveFlame(35);
+    restoreTheme();
 
     await showText('You feel something leave you.', passageEl);
     await showText('A page in your journal fades to nothing.', passageEl);
