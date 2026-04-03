@@ -358,23 +358,23 @@ body.death-theme {
     top: 14px;
     right: 18px;
     z-index: 110;
-    color: rgba(180, 200, 220, 0.55);
-    font-size: 0.48em;
+    color: rgba(235, 200, 80, 1);
+    font-size: 0.58em;
     letter-spacing: 0.1em;
     cursor: pointer;
-    padding: 5px 11px;
+    padding: 6px 14px;
     border-radius: 4px;
-    border: 1px solid rgba(180, 200, 220, 0.18);
-    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(235, 200, 80, 0.55);
+    background: rgba(0, 0, 0, 0.3);
     transition: color 0.3s, background 0.3s, border-color 0.3s;
     user-select: none;
     font-family: Georgia, serif;
     font-style: italic;
 }
 #history-btn:hover {
-    color: rgba(180, 200, 220, 0.9);
-    background: rgba(255,255,255,0.07);
-    border-color: rgba(180, 200, 220, 0.4);
+    color: rgba(255, 230, 110, 1);
+    background: rgba(235, 200, 80, 0.12);
+    border-color: rgba(235, 200, 80, 0.8);
 }
 #history-btn.paused {
     color: rgba(210, 180, 120, 0.85);
@@ -431,6 +431,35 @@ body.death-theme {
     border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 .history-entry:last-child { border-bottom: none; }
+#history-advance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7em;
+    padding: 10px 20px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.15s;
+}
+#history-advance.visible { opacity: 1; }
+#history-advance .adv-label {
+    font-size: 0.6em;
+    color: rgba(150,170,190,0.4);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: 0.2em;
+}
+#history-advance .adv-btn {
+    font-size: 0.62em;
+    font-family: Georgia, serif;
+    color: rgba(150,180,210,0.7);
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    padding: 0.15em 0.6em;
+    transition: opacity 0.2s, color 0.2s;
+}
+#history-advance .adv-btn:hover { color: rgba(200,225,255,0.95); }
 </style>
 </head>
 <body class="ice-theme">
@@ -462,6 +491,7 @@ body.death-theme {
 <!-- History Drawer -->
 <div id="history-drawer">
     <div id="history-close">&#x2715; resume</div>
+    <div id="history-advance"></div>
     <div id="history-log"></div>
 </div>
 
@@ -519,6 +549,12 @@ const historyDrawer = document.getElementById('history-drawer');
 const historyClose = document.getElementById('history-close');
 const historyLog = document.getElementById('history-log');
 
+// ===== TEXT ADVANCE MODE =====
+// autoText=true: text advances on its own (click also works). false: must click.
+let autoText = true;
+let _advanceHandler = null;
+let _clickPending = false; // manual mode: click was earned by last showText, consume before next
+
 // ===== DEV MODE (Shift+Click to toggle) =====
 let devMode = false;
 const devIndicator = document.getElementById('dev-indicator');
@@ -547,6 +583,29 @@ function openHistory() {
     historyDrawer.classList.add('open');
     historyBtn.classList.add('paused');
     historyBtn.textContent = 'resume';
+
+    // Rebuild advance control
+    const historyAdvance = document.getElementById('history-advance');
+    historyAdvance.classList.remove('visible');
+    historyAdvance.innerHTML = '';
+    const advLbl = document.createElement('span');
+    advLbl.className = 'adv-label';
+    advLbl.textContent = 'text:';
+    historyAdvance.appendChild(advLbl);
+    [{ label: 'Auto', val: true }, { label: 'Manual', val: false }].forEach(opt => {
+        const btn = document.createElement('span');
+        btn.className = 'adv-btn';
+        btn.textContent = opt.label;
+        btn.style.opacity = autoText === opt.val ? '1' : '0.35';
+        btn.addEventListener('click', () => {
+            autoText = opt.val;
+            historyAdvance.querySelectorAll('.adv-btn').forEach(b => {
+                b.style.opacity = b.textContent === opt.label ? '1' : '0.35';
+            });
+        });
+        historyAdvance.appendChild(btn);
+    });
+
     // Rebuild log
     historyLog.innerHTML = '';
     textHistory.forEach(entry => {
@@ -557,6 +616,9 @@ function openHistory() {
     });
     // Scroll to bottom (most recent)
     historyLog.scrollTop = historyLog.scrollHeight;
+
+    // Fade in the advance control after the drawer slides in
+    requestAnimationFrame(() => requestAnimationFrame(() => historyAdvance.classList.add('visible')));
 }
 
 function closeHistory() {
@@ -564,6 +626,7 @@ function closeHistory() {
     state.stressEnabled = state._stressWas !== undefined ? state._stressWas : state.stressEnabled;
     startFlameAnimation();
     historyDrawer.classList.remove('open');
+    document.getElementById('history-advance').classList.remove('visible');
     historyBtn.classList.remove('paused');
     historyBtn.textContent = 'transcript';
     const resolvers = _pauseResolvers.splice(0);
@@ -701,20 +764,19 @@ let ashParticles = [];
 let mouseX = 0, mouseY = 0, prevMouseX = 0, prevMouseY = 0;
 let mouseSpeed = 0;
 let mouseSpeedRaw = 0;
-const MOUSE_SMOOTH = 0.12;
+const MOUSE_SMOOTH = 0.22;
 
 let windStress = 0;
-let stillStress = 0;
-const WIND_BUILD_RATE   = 0.6;
-const WIND_DECAY_RATE   = 0.08;
-const STILL_BUILD_RATE  = 0.06;
-const STILL_DECAY_RATE  = 0.15;
+let heatStress = 0;   // builds when flame is at max brightness too long
+const WIND_BUILD_RATE      = 0.6;
+const WIND_DECAY_RATE      = 0.08;
+const INTENSITY_RISE_RATE  = 0.22;   // gentle movement feeds oxygen → brighter
+const INTENSITY_DRAIN_RATE = 0.022;  // stillness starves oxygen → dimmer
+const HEAT_BUILD_RATE      = 0.18;   // rate heatStress rises when at max brightness
+const HEAT_DECAY_RATE      = 0.09;
 const STRESS_KILL_THRESHOLD = 100;
-const SPUTTER_WINDOW_MS  = 18000;  // sputters within this window count toward death
-const SPUTTER_REVIVE_MS  = 3000;   // ms for flame to grow back after a sputter
+const SPUTTER_REVIVE_MS  = 3000;
 
-let sputterCount = 0;
-let lastSputterTime = 0;
 let sputterRecoveryActive = false;
 let sputterRecoveryStart = 0;
 let sputterTargetIntensity = 50;
@@ -752,7 +814,7 @@ function updateStressMeters() {
 
     const mi = getMouseInfluence();
 
-    // WIND: fast mouse builds stress
+    // WIND: too fast builds wind stress
     if (mi > 0.5) {
         const excess = (mi - 0.5) / 0.5;
         windStress = Math.min(STRESS_KILL_THRESHOLD, windStress + WIND_BUILD_RATE * excess);
@@ -760,48 +822,56 @@ function updateStressMeters() {
         windStress = Math.max(0, windStress - WIND_DECAY_RATE);
     }
 
-    // STILL: perfectly still builds stress; any movement drains it fast
+    // INTENSITY: gentle movement feeds oxygen (rises), stillness or excess speed drains it
     if (mi < 0.02) {
-        stillStress = Math.min(STRESS_KILL_THRESHOLD, stillStress + STILL_BUILD_RATE);
-        state.flameIntensity = Math.min(state.maxFlameIntensity, state.flameIntensity + 0.04);
-    } else {
-        stillStress = Math.max(0, stillStress - STILL_DECAY_RATE * Math.max(0.1, mi));
-        // Movement drains intensity — no floor, can reach 0
-        state.flameIntensity = Math.max(0, state.flameIntensity - 0.15 * Math.max(0.08, mi));
+        // No movement — flame suffocates, slowly dims
+        state.flameIntensity = Math.max(0, state.flameIntensity - INTENSITY_DRAIN_RATE);
+    } else if (mi <= 0.5) {
+        // Gentle movement — oxygen feeds the flame, grows brighter
+        state.flameIntensity = Math.min(state.maxFlameIntensity,
+            state.flameIntensity + INTENSITY_RISE_RATE * (mi / 0.5));
+    } else if (mi > 0.5) {
+        // Too fast — wind steals heat quickly, but only while actively fast
+        const excess = (mi - 0.5) / 0.5;
+        state.flameIntensity = Math.max(0, state.flameIntensity - INTENSITY_DRAIN_RATE * 2.5 * excess);
     }
 
-    // BAR EMPTY: flame dies from being drained out by movement
+    // HEAT STRESS: flame held at max brightness too long → burns out
+    if (state.flameIntensity >= state.maxFlameIntensity) {
+        heatStress = Math.min(STRESS_KILL_THRESHOLD, heatStress + HEAT_BUILD_RATE);
+    } else {
+        heatStress = Math.max(0, heatStress - HEAT_DECAY_RATE);
+    }
+
+    // DEATH — no movement: flame starves of oxygen
     if (state.flameIntensity <= 0 && state.flameAlive) {
-        windStress = 0;
-        stillStress = 0;
+        windStress = 0; heatStress = 0;
         state.lastPassageBeforeDeath = state.currentPassage;
         killFlame();
         flameCanvas.classList.add('dead');
-        const t = setTimeout(() => goToPassage('wind_killed'), 900);
+        const t = setTimeout(() => goToPassage('no_movement_killed'), 900);
         state.timers.push(t);
     }
 
-    // OVERHEAT (too still): flame canvas flashes white then snuffs
-    if (stillStress >= STRESS_KILL_THRESHOLD) {
-        windStress = 0;
-        stillStress = 0;
+    // DEATH — too bright: white flash on canvas then burns out
+    if (heatStress >= STRESS_KILL_THRESHOLD) {
+        windStress = 0; heatStress = 0;
         state.lastPassageBeforeDeath = state.currentPassage;
-        overheatFlash = 1.0;       // white burst on flame canvas only
-        state.flameAlive = false;  // stop new particle spawning
-        heatOverlay.classList.remove('active');  // clear screen overlay immediately
+        overheatFlash = 1.0;
+        state.flameAlive = false;
+        heatOverlay.classList.remove('active');
         const t1 = setTimeout(() => {
-            particles = []; sparks = [];   // wipe remaining particles after flash
+            particles = []; sparks = [];
             flameCanvas.classList.add('dead');
-            const t2 = setTimeout(() => goToPassage('overheat_killed'), 900);
+            const t2 = setTimeout(() => goToPassage('brightness_killed'), 900);
             state.timers.push(t2);
         }, 350);
         state.timers.push(t1);
     }
 
-    // WIND (too fast): immediate death
+    // DEATH — too fast: wind blows it out
     if (windStress >= STRESS_KILL_THRESHOLD) {
-        windStress = 0;
-        stillStress = 0;
+        windStress = 0; heatStress = 0;
         state.lastPassageBeforeDeath = state.currentPassage;
         killFlame();
         flameCanvas.classList.add('dead');
@@ -905,14 +975,14 @@ function flameLoop() {
         flameCtx.fillStyle = coreGlow;
         flameCtx.fill();
 
-        // Ash when moving very fast or near still-overheat
+        // Ash when moving very fast or near heat-death
         if (mi > 0.65 && Math.random() < mi * 0.2) ashParticles.push(new AshParticle());
-        if (stillStress > 70 && Math.random() < 0.15) ashParticles.push(new AshParticle());
+        if (heatStress > 70 && Math.random() < 0.15) ashParticles.push(new AshParticle());
 
-        // Heat overlay when approaching still-death
-        if (stillStress > 65) {
+        // Heat overlay when approaching brightness-death
+        if (heatStress > 65) {
             heatOverlay.classList.add('active');
-        } else if (stillStress < 45 && windStress < 45) {
+        } else if (heatStress < 45 && windStress < 45) {
             heatOverlay.classList.remove('active');
         }
 
@@ -970,6 +1040,8 @@ function clearAllTimers() {
     if (state.thermalTimer) { clearInterval(state.thermalTimer); state.thermalTimer = null; }
     sputterRecoveryActive = false;
     overheatFlash = 0;
+    windStress = 0;
+    heatStress = 0;
 }
 
 function waitIfPaused() {
@@ -994,7 +1066,45 @@ function readingDelay(html) {
     return Math.max(1400, Math.min(5500, 1000 + words * 160));
 }
 
+function cancelAdvanceClick() {
+    if (_advanceHandler) {
+        document.removeEventListener('click', _advanceHandler);
+        _advanceHandler = null;
+    }
+    document.body.style.cursor = '';
+}
+
+function waitForAdvanceClick() {
+    cancelAdvanceClick();
+    if (!autoText) document.body.style.cursor = 'pointer';
+    return new Promise(resolve => {
+        _advanceHandler = (e) => {
+            if (isPaused) return;
+            if (e.button !== 0) return;
+            if (e.shiftKey) return;
+            if (e.target.closest('.choice-link')) return;
+            if (e.target.closest('#history-drawer')) return;
+            if (e.target.closest('#history-btn')) return;
+            const h = _advanceHandler;
+            _advanceHandler = null;
+            document.removeEventListener('click', h);
+            document.body.style.cursor = '';
+            resolve();
+        };
+        document.addEventListener('click', _advanceHandler);
+    });
+}
+
 async function showText(text, _container) {
+    // Manual mode: consume the pending click BEFORE showing the next text.
+    // This means choices after the last showText appear immediately — no click needed.
+    if (!autoText && _clickPending) {
+        _clickPending = false;
+        await waitForAdvanceClick();
+    } else {
+        cancelAdvanceClick();
+    }
+
     const existing = textArea.querySelector('.active-text');
     if (existing) {
         existing.classList.remove('dissolve');
@@ -1006,8 +1116,15 @@ async function showText(text, _container) {
     span.className = 'dissolve active-text';
     span.innerHTML = text.replace(/^(<br\s*\/?>)+/g, '');
     textArea.appendChild(span);
-    addToHistory(text);   // record to history
-    await delay(readingDelay(text));
+    addToHistory(text);
+
+    if (autoText) {
+        const clickRace = waitForAdvanceClick();
+        await Promise.race([delay(readingDelay(text)), clickRace]);
+        cancelAdvanceClick();
+    } else {
+        _clickPending = true; // next showText (or goToPassage) will consume this
+    }
     return span;
 }
 
@@ -1027,11 +1144,13 @@ async function showFlameHelp(deathType) {
     const dim = 'color:rgba(180,205,225,0.48);';
     await showText(`<span style="${dim}">The flame follows your hand.</span>`, passageEl);
     if (deathType === 'wind') {
-        await showText(`<span style="${dim}">Moving too fast blows it out.</span>`, passageEl);
+        await showText(`<span style="${dim}">Moving too fast steals the air — it blows out.</span>`, passageEl);
+    } else if (deathType === 'bright') {
+        await showText(`<span style="${dim}">The flame burned too bright for too long and consumed itself.</span>`, passageEl);
     } else {
-        await showText(`<span style="${dim}">Staying perfectly still smothers it.</span>`, passageEl);
+        await showText(`<span style="${dim}">No movement, no oxygen — the flame starved.</span>`, passageEl);
     }
-    await showText(`<span style="${dim}">A slow, gentle drift across the screen keeps it alive.</span>`, passageEl);
+    await showText(`<span style="${dim}">Keep moving. Keep it fed. Keep it alive.</span>`, passageEl);
 
     await new Promise(resolve => {
         const link = document.createElement('span');
@@ -1050,6 +1169,8 @@ async function showFlameHelp(deathType) {
 function addLineBreak(_container) {}
 
 function addChoiceLink(text, targetPassage, _container, opts = {}) {
+    _clickPending = false;
+    cancelAdvanceClick();
     const link = document.createElement('span');
     link.className = 'choice-link dissolve';
     link.textContent = text;
@@ -1102,7 +1223,7 @@ function reviveFlame(intensity) {
     ashParticles = [];
     flameCanvas.classList.remove('dead');
     windStress = 0;
-    stillStress = 0;
+    heatStress = 0;
     heatOverlay.classList.remove('active');
 }
 
@@ -1247,27 +1368,95 @@ passages['title'] = async function() {
     emberContainer.style.display = 'none';
     flameBarContainer.style.display = 'none';
     journalContainer.style.display = 'none';
- 
-    // Disable stress meters on title so flame can't die while waiting
     state.flameAlive = false;
- 
+
     const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && !window.matchMedia('(pointer: fine)').matches);
- 
-    await delay(500);
-    await showText('<div style="font-size:0.6em; color:#556;">A flame carried in silence</div>', passageEl);
-    await showText('<div style="font-size:2em; font-weight:bold; margin: 0.5em 0; color:#c8dde8;">Ember of Self</div><div style="font-size:0.5em; color:#7a4a1e; margin-top:0.5em; letter-spacing:0.04em;">requires a mouse to play</div>', passageEl);
- 
-    addLineBreak(passageEl);
-    addLineBreak(passageEl);
- 
+
     if (isMobile) {
+        await delay(500);
+        await showText('<div style="font-size:2em; font-weight:bold; margin: 0.5em 0; color:#c8dde8;">Ember of Self</div>', passageEl);
         const msg = document.createElement('div');
         msg.style.cssText = 'font-size:0.7em; color:#7a4a1e; line-height:1.6; max-width:340px; margin: 0 auto;';
         msg.innerHTML = 'This game requires a mouse and is not playable on mobile.<br><br>Please open it on a desktop or laptop.';
         choicesArea.appendChild(msg);
-    } else {
-        addChoiceLink('Begin', 'awakening', passageEl);
+        return;
     }
+
+    // ── STEP 1: Text advance option fades in before anything else ──
+    await new Promise(resolve => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'dissolve';
+        wrapper.style.cssText = 'text-align:center;';
+
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'font-size:0.7em; color:#667; margin-bottom:0.7em; letter-spacing:0.08em;';
+        lbl.textContent = 'Text Advance';
+        wrapper.appendChild(lbl);
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex; gap:1.8em; justify-content:center; margin-bottom:0.5em;';
+        wrapper.appendChild(btnRow);
+
+        const desc = document.createElement('div');
+        desc.style.cssText = 'font-size:0.65em; color:#556; min-height:1.4em; margin-top:0.3em;';
+        wrapper.appendChild(desc);
+
+        const hint2 = document.createElement('div');
+        hint2.style.cssText = 'font-size:0.52em; color:#3a4a55; margin-top:1.1em; line-height:1.6;';
+        hint2.textContent = 'You can change this and view previous text in the transcript button at the top right.';
+        wrapper.appendChild(hint2);
+
+        const opts = [
+            { label: 'Auto',   val: true,  hint: 'Text advances on its own. Click to skip ahead.' },
+            { label: 'Manual', val: false, hint: 'Text waits for a click before continuing.' },
+        ];
+
+        function select(val) {
+            autoText = val;
+            btnRow.querySelectorAll('span').forEach(b => {
+                b.style.opacity = (b.dataset.val === String(val)) ? '1' : '0.35';
+            });
+            desc.textContent = opts.find(o => o.val === val).hint;
+        }
+
+        opts.forEach(o => {
+            const btn = document.createElement('span');
+            btn.className = 'choice-link';
+            btn.textContent = o.label;
+            btn.dataset.val = String(o.val);
+            btn.addEventListener('click', () => select(o.val));
+            btn.style.opacity = autoText === o.val ? '1' : '0.35';
+            btnRow.appendChild(btn);
+        });
+        desc.textContent = opts.find(o => o.val === autoText).hint;
+
+        textArea.appendChild(wrapper);
+
+        const confirmBtn = document.createElement('span');
+        confirmBtn.className = 'choice-link dissolve';
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.addEventListener('click', () => resolve());
+        choicesArea.appendChild(confirmBtn);
+    });
+
+    // ── STEP 2: Dissolve out the selector ──
+    choicesArea.innerHTML = '';
+    Array.from(textArea.children).forEach(el => {
+        el.classList.remove('dissolve');
+        el.classList.add('dissolve-out');
+    });
+    await new Promise(r => setTimeout(r, 400));
+    textArea.innerHTML = '';
+
+    // ── STEP 3: Title text ──
+    await delay(300);
+    await showText('<div style="font-size:0.6em; color:#556;">A flame carried in silence</div>', passageEl);
+    await showText('<div style="font-size:2em; font-weight:bold; margin: 0.5em 0; color:#c8dde8;">Ember of Self</div><div style="font-size:0.5em; color:#7a4a1e; margin-top:0.5em; letter-spacing:0.04em;">requires a mouse to play</div>', passageEl);
+
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+
+    addChoiceLink('Begin', 'awakening', passageEl);
 };
 
 // ---------- NODE 1: THE AWAKENING ----------
@@ -1281,7 +1470,7 @@ passages['awakening'] = async function() {
     state.maxFlameIntensity = 100;
     flameCanvas.classList.remove('dead');
     windStress = 0;
-    stillStress = 0;
+    heatStress = 0;
     state.currentStats = state.maxIdentityStats;
     updateEmberVisual();
     // Pips not shown yet — appear after "Breathe"
@@ -1309,7 +1498,7 @@ passages['breathing_ritual'] = async function() {
     state.playerMoved = true;
     state.stressEnabled = true;   // timer starts NOW
     windStress = 0;
-    stillStress = 0;
+    heatStress = 0;
     updateEmberVisual();
 
     // Pips appear here with the gold-shine entrance
@@ -1436,16 +1625,12 @@ passages['sacrifice_decline'] = async function() {
 
 passages['wind_killed'] = async function() {
     await flashPipsOnDeath();
-    // Canvas already fading via CSS (added 'dead' class in updateStressMeters)
-    // Just wait for it to finish, then tell the story
     await delay(700);
     setTheme('death-theme');
 
-    await showText('The wind...', passageEl);
-    await showText('Your movement stirred the air too violently.', passageEl);
-    await showText('The flame guttered, sputtered...', passageEl);
-    await showText('And went out.', passageEl);
-    await showText('<span style="color:#556; font-size:0.75em;">Stillness keeps the ember alive. Chaos smothers it.</span>', passageEl);
+    await showText('You moved too fast.', passageEl);
+    await showText('The rush of air tore through it.', passageEl);
+    await showText('The flame goes out.', passageEl);
 
     if (!state.hasSeenFlameHelp) {
         await showFlameHelp('wind');
@@ -1458,16 +1643,34 @@ passages['wind_killed'] = async function() {
     addChoiceLink('Refuse', 'sacrifice_decline', passageEl);
 };
 
-passages['overheat_killed'] = async function() {
+passages['brightness_killed'] = async function() {
     await flashPipsOnDeath();
     setTheme('death-theme');
     await delay(500);
 
-    await showText('The flame, unfed by motion, turned inward.', passageEl);
-    await showText('It burned too bright — consuming itself.', passageEl);
-    await showText('A flash of white heat...', passageEl);
-    await showText('Then nothing.', passageEl);
-    await showText('<span style="color:#556; font-size:0.75em;">A flame needs breath. Perfect stillness is suffocation.</span>', passageEl);
+    await showText('Too bright. Too long.', passageEl);
+    await showText('The flame burned itself out.', passageEl);
+    await showText('Nothing left to sustain it.', passageEl);
+
+    if (!state.hasSeenFlameHelp) {
+        await showFlameHelp('bright');
+    }
+
+    await showText('<em style="color:#aa7744;">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
+
+    state.optionsShownTime = Date.now();
+    addChoiceLink('Sacrifice', 'sacrifice_accept_return', passageEl);
+    addChoiceLink('Refuse', 'sacrifice_decline', passageEl);
+};
+
+passages['no_movement_killed'] = async function() {
+    await flashPipsOnDeath();
+    await delay(700);
+    setTheme('death-theme');
+
+    await showText('You stopped moving.', passageEl);
+    await showText('The flame lost its air.', passageEl);
+    await showText('It faded, quietly, to nothing.', passageEl);
 
     if (!state.hasSeenFlameHelp) {
         await showFlameHelp('still');
@@ -1801,6 +2004,8 @@ passages['survey_outro'] = async function() {
 // ==========================================================
 function goToPassage(name) {
     clearAllTimers();
+    cancelAdvanceClick();
+    _clickPending = false;
     stopIdleReminder();
     // Close history drawer on any navigation
     if (isPaused) closeHistory();
