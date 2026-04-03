@@ -156,11 +156,20 @@ body {
 #flame-canvas.dead {
     opacity: 0;
 }
-#ember-label {
-    font-size: 0.5em;
-    color: #887;
-    margin-top: -10px;
-    transition: color 1s;
+#ember-bar-track {
+    width: 60px;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    margin: 5px auto 0;
+    overflow: hidden;
+}
+#ember-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    background: linear-gradient(to right, #cc3300, #ff8800);
+    transition: width 0.4s ease, background 0.6s ease;
 }
 
 /* ===== FLAME BAR ===== */
@@ -213,13 +222,15 @@ body {
     100% { opacity: 1; transform: scale(1); background: #aac;
            box-shadow: 0 0 4px rgba(170,170,204,0.3); }
 }
-@keyframes pip-die {
-    0%   { transform: scale(1);    background: #ffe033;
-           box-shadow: 0 0 18px rgba(255,220,0,1), 0 0 36px rgba(255,140,0,0.7); opacity: 1; }
-    40%  { transform: scale(1.6);  background: #ffaa00;
-           box-shadow: 0 0 28px rgba(255,180,0,1), 0 0 55px rgba(255,100,0,0.8); opacity: 1; }
-    100% { transform: scale(1);    background: #2a2a3a;
-           box-shadow: none; opacity: 0.35; }
+@keyframes pip-sacrifice {
+    0%   { transform: scale(1);    background: #aac;    box-shadow: none; opacity: 1; }
+    8%   { transform: scale(1.55); background: #ffe033;
+           box-shadow: 0 0 14px rgba(255,220,0,1), 0 0 30px rgba(255,170,0,0.85), 0 0 52px rgba(255,130,0,0.45); opacity: 1; }
+    26%  { transform: scale(1.5);  background: #ffdd00;
+           box-shadow: 0 0 3px rgba(255,200,0,0.2), 0 0 6px rgba(255,140,0,0.08); opacity: 1; }
+    38%  { transform: scale(1);    background: #ccaa00; box-shadow: none; opacity: 1; }
+    78%  { transform: scale(1);    background: #2a2a3a; box-shadow: none; opacity: 0.35; }
+    100% { transform: scale(1);    background: #2a2a3a; box-shadow: none; opacity: 0.35; }
 }
 
 .journal-pip {
@@ -239,8 +250,8 @@ body {
     box-shadow: 0 0 8px rgba(255,220,0,0.95), 0 0 18px rgba(255,180,0,0.5);
     transition: background 0.2s, box-shadow 0.2s;
 }
-.journal-pip.dying {
-    animation: pip-die 0.75s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+.journal-pip.sacrificing {
+    animation: pip-sacrifice 1.1s ease-in-out forwards;
     pointer-events: none;
 }
 .journal-pip.lost {
@@ -296,6 +307,26 @@ body.thaw-theme {
 body.ember-end-theme {
     background: linear-gradient(to bottom, #120e08, #1a1208);
     color: #c8a96e;
+}
+body.death-theme {
+    background: #04040a;
+    color: #667;
+    transition: background-color 1.2s ease, color 1.2s ease;
+}
+
+/* ===== DEV INDICATOR ===== */
+#dev-indicator {
+    position: fixed;
+    bottom: 8px;
+    left: 10px;
+    font-size: 0.32em;
+    font-family: monospace;
+    letter-spacing: 0.12em;
+    color: rgba(255, 90, 90, 0.55);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 300;
 }
 
 /* ===== SCREEN FADE ===== */
@@ -413,8 +444,9 @@ body.ember-end-theme {
 <!-- Ember / Flame Indicator -->
 <div id="ember-container">
     <canvas id="flame-canvas" width="120" height="160"></canvas>
-    <div id="ember-label"></div>
+    <div id="ember-bar-track"><div id="ember-bar-fill"></div></div>
 </div>
+<div id="dev-indicator">DEV</div>
 
 <!-- Flame Intensity Bar -->
 <div id="flame-bar-container" style="display:none;">
@@ -475,7 +507,7 @@ const textArea = document.getElementById('text-area');
 const choicesArea = document.getElementById('choices-area');
 const flameCanvas = document.getElementById('flame-canvas');
 const flameCtx = flameCanvas.getContext('2d');
-const emberLabel = document.getElementById('ember-label');
+const emberBarFill = document.getElementById('ember-bar-fill');
 const emberContainer = document.getElementById('ember-container');
 const flameBarContainer = document.getElementById('flame-bar-container');
 const flameBar = document.getElementById('flame-bar');
@@ -486,6 +518,16 @@ const historyBtn = document.getElementById('history-btn');
 const historyDrawer = document.getElementById('history-drawer');
 const historyClose = document.getElementById('history-close');
 const historyLog = document.getElementById('history-log');
+
+// ===== DEV MODE (Shift+Click to toggle) =====
+let devMode = false;
+const devIndicator = document.getElementById('dev-indicator');
+document.addEventListener('click', (e) => {
+    if (e.shiftKey) {
+        devMode = !devMode;
+        devIndicator.style.opacity = devMode ? '1' : '0';
+    }
+});
 
 // ===== HISTORY LOG =====
 const textHistory = [];   // plain-text entries of all shown lines
@@ -663,11 +705,20 @@ const MOUSE_SMOOTH = 0.12;
 
 let windStress = 0;
 let stillStress = 0;
-const WIND_BUILD_RATE   = 0.25;
-const WIND_DECAY_RATE   = 0.12;
+const WIND_BUILD_RATE   = 0.6;
+const WIND_DECAY_RATE   = 0.08;
 const STILL_BUILD_RATE  = 0.06;
 const STILL_DECAY_RATE  = 0.15;
 const STRESS_KILL_THRESHOLD = 100;
+const SPUTTER_WINDOW_MS  = 18000;  // sputters within this window count toward death
+const SPUTTER_REVIVE_MS  = 3000;   // ms for flame to grow back after a sputter
+
+let sputterCount = 0;
+let lastSputterTime = 0;
+let sputterRecoveryActive = false;
+let sputterRecoveryStart = 0;
+let sputterTargetIntensity = 50;
+let overheatFlash = 0;  // 0-1, drives white burst on flame canvas
 
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -702,8 +753,8 @@ function updateStressMeters() {
     const mi = getMouseInfluence();
 
     // WIND: fast mouse builds stress
-    if (mi > 0.65) {
-        const excess = (mi - 0.65) / 0.35;
+    if (mi > 0.5) {
+        const excess = (mi - 0.5) / 0.5;
         windStress = Math.min(STRESS_KILL_THRESHOLD, windStress + WIND_BUILD_RATE * excess);
     } else {
         windStress = Math.max(0, windStress - WIND_DECAY_RATE);
@@ -712,44 +763,64 @@ function updateStressMeters() {
     // STILL: perfectly still builds stress; any movement drains it fast
     if (mi < 0.02) {
         stillStress = Math.min(STRESS_KILL_THRESHOLD, stillStress + STILL_BUILD_RATE);
-        // stillness = flame grows toward max
         state.flameIntensity = Math.min(state.maxFlameIntensity, state.flameIntensity + 0.04);
     } else {
         stillStress = Math.max(0, stillStress - STILL_DECAY_RATE * Math.max(0.1, mi));
+        // Movement drains intensity — no floor, can reach 0
+        state.flameIntensity = Math.max(0, state.flameIntensity - 0.15 * Math.max(0.08, mi));
     }
 
-    // OVERHEAT (too still): IMMEDIATE snuff — no warning
+    // BAR EMPTY: flame dies from being drained out by movement
+    if (state.flameIntensity <= 0 && state.flameAlive) {
+        windStress = 0;
+        stillStress = 0;
+        state.lastPassageBeforeDeath = state.currentPassage;
+        killFlame();
+        flameCanvas.classList.add('dead');
+        const t = setTimeout(() => goToPassage('wind_killed'), 900);
+        state.timers.push(t);
+    }
+
+    // OVERHEAT (too still): flame canvas flashes white then snuffs
     if (stillStress >= STRESS_KILL_THRESHOLD) {
         windStress = 0;
         stillStress = 0;
         state.lastPassageBeforeDeath = state.currentPassage;
-        // Instant visual kill — canvas goes opaque-dead immediately
-        flameOpacity = 1;
-        flameCanvas.classList.remove('dead');
-        killFlame();
-        // Small delay so the "empty canvas" registers, then navigate
-        setTimeout(() => {
+        overheatFlash = 1.0;       // white burst on flame canvas only
+        state.flameAlive = false;  // stop new particle spawning
+        heatOverlay.classList.remove('active');  // clear screen overlay immediately
+        const t1 = setTimeout(() => {
+            particles = []; sparks = [];   // wipe remaining particles after flash
             flameCanvas.classList.add('dead');
-            goToPassage('overheat_killed');
-        }, 80);
+            const t2 = setTimeout(() => goToPassage('overheat_killed'), 900);
+            state.timers.push(t2);
+        }, 350);
+        state.timers.push(t1);
     }
 
-    // WIND (too fast): flame fades out, then navigate
+    // WIND (too fast): immediate death
     if (windStress >= STRESS_KILL_THRESHOLD) {
         windStress = 0;
         stillStress = 0;
         state.lastPassageBeforeDeath = state.currentPassage;
         killFlame();
-        flameCanvas.classList.add('dead'); // CSS fade over 1.2s
-        setTimeout(() => {
-            goToPassage('wind_killed');
-        }, 900);
+        flameCanvas.classList.add('dead');
+        const t = setTimeout(() => goToPassage('wind_killed'), 900);
+        state.timers.push(t);
     }
 }
 
 function flameLoop() {
     updateMouseSpeed();
     updateStressMeters();
+
+    // Sputter recovery: slowly grow flame from tiny spark back to normal
+    if (sputterRecoveryActive && state.flameAlive) {
+        const progress = Math.min(1, (Date.now() - sputterRecoveryStart) / SPUTTER_REVIVE_MS);
+        state.flameIntensity = 5 + (sputterTargetIntensity - 5) * progress;
+        if (progress >= 1) sputterRecoveryActive = false;
+    }
+
     flameCtx.clearRect(0, 0, FLAME_W, FLAME_H);
 
     // Always render flame particles while flameAlive
@@ -865,6 +936,19 @@ function flameLoop() {
         if (ashParticles[i].life <= 0) ashParticles.splice(i, 1);
     }
 
+    // Overheat canvas flash — white burst on the flame canvas only, not the screen
+    if (overheatFlash > 0) {
+        const fa = overheatFlash * 0.92;
+        const burst = flameCtx.createRadialGradient(FLAME_CX, FLAME_BASE_Y - 12, 0, FLAME_CX, FLAME_BASE_Y, 58);
+        burst.addColorStop(0,   `rgba(255, 255, 255, ${fa})`);
+        burst.addColorStop(0.2, `rgba(255, 245, 210, ${fa * 0.75})`);
+        burst.addColorStop(0.6, `rgba(255, 160, 40,  ${fa * 0.35})`);
+        burst.addColorStop(1,   'rgba(200, 60, 0, 0)');
+        flameCtx.fillStyle = burst;
+        flameCtx.fillRect(0, 0, FLAME_W, FLAME_H);
+        overheatFlash = Math.max(0, overheatFlash - 0.045);
+    }
+
     updateEmberVisual();
     flameAnimId = requestAnimationFrame(flameLoop);
 }
@@ -884,6 +968,8 @@ function clearAllTimers() {
     state.timers = [];
     if (state.idleTimer) { clearInterval(state.idleTimer); state.idleTimer = null; }
     if (state.thermalTimer) { clearInterval(state.thermalTimer); state.thermalTimer = null; }
+    sputterRecoveryActive = false;
+    overheatFlash = 0;
 }
 
 function waitIfPaused() {
@@ -892,6 +978,7 @@ function waitIfPaused() {
 }
 
 function delay(ms) {
+    if (devMode) ms = Math.min(ms, 300);
     return new Promise(resolve => {
         const t = setTimeout(async () => {
             await waitIfPaused();
@@ -986,19 +1073,17 @@ function addChoiceLink(text, targetPassage, _container, opts = {}) {
 // ===== EMBER VISUALS =====
 function updateEmberVisual() {
     if (!state.flameAlive) {
-        emberLabel.textContent = '';
+        emberBarFill.style.width = '0%';
         return;
     }
     const ratio = state.flameIntensity / state.maxFlameIntensity;
-    if (ratio < 0.25) {
-        emberLabel.textContent = 'dim';
-        emberLabel.style.color = '#665544';
-    } else if (ratio < 0.6) {
-        emberLabel.textContent = 'steady';
-        emberLabel.style.color = '#887766';
+    emberBarFill.style.width = (ratio * 100) + '%';
+    if (ratio < 0.3) {
+        emberBarFill.style.background = 'linear-gradient(to right, #661100, #cc3300)';
+    } else if (ratio < 0.65) {
+        emberBarFill.style.background = 'linear-gradient(to right, #cc3300, #ff8800)';
     } else {
-        emberLabel.textContent = 'bright';
-        emberLabel.style.color = '#aa9955';
+        emberBarFill.style.background = 'linear-gradient(to right, #ff6600, #ffcc00)';
     }
 }
 
@@ -1007,6 +1092,7 @@ function killFlame() {
     state.flameIntensity = 0;
     particles = [];
     sparks = [];
+    heatOverlay.classList.remove('active');
     // canvas fade is handled by callers via flameCanvas.classList
 }
 
@@ -1053,7 +1139,7 @@ async function flashPipsOnDeath() {
     pips.forEach(p => p.classList.remove('flash'));
 }
 
-// Only the pip being lost lights up gold, then collapses to a grey dead dot
+// Only the pip being lost lights up gold, bursts, then collapses to grey
 async function animatePipLoss() {
     const pips = [...journalContainer.querySelectorAll('.journal-pip')];
     const dyingPip = pips[state.currentStats]; // index = new value = pip just lost
@@ -1061,15 +1147,14 @@ async function animatePipLoss() {
         renderJournal(false);
         return;
     }
-    // Gold flash on just this pip
-    dyingPip.classList.add('flash');
-    await delay(480);
-    // Add dying BEFORE removing flash so the animation starts from gold
-    // (removing flash first would cause a transition-vs-animation race)
-    dyingPip.classList.add('dying');
-    dyingPip.classList.remove('flash');
-    await delay(800);
-    dyingPip.classList.remove('dying');
+
+    // Run the keyframe animation — starts from pip's current colour,
+    // swells gold, bursts, then collapses to grey. 'forwards' keeps final frame.
+    dyingPip.classList.add('sacrificing');
+    await delay(1120);
+
+    // Lock in as lost. The lost class matches the animation's 100% frame
+    // (background #2a2a3a, opacity 0.35) so there is no visual snap.
     dyingPip.classList.add('lost');
 }
 
@@ -1149,56 +1234,34 @@ function fadeFromBlack() {
 
 const passages = {};
 
+
 // ---------- TITLE ----------
 passages['title'] = async function() {
     setTheme('ice-theme');
-    state.stressEnabled = false;
-    windStress = 0;
-    stillStress = 0;
-    heatOverlay.classList.remove('active');
-
-    // Title: flame inert — prevents stress meters from firing on start screen
-    state.flameAlive = false;
-    state.flameIntensity = 0;
-    state.maxFlameIntensity = 100;
-    flameCanvas.classList.add('dead');
-
+    emberContainer.style.display = 'none';
     flameBarContainer.style.display = 'none';
     journalContainer.style.display = 'none';
-
-    const isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-
-    await delay(600);
-    await showText('<div style="font-size:0.55em; color:#445566; letter-spacing:0.12em; text-transform:uppercase;">A flame carried in silence</div>', passageEl);
-    await showText('<div style="font-size:2em; font-weight:bold; margin: 0.4em 0; color:#c8dde8; letter-spacing:0.04em;">Ember of Self</div>', passageEl);
-    await showText('<div style="font-size:0.62em; color:#556677; font-style:italic; margin-top:0.8em; line-height:1.7;">A flame carried within.</div>', passageEl);
-
+ 
+    // Disable stress meters on title so flame can't die while waiting
+    state.flameAlive = false;
+ 
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && !window.matchMedia('(pointer: fine)').matches);
+ 
+    await delay(500);
+    await showText('<div style="font-size:0.6em; color:#556;">A flame carried in silence</div>', passageEl);
+    await showText('<div style="font-size:2em; font-weight:bold; margin: 0.5em 0; color:#c8dde8;">Ember of Self</div><div style="font-size:0.5em; color:#7a4a1e; margin-top:0.5em; letter-spacing:0.04em;">requires a mouse to play</div>', passageEl);
+ 
+    addLineBreak(passageEl);
+    addLineBreak(passageEl);
+ 
     if (isMobile) {
         const msg = document.createElement('div');
-        msg.style.cssText = 'font-size:0.58em; color:#445566; font-style:italic; line-height:2; margin-top:1.2em;';
-        msg.innerHTML = 'This experience requires a mouse.<br>Please visit on a desktop or laptop.';
+        msg.style.cssText = 'font-size:0.7em; color:#7a4a1e; line-height:1.6; max-width:340px; margin: 0 auto;';
+        msg.innerHTML = 'This game requires a mouse and is not playable on mobile.<br><br>Please open it on a desktop or laptop.';
         choicesArea.appendChild(msg);
-        return;
+    } else {
+        addChoiceLink('Begin', 'awakening', passageEl);
     }
-
-    const notice = document.createElement('div');
-    notice.style.cssText = 'font-size:0.5em; color:#3a4a58; letter-spacing:0.07em; margin-bottom:1em;';
-    notice.textContent = 'Requires a mouse to play';
-    choicesArea.appendChild(notice);
-
-    const link = document.createElement('span');
-    link.className = 'choice-link dissolve';
-    link.textContent = 'Enter';
-    link.style.cssText = 'letter-spacing:0.14em; font-size:0.85em; color:#4a7a9f;';
-    link.addEventListener('click', () => {
-        textHistory.length = 0;
-        state.stressEnabled = true;
-        windStress = 0;
-        stillStress = 0;
-        flameCanvas.classList.remove('dead');
-        goToPassage('awakening');
-    });
-    choicesArea.appendChild(link);
 };
 
 // ---------- NODE 1: THE AWAKENING ----------
@@ -1206,6 +1269,7 @@ passages['awakening'] = async function() {
     setTheme('ice-theme');
     state.stressEnabled = false;   // stress starts AFTER "Breathe" is chosen
     journalContainer.style.display = 'flex';
+    emberContainer.style.display = '';
     state.flameAlive = true;
     state.flameIntensity = 30;
     state.maxFlameIntensity = 100;
@@ -1368,7 +1432,7 @@ passages['wind_killed'] = async function() {
     // Canvas already fading via CSS (added 'dead' class in updateStressMeters)
     // Just wait for it to finish, then tell the story
     await delay(700);
-    setTheme('ice-theme');
+    setTheme('death-theme');
 
     await showText('The wind...', passageEl);
     await showText('Your movement stirred the air too violently.', passageEl);
@@ -1389,11 +1453,8 @@ passages['wind_killed'] = async function() {
 
 passages['overheat_killed'] = async function() {
     await flashPipsOnDeath();
-    // Canvas snuffed instantly — brief white flash to sell the 'too hot' moment
-    heatOverlay.classList.add('active');
-    await delay(300);
-    heatOverlay.classList.remove('active');
-    await delay(400);
+    setTheme('death-theme');
+    await delay(500);
 
     await showText('The flame, unfed by motion, turned inward.', passageEl);
     await showText('It burned too bright — consuming itself.', passageEl);
@@ -1756,13 +1817,13 @@ function goToPassage(name) {
 // ==========================================================
 //  START
 // ==========================================================
-const GAME_UPDATING = true;   // ← set to false to re-enable the game
+const GAME_UPDATING = false;   // ← set to false to re-enable the game
 
 if (GAME_UPDATING) {
     stopFlameAnimation();
     state.flameAlive = false;
     flameCanvas.classList.add('dead');
-    emberLabel.textContent = '';
+    emberBarFill.style.width = '0%';
     textArea.innerHTML = '';
     choicesArea.innerHTML = '';
     historyBtn.style.display = 'none';
