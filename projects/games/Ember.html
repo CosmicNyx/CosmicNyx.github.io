@@ -167,7 +167,7 @@ body {
 #flame-bar-container {
     position: fixed;
     top: 20px;
-    right: 20px;
+    left: 20px;
     width: 8px;
     height: 120px;
     background: rgba(255,255,255,0.05);
@@ -327,22 +327,28 @@ body.ember-end-theme {
     top: 14px;
     right: 18px;
     z-index: 110;
-    color: rgba(180, 200, 220, 0.22);
-    font-size: 0.55em;
-    letter-spacing: 3px;
+    color: rgba(180, 200, 220, 0.55);
+    font-size: 0.48em;
+    letter-spacing: 0.1em;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 5px 11px;
     border-radius: 4px;
-    transition: color 0.3s, background 0.3s;
+    border: 1px solid rgba(180, 200, 220, 0.18);
+    background: rgba(0, 0, 0, 0.25);
+    transition: color 0.3s, background 0.3s, border-color 0.3s;
     user-select: none;
     font-family: Georgia, serif;
+    font-style: italic;
 }
 #history-btn:hover {
-    color: rgba(180, 200, 220, 0.6);
-    background: rgba(255,255,255,0.04);
+    color: rgba(180, 200, 220, 0.9);
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(180, 200, 220, 0.4);
 }
 #history-btn.paused {
-    color: rgba(210, 180, 120, 0.55);
+    color: rgba(210, 180, 120, 0.85);
+    border-color: rgba(210, 180, 120, 0.35);
+    background: rgba(20, 15, 8, 0.5);
 }
 
 /* ===== HISTORY DRAWER ===== */
@@ -419,7 +425,7 @@ body.ember-end-theme {
 <div id="journal-container"></div>
 
 <!-- History / Pause Button -->
-<div id="history-btn" style="display:none;" title="Pause & review">&#8226; &#8226; &#8226;</div>
+<div id="history-btn" style="display:none;" title="Pause & review transcript">transcript</div>
 
 <!-- History Drawer -->
 <div id="history-drawer">
@@ -484,6 +490,7 @@ const historyLog = document.getElementById('history-log');
 // ===== HISTORY LOG =====
 const textHistory = [];   // plain-text entries of all shown lines
 let isPaused = false;
+let _pauseResolvers = [];
 
 function addToHistory(html) {
     const plain = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
@@ -492,11 +499,12 @@ function addToHistory(html) {
 
 function openHistory() {
     isPaused = true;
-    // Pause stress while reading
     state._stressWas = state.stressEnabled;
     state.stressEnabled = false;
+    stopFlameAnimation();
     historyDrawer.classList.add('open');
     historyBtn.classList.add('paused');
+    historyBtn.textContent = 'resume';
     // Rebuild log
     historyLog.innerHTML = '';
     textHistory.forEach(entry => {
@@ -512,8 +520,12 @@ function openHistory() {
 function closeHistory() {
     isPaused = false;
     state.stressEnabled = state._stressWas !== undefined ? state._stressWas : state.stressEnabled;
+    startFlameAnimation();
     historyDrawer.classList.remove('open');
     historyBtn.classList.remove('paused');
+    historyBtn.textContent = 'transcript';
+    const resolvers = _pauseResolvers.splice(0);
+    resolvers.forEach(r => r());
 }
 
 historyBtn.addEventListener('click', () => {
@@ -853,6 +865,7 @@ function flameLoop() {
         if (ashParticles[i].life <= 0) ashParticles.splice(i, 1);
     }
 
+    updateEmberVisual();
     flameAnimId = requestAnimationFrame(flameLoop);
 }
 
@@ -873,9 +886,17 @@ function clearAllTimers() {
     if (state.thermalTimer) { clearInterval(state.thermalTimer); state.thermalTimer = null; }
 }
 
+function waitIfPaused() {
+    if (!isPaused) return Promise.resolve();
+    return new Promise(resolve => _pauseResolvers.push(resolve));
+}
+
 function delay(ms) {
     return new Promise(resolve => {
-        const t = setTimeout(resolve, ms);
+        const t = setTimeout(async () => {
+            await waitIfPaused();
+            resolve();
+        }, ms);
         state.timers.push(t);
     });
 }
@@ -910,6 +931,7 @@ function dissolveText(text, _container) {
     span.className = 'dissolve active-text';
     span.innerHTML = text.replace(/^(<br\s*\/?>)+/g, '');
     textArea.appendChild(span);
+    addToHistory(text);
     return span;
 }
 
@@ -962,7 +984,23 @@ function addChoiceLink(text, targetPassage, _container, opts = {}) {
 }
 
 // ===== EMBER VISUALS =====
-function updateEmberVisual() {}
+function updateEmberVisual() {
+    if (!state.flameAlive) {
+        emberLabel.textContent = '';
+        return;
+    }
+    const ratio = state.flameIntensity / state.maxFlameIntensity;
+    if (ratio < 0.25) {
+        emberLabel.textContent = 'dim';
+        emberLabel.style.color = '#665544';
+    } else if (ratio < 0.6) {
+        emberLabel.textContent = 'steady';
+        emberLabel.style.color = '#887766';
+    } else {
+        emberLabel.textContent = 'bright';
+        emberLabel.style.color = '#aa9955';
+    }
+}
 
 function killFlame() {
     state.flameAlive = false;
@@ -1009,7 +1047,10 @@ function renderJournal(animate) {
 }
 
 async function flashPipsOnDeath() {
-    // intentionally empty — only the dying pip animates, not all of them
+    const pips = [...journalContainer.querySelectorAll('.journal-pip:not(.lost)')];
+    pips.forEach(p => p.classList.add('flash'));
+    await delay(300);
+    pips.forEach(p => p.classList.remove('flash'));
 }
 
 // Only the pip being lost lights up gold, then collapses to a grey dead dot
@@ -1022,11 +1063,12 @@ async function animatePipLoss() {
     }
     // Gold flash on just this pip
     dyingPip.classList.add('flash');
-    await delay(350);
-    dyingPip.classList.remove('flash');
-    // Die burst — swells then collapses to grey
+    await delay(480);
+    // Add dying BEFORE removing flash so the animation starts from gold
+    // (removing flash first would cause a transition-vs-animation race)
     dyingPip.classList.add('dying');
-    await delay(750);
+    dyingPip.classList.remove('flash');
+    await delay(800);
     dyingPip.classList.remove('dying');
     dyingPip.classList.add('lost');
 }
@@ -1038,7 +1080,7 @@ function startThermalTimer() {
     updateFlameBar();
 
     state.thermalTimer = setInterval(() => {
-        if (!state.flameAlive) return;
+        if (!state.flameAlive || isPaused) return;
         state.thermalThreshold += 2;
         state.flameIntensity = Math.min(state.maxFlameIntensity, state.flameIntensity + 1);
         updateEmberVisual();
@@ -1115,33 +1157,45 @@ passages['title'] = async function() {
     stillStress = 0;
     heatOverlay.classList.remove('active');
 
-    // Flame always visible — restore it to alive state for title
-    state.flameAlive = true;
-    state.flameIntensity = 50;
+    // Title: flame inert — prevents stress meters from firing on start screen
+    state.flameAlive = false;
+    state.flameIntensity = 0;
     state.maxFlameIntensity = 100;
-    flameCanvas.classList.remove('dead'); // restore from any prior death
+    flameCanvas.classList.add('dead');
 
     flameBarContainer.style.display = 'none';
     journalContainer.style.display = 'none';
+
+    const isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
     await delay(600);
     await showText('<div style="font-size:0.55em; color:#445566; letter-spacing:0.12em; text-transform:uppercase;">A flame carried in silence</div>', passageEl);
     await showText('<div style="font-size:2em; font-weight:bold; margin: 0.4em 0; color:#c8dde8; letter-spacing:0.04em;">Ember of Self</div>', passageEl);
     await showText('<div style="font-size:0.62em; color:#556677; font-style:italic; margin-top:0.8em; line-height:1.7;">A flame carried within.</div>', passageEl);
 
-    addLineBreak(passageEl);
-    addLineBreak(passageEl);
+    if (isMobile) {
+        const msg = document.createElement('div');
+        msg.style.cssText = 'font-size:0.58em; color:#445566; font-style:italic; line-height:2; margin-top:1.2em;';
+        msg.innerHTML = 'This experience requires a mouse.<br>Please visit on a desktop or laptop.';
+        choicesArea.appendChild(msg);
+        return;
+    }
 
-    // "Enter" — clicking enables stress and starts the game
+    const notice = document.createElement('div');
+    notice.style.cssText = 'font-size:0.5em; color:#3a4a58; letter-spacing:0.07em; margin-bottom:1em;';
+    notice.textContent = 'Requires a mouse to play';
+    choicesArea.appendChild(notice);
+
     const link = document.createElement('span');
     link.className = 'choice-link dissolve';
     link.textContent = 'Enter';
     link.style.cssText = 'letter-spacing:0.14em; font-size:0.85em; color:#4a7a9f;';
     link.addEventListener('click', () => {
-        textHistory.length = 0;  // clear history on new game
+        textHistory.length = 0;
         state.stressEnabled = true;
         windStress = 0;
         stillStress = 0;
+        flameCanvas.classList.remove('dead');
         goToPassage('awakening');
     });
     choicesArea.appendChild(link);
@@ -1702,7 +1756,23 @@ function goToPassage(name) {
 // ==========================================================
 //  START
 // ==========================================================
-goToPassage('title');
+const GAME_UPDATING = true;   // ← set to false to re-enable the game
+
+if (GAME_UPDATING) {
+    stopFlameAnimation();
+    state.flameAlive = false;
+    flameCanvas.classList.add('dead');
+    emberLabel.textContent = '';
+    textArea.innerHTML = '';
+    choicesArea.innerHTML = '';
+    historyBtn.style.display = 'none';
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-size:0.65em; color:#445566; font-style:italic; letter-spacing:0.08em; line-height:2;';
+    msg.textContent = 'Game is updating. please come back later.';
+    textArea.appendChild(msg);
+} else {
+    goToPassage('title');
+}
 </script>
 </body>
 </html>
