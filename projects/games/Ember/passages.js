@@ -17,9 +17,9 @@ passages['title'] = async function() {
 
     if (isMobile) {
         await delay(500);
-        await showText('<div style="font-size:2em; font-weight:bold; margin: 0.5em 0; color:#c8dde8;">Ember of Self</div>', passageEl);
+        await showText('<div class="txt-ice title-heading">Ember of Self</div>', passageEl);
         const msg = document.createElement('div');
-        msg.style.cssText = 'font-size:0.7em; color:#7a4a1e; line-height:1.6; max-width:340px; margin: 0 auto;';
+        msg.className = 'txt-warm mobile-notice';
         msg.innerHTML = 'This game requires a mouse and is not playable on mobile.<br><br>Please open it on a desktop or laptop.';
         choicesArea.appendChild(msg);
         return;
@@ -28,24 +28,23 @@ passages['title'] = async function() {
     // ── STEP 1: Text advance option fades in before anything else ──
     await new Promise(resolve => {
         const wrapper = document.createElement('div');
-        wrapper.className = 'dissolve';
-        wrapper.style.cssText = 'text-align:center;';
+        wrapper.className = 'dissolve selector-wrapper';
 
         const lbl = document.createElement('div');
-        lbl.style.cssText = 'font-size:0.7em; color:#667; margin-bottom:0.7em; letter-spacing:0.08em;';
+        lbl.className = 'txt-dim selector-label';
         lbl.textContent = 'Text Advance';
         wrapper.appendChild(lbl);
 
         const btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display:flex; gap:1.8em; justify-content:center; margin-bottom:0.5em;';
+        btnRow.className = 'selector-row';
         wrapper.appendChild(btnRow);
 
         const desc = document.createElement('div');
-        desc.style.cssText = 'font-size:0.65em; color:#556; min-height:1.4em; margin-top:0.3em;';
+        desc.className = 'txt-dimmer selector-desc';
         wrapper.appendChild(desc);
 
         const hint2 = document.createElement('div');
-        hint2.style.cssText = 'font-size:0.52em; color:#3a4a55; margin-top:1.1em; line-height:1.6;';
+        hint2.className = 'txt-dimmest selector-hint';
         hint2.textContent = 'You can change this and view previous text in the transcript button at the top right.';
         wrapper.appendChild(hint2);
 
@@ -93,8 +92,8 @@ passages['title'] = async function() {
 
     // ── STEP 3: Title text ──
     await delay(300);
-    await showText('<div style="font-size:0.6em; color:#556;">A flame carried in silence</div>', passageEl);
-    await showText('<div style="font-size:2em; font-weight:bold; margin: 0.5em 0; color:#c8dde8;">Ember of Self</div><div style="font-size:0.5em; color:#7a4a1e; margin-top:0.5em; letter-spacing:0.04em;">requires a mouse to play</div>', passageEl);
+    await showText('<div class="txt-dimmer title-subtitle">A flame carried in silence</div>', passageEl);
+    await showText('<div class="txt-ice title-heading">Ember of Self</div><div class="txt-warm title-mouse-note">requires a mouse to play</div>', passageEl);
 
 
 
@@ -122,7 +121,7 @@ passages['awakening'] = async function() {
     await showText('<br><br>A tiny, dim ember hovers near your chest.', passageEl);
     await showText('<br><br>Your robe is dark blue - intricate patterns trace the hem.', passageEl);
     await showText('<br><br>Silence.', passageEl);
-    await showText('<br><br><em style="color:#7a6040; font-size:0.85em;">Do not let the flame die.</em><br><span style="font-size:0.65em; color:#445566; display:block; margin-top:0.5em; line-height:1.6;">Move your mouse gently and keep moving forward to keep it alive.</span>', passageEl);
+    await showText('<br><br><em class="txt-caution flame-caution">Do not let the flame die.</em><br><span class="txt-hint flame-hint-block">Move your mouse gently and keep moving forward to keep it alive.</span>', passageEl);
     await showText('<br><br><span class="breathing-prompt">Breathe to stabilize the spark...</span>', passageEl);
 
     startIdleReminder();
@@ -136,7 +135,6 @@ passages['breathing_ritual'] = async function() {
     stopIdleReminder();
     state.hasBreathed = true;
     state.flameIntensity = 45;
-    state.playerMoved = true;
     state.stressEnabled = true;   // timer starts NOW
     windStress = 0;
     heatStress = 0;
@@ -171,7 +169,7 @@ passages['examine_pot'] = async function() {
     await showText('<br><br>The ember drifts down, illuminating its surface.', passageEl);
     await showText('<br><br>The patterns on the pot...', passageEl);
     await showText('<br><br>They match the embroidery on your sleeves.', passageEl);
-    await showText('<br><br><em style="color:#6688aa;">You have been here before.</em>', passageEl);
+    await showText('<br><br><em class="txt-echo">You have been here before.</em>', passageEl);
 
 
     state.optionsShownTime = Date.now();
@@ -185,7 +183,7 @@ passages['cave_threshold'] = async function() {
     await showText('A bright light shines from the cave exit.', passageEl);
     await showText('<br><br>Instinct pulls you forward. This is the way out.', passageEl);
     await showText('<br><br>The light is warm. Inviting.', passageEl);
-    await showText('<br><br><span style="color:#667;">The ember flickers - it senses your eagerness.</span>', passageEl);
+    await showText('<br><br><span class="txt-dim">The ember flickers - it senses your eagerness.</span>', passageEl);
 
 
     state.optionsShownTime = Date.now();
@@ -216,7 +214,7 @@ passages['rushed'] = async function() {
     await showText('<br><br>You cannot proceed without light.', passageEl);
 
 
-    await showText('<em style="color:#aa7744;">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
+    await showText('<em class="txt-sacrifice">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
 
 
     state.optionsShownTime = Date.now();
@@ -236,7 +234,7 @@ passages['sacrifice_accept'] = async function() {
     await showText('You feel something leave you.', passageEl);
     await showText('<br><br>A page in your journal fades to nothing.', passageEl);
     await showText('<br><br>The ember returns - but dimmer than before.', passageEl);
-    await showText('<br><br><span style="color:#776655; font-size:0.7em;">Maximum light intensity permanently reduced.</span>', passageEl);
+    await showText('<br><br><span class="txt-warning txt-sm">Maximum light intensity permanently reduced.</span>', passageEl);
 
 
     state.optionsShownTime = Date.now();
@@ -249,7 +247,7 @@ passages['sacrifice_decline'] = async function() {
     await showText('<br><br>Without light, there is no path.', passageEl);
     await showText('<br><br>...', passageEl);
     await showText('<br><br>The silence grows heavier.', passageEl);
-    await showText('<br><br><em style="color:#556;">"The ember does not beg. But it waits."</em>', passageEl);
+    await showText('<br><br><em class="txt-dimmer">"The ember does not beg. But it waits."</em>', passageEl);
 
 
     state.optionsShownTime = Date.now();
@@ -269,7 +267,7 @@ passages['wind_killed'] = async function() {
         await showFlameHelp('wind');
     }
 
-    await showText('<em style="color:#aa7744;">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
+    await showText('<em class="txt-sacrifice">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
 
     state.optionsShownTime = Date.now();
     addChoiceLink('Sacrifice', 'sacrifice_accept_return', passageEl);
@@ -289,7 +287,7 @@ passages['brightness_killed'] = async function() {
         await showFlameHelp('bright');
     }
 
-    await showText('<em style="color:#aa7744;">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
+    await showText('<em class="txt-sacrifice">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
 
     state.optionsShownTime = Date.now();
     addChoiceLink('Sacrifice', 'sacrifice_accept_return', passageEl);
@@ -309,7 +307,7 @@ passages['no_movement_killed'] = async function() {
         await showFlameHelp('still');
     }
 
-    await showText('<em style="color:#aa7744;">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
+    await showText('<em class="txt-sacrifice">"Sacrifice a Fragment of Self to Reignite?"</em>', passageEl);
 
     state.optionsShownTime = Date.now();
     addChoiceLink('Sacrifice', 'sacrifice_accept_return', passageEl);
@@ -328,8 +326,8 @@ passages['sacrifice_accept_return'] = async function() {
     await showText('You feel something leave you.', passageEl);
     await showText('A page in your journal fades to nothing.', passageEl);
     await showText('The ember returns - but dimmer than before.', passageEl);
-    await showText('<span style="color:#776655; font-size:0.7em;">Maximum light intensity permanently reduced.</span>', passageEl);
-    await showText('<span style="color:#667; font-size:0.7em;">Be mindful of the balance between stillness and motion.</span>', passageEl);
+    await showText('<span class="txt-warning txt-sm">Maximum light intensity permanently reduced.</span>', passageEl);
+    await showText('<span class="txt-dim txt-sm">Be mindful of the balance between stillness and motion.</span>', passageEl);
 
     state.optionsShownTime = Date.now();
     const returnTo = state.lastPassageBeforeDeath || 'awakening';
@@ -361,7 +359,7 @@ passages['mural_discovery'] = async function() {
     await showText('<br><br>A weathered mural stretches across its face.', passageEl);
     await showText('<br><br>Figures - standing in a circle around a great bonfire.', passageEl);
     await showText('<br><br>Their hands are raised. Not in worship. In warmth.', passageEl);
-    await showText('<br><br><em style="color:#7799aa;">The goal is not the flame. It is the circle.</em>', passageEl);
+    await showText('<br><br><em class="txt-aside">The goal is not the flame. It is the circle.</em>', passageEl);
 
 
     state.optionsShownTime = Date.now();
@@ -375,7 +373,7 @@ passages['find_bowl'] = async function() {
     await showText('Among the ash and stone, something catches the light.', passageEl);
     await showText('<br><br>A <em>chipped porcelain bowl</em>. Painted with fine brushwork.', passageEl);
     await showText('<br><br>You pick it up carefully. The ember leans toward it, curious.', passageEl);
-    await showText('<br><br><span style="color:#667; font-size:0.75em;">The flame grows warmer the longer you hold still...</span>', passageEl);
+    await showText('<br><br><span class="txt-dim txt-sm">The flame grows warmer the longer you hold still...</span>', passageEl);
 
 
     state.optionsShownTime = Date.now();
@@ -389,7 +387,7 @@ passages['study_bowl'] = async function() {
     await showText('You turn the bowl in your hands.', passageEl);
     await showText('<br><br>Delicate flowers, painted by someone who knew patience.', passageEl);
     await showText('<br><br>The ember pulses brighter... too bright.', passageEl);
-    await showText('<br><br><span style="color:#aa7744; font-size:0.8em;">The warmth is becoming uncomfortable.</span>', passageEl);
+    await showText('<br><br><span class="txt-sacrifice txt-sm">The warmth is becoming uncomfortable.</span>', passageEl);
 
 
     state.optionsShownTime = Date.now();
@@ -406,7 +404,7 @@ passages['linger_more'] = async function() {
     state.thermalThreshold = Math.max(state.thermalThreshold, 85);
     updateFlameBar();
 
-    await showText('<br><br><span style="color:#cc5500;">The ember is burning too hot...</span>', passageEl);
+    await showText('<br><br><span class="txt-danger">The ember is burning too hot...</span>', passageEl);
 
     await delay(2000);
     if (state.currentPassage === 'linger_more') {
@@ -468,7 +466,7 @@ passages['silent_encounter'] = async function() {
 
     await delay(300);
     await showText('The light shifts.', passageEl);
-    await showText('<br><br>Where everything was ice-blue, a pale <span style="color:#ddc070;">gold</span> now bleeds into the edges.', passageEl);
+    await showText('<br><br>Where everything was ice-blue, a pale <span class="txt-gold-accent">gold</span> now bleeds into the edges.', passageEl);
     await showText('<br><br>And then you see it...', passageEl);
     await showText('<br><br>A <em>silhouette</em>. Distant. Another traveler.', passageEl);
     await showText('<br><br>They pause - then disappear behind a frost-covered ridge.', passageEl);
@@ -504,9 +502,9 @@ passages['light_brazier'] = async function() {
     state.flameIntensity = Math.min(state.maxFlameIntensity, 70);
     updateEmberVisual();
 
-    await showText('<br><br><span style="color:#ffd700; font-size:1.2em;">Light.</span>', passageEl);
+    await showText('<br><br><span class="txt-gold-bright txt-lg">Light.</span>', passageEl);
     await showText('<br><br>The frost around the brazier retreats.', passageEl);
-    await showText('<br><br>Grey stone turns to <span style="color:#daa520;">warm gold</span>.', passageEl);
+    await showText('<br><br>Grey stone turns to <span class="txt-gold">warm gold</span>.', passageEl);
     await showText('<br><br>The cold releases its grip on this small circle of earth.', passageEl);
 
 
@@ -523,19 +521,19 @@ passages['meditation'] = async function() {
     await showText('<br><br>It is warm.', passageEl);
 
     if (state.hasSacrificed) {
-        await showText('<br><br><span style="color:#887766; font-size:0.75em;">The light is dimmer than it should be. You remember what you gave up.</span>', passageEl);
+        await showText('<br><br><span class="txt-gold-dim txt-sm">The light is dimmer than it should be. You remember what you gave up.</span>', passageEl);
     }
 
-    await showText('<br><br><em style="color:#daa520;">Fragment of Self unlocked.</em>', passageEl);
+    await showText('<br><br><em class="txt-gold">Fragment of Self unlocked.</em>', passageEl);
 
 
 
     const statsLost = state.maxIdentityStats - state.currentStats;
     if (statsLost > 0) {
-        await showText('<br><span style="color:#776655; font-size:0.65em;">Fragments sacrificed: ' + statsLost + '</span>', passageEl);
+        await showText('<br><span class="txt-warning txt-xs">Fragments sacrificed: ' + statsLost + '</span>', passageEl);
     }
 
-    await showText('<br><span style="color:#776655; font-size:0.65em;">Maximum flame intensity: ' + state.maxFlameIntensity + '%</span>', passageEl);
+    await showText('<br><span class="txt-warning txt-xs">Maximum flame intensity: ' + state.maxFlameIntensity + '%</span>', passageEl);
 
     await fadeToBlack();
     await delay(1000);
@@ -560,22 +558,22 @@ passages['survey_outro'] = async function() {
     await delay(800);
 
     await showText(
-        '<div style="font-size:0.9em; color:#c8a050; letter-spacing:0.06em;">End of Vertical Slice</div>',
+        '<div class="txt-end-title">End of Vertical Slice</div>',
         passageEl
     );
 
     await showText(
-        '<span style="font-size:0.65em; color:#8a7050; font-style:italic; letter-spacing:0.03em;">The fire remembers what the mind forgets.</span>',
+        '<span class="txt-end-quote">The fire remembers what the mind forgets.</span>',
         passageEl
     );
 
     await showText(
-        '<span style="font-size:0.8em; color:#b09060;">Thank you for carrying the ember this far.</span>',
+        '<span class="txt-end-body">Thank you for carrying the ember this far.</span>',
         passageEl
     );
 
     await showText(
-        '<span style="font-size:0.72em; color:#7a6848;">Your journey leaves traces — impressions, questions, small warmths and frictions. If you are willing, I would hear them.</span>',
+        '<span class="txt-end-survey">Your journey leaves traces — impressions, questions, small warmths and frictions. If you are willing, I would hear them.</span>',
         passageEl
     );
 
@@ -589,11 +587,10 @@ passages['survey_outro'] = async function() {
     }
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'dissolve active-text';
-    wrapper.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:1.4em;';
+    wrapper.className = 'dissolve active-text survey-wrapper';
 
     const prompt = document.createElement('div');
-    prompt.style.cssText = 'font-size:0.68em; color:#9a8460; font-style:italic; letter-spacing:0.04em; line-height:1.6;';
+    prompt.className = 'txt-end-survey survey-prompt';
     prompt.innerHTML = 'Leave your tale in the embers.';
 
     const surveyBtn = document.createElement('a');
@@ -604,11 +601,10 @@ passages['survey_outro'] = async function() {
     surveyBtn.textContent = 'Open the Scroll of Testimony';
 
     const divider = document.createElement('div');
-    divider.style.cssText = 'width:32px; height:1px; background:rgba(160,130,80,0.2); margin:0.2em auto;';
+    divider.className = 'survey-divider';
 
     const restart = document.createElement('span');
-    restart.className = 'choice-link';
-    restart.style.cssText = 'font-size:0.72em; color:#5a6870; font-weight:normal; margin-top:0.2em;';
+    restart.className = 'choice-link txt-end-restart survey-restart';
     restart.textContent = 'Begin again';
     restart.addEventListener('click', () => goToPassage('title'));
 
@@ -663,7 +659,7 @@ if (GAME_UPDATING) {
     choicesArea.innerHTML = '';
     historyBtn.style.display = 'none';
     const msg = document.createElement('div');
-    msg.style.cssText = 'font-size:0.65em; color:#445566; font-style:italic; letter-spacing:0.08em; line-height:2;';
+    msg.className = 'txt-hint updating-msg';
     msg.textContent = 'Game is updating. please come back later.';
     textArea.appendChild(msg);
 } else {

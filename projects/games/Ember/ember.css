@@ -1,3 +1,92 @@
+/* ===== COLOR PALETTE ===== */
+:root {
+    /* Narrative tones */
+    --clr-dim:         #667;        /* muted / background text */
+    --clr-dimmer:      #556;        /* more muted */
+    --clr-dimmest:     #3a4a55;     /* barely-there hint */
+    --clr-hint:        #445566;     /* system hints, game-updating text */
+    --clr-caution:     #7a6040;     /* gentle caution / flame warning */
+
+    --clr-sacrifice:   #aa7744;     /* sacrifice prompts */
+    --clr-warning:     #776655;     /* stat loss / reduction */
+    --clr-danger:      #cc5500;     /* overheat / urgent */
+    --clr-echo:        #6688aa;     /* memory / past echoes */
+    --clr-aside:       #7799aa;     /* philosophical asides */
+    --clr-warm:        #7a4a1e;     /* warm brown / mobile notice */
+
+    /* World palette */
+    --clr-ice:         #c8dde8;     /* early-game ice blue */
+    --clr-gold-accent: #ddc070;     /* inline gold highlight word */
+    --clr-gold:        #daa520;     /* warm gold / achievement */
+    --clr-gold-bright: #ffd700;     /* peak light moment */
+    --clr-gold-dim:    #887766;     /* post-sacrifice dim gold */
+
+    /* End screen */
+    --clr-end-title:   #c8a050;
+    --clr-end-quote:   #8a7050;
+    --clr-end-body:    #b09060;
+    --clr-end-survey:  #9a8460;
+    --clr-end-restart: #5a6870;
+}
+
+/* ===== PASSAGE TEXT CLASSES ===== */
+/* Combine color classes with size utilities: e.g. class="txt-warning txt-sm" */
+.txt-dim         { color: var(--clr-dim); }
+.txt-dimmer      { color: var(--clr-dimmer); }
+.txt-dimmest     { color: var(--clr-dimmest); }
+.txt-hint        { color: var(--clr-hint); }
+.txt-caution     { color: var(--clr-caution); }
+.txt-sacrifice   { color: var(--clr-sacrifice); }
+.txt-warning     { color: var(--clr-warning); }
+.txt-danger      { color: var(--clr-danger); }
+.txt-echo        { color: var(--clr-echo); }
+.txt-aside       { color: var(--clr-aside); }
+.txt-warm        { color: var(--clr-warm); }
+.txt-ice         { color: var(--clr-ice); }
+.txt-gold-accent { color: var(--clr-gold-accent); }
+.txt-gold        { color: var(--clr-gold); }
+.txt-gold-bright { color: var(--clr-gold-bright); }
+.txt-gold-dim    { color: var(--clr-gold-dim); }
+/* end screen classes with full styling are defined below */
+
+/* Size utilities */
+.txt-sm  { font-size: 0.75em; }
+.txt-xs  { font-size: 0.65em; }
+.txt-lg  { font-size: 1.2em; }
+
+/* End screen — color + sizing together */
+.txt-end-title   { color: var(--clr-end-title);   font-size: 0.9em;  letter-spacing: 0.06em; }
+.txt-end-quote   { color: var(--clr-end-quote);   font-size: 0.65em; font-style: italic; letter-spacing: 0.03em; }
+.txt-end-body    { color: var(--clr-end-body);    font-size: 0.8em; }
+.txt-end-survey  { color: var(--clr-end-survey);  font-size: 0.72em; }
+.txt-end-restart { color: var(--clr-end-restart); }
+
+/* ===== TITLE SCREEN ===== */
+.title-heading    { font-size: 2em; font-weight: bold; margin: 0.5em 0; }
+.title-subtitle   { font-size: 0.6em; }
+.title-mouse-note { font-size: 0.5em; margin-top: 0.5em; letter-spacing: 0.04em; }
+.mobile-notice    { font-size: 0.7em; line-height: 1.6; max-width: 340px; margin: 0 auto; }
+
+/* ===== TEXT ADVANCE SELECTOR ===== */
+.selector-wrapper { text-align: center; }
+.selector-label   { font-size: 0.7em; margin-bottom: 0.7em; letter-spacing: 0.08em; }
+.selector-row     { display: flex; gap: 1.8em; justify-content: center; margin-bottom: 0.5em; }
+.selector-desc    { font-size: 0.65em; min-height: 1.4em; margin-top: 0.3em; }
+.selector-hint    { font-size: 0.52em; margin-top: 1.1em; line-height: 1.6; }
+
+/* ===== AWAKENING ===== */
+.flame-caution    { font-size: 0.85em; }
+.flame-hint-block { font-size: 0.65em; display: block; margin-top: 0.5em; line-height: 1.6; }
+
+/* ===== SURVEY OUTRO ===== */
+.survey-wrapper { display: flex; flex-direction: column; align-items: center; gap: 1.4em; }
+.survey-prompt  { font-size: 0.68em; font-style: italic; letter-spacing: 0.04em; line-height: 1.6; }
+.survey-divider { width: 32px; height: 1px; background: rgba(160,130,80,0.2); margin: 0.2em auto; }
+.survey-restart { font-size: 0.72em; font-weight: normal; margin-top: 0.2em; }
+
+/* ===== GAME UPDATING ===== */
+.updating-msg   { font-size: 0.65em; font-style: italic; letter-spacing: 0.08em; line-height: 2; }
+
 /* ===== BASE RESET & BODY ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow-x: hidden; }
