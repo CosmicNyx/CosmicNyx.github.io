@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1" name="viewport">
+<title>Ember of Self</title>
+<link rel="stylesheet" href="ember.css">
+</head>
+<body class="ice-theme">
+
+<!-- Screen Fade Overlay -->
+<div id="screen-fade"></div>
+
+<!-- Heat Shimmer Overlay -->
+<div id="heat-overlay"></div>
+
+<!-- Ember / Flame Indicator -->
+<div id="ember-container">
+    <canvas id="flame-canvas" width="160" height="210"></canvas>
+    <div id="ember-bar-track"><div id="ember-bar-fill"></div></div>
+</div>
+<div id="dev-indicator">DEV</div>
+
+<!-- Flame Intensity Bar -->
+<div id="flame-bar-container" style="display:none;">
+    <div id="flame-bar"></div>
+</div>
+
+<!-- Journal Pips (Identity Stats) -->
+<div id="journal-container"></div>
+
+<!-- History / Pause Button -->
+<div id="history-btn" style="display:none;" title="Pause & review transcript">transcript</div>
+
+<!-- History Drawer -->
+<div id="history-drawer">
+    <div id="history-close">&#x2715; resume</div>
+    <div id="history-advance"></div>
+    <div id="history-log"></div>
+</div>
+
+<!-- Main Passage Area -->
+<div id="passage-container">
+    <div id="text-area"></div>
+</div>
+<!-- Choices always fixed at bottom -->
+<div id="choices-area"></div>
+
+<script src="ember.js"></script>
+<script src="passages.js"></script>
+</body>
+</html>
