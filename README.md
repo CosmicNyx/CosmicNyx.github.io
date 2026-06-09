@@ -1,4 +1,4 @@
-# [CosmicNyx.github.io](https://cosmicnyx.github.io)
+# [NyxCosmic.github.io](https://nyxcosmic.github.io/))
 
 this is where i will post projects
 
